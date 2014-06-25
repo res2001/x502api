@@ -42,6 +42,7 @@ set(SOURCES
     src/x502api.c
     src/x502_config.c
     src/x502_errs.c
+    src/x502api_streams.c
     lib/osspec/osspec.c
     lib/crc/fast_crc.c)
 

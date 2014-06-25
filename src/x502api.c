@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 
-
+static const double f_scales[] = {10., 5., 2., 1., 0.5, 0.2};
 
 
 LPCIE_EXPORT(t_x502_hnd) X502_Create(void) {
@@ -146,6 +146,17 @@ LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502* hnd, const t_lpcie_devinfo* inf
 
                 if (!err)
                     err =  hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 0);
+
+                if (!err) {
+                    int32_t running;
+                    unsigned ch;
+                    for (ch=0; (ch < X502_STREAM_CH_CNT) && !err; ch++) {
+                        err = hnd->iface->stream_running(hnd, ch, &running);
+                        if (!err && running) {
+                            err = hnd->iface->stream_stop(hnd, ch);
+                        }
+                    }
+                }
             }
 
 #if 0
@@ -300,6 +311,170 @@ LPCIE_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info) {
 
     if (!err)
         *info = hnd->info;
+
+    return err;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+LPCIE_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err && (lch==NULL))
+        err = X502_ERR_INVALID_POINTER;
+    if (!err)
+        *lch = hnd->proc_adc_ch;
+    return err;
+}
+
+#define STREAM_IN_WRD_TYPE(wrd) wrd & 0x80000000 ? STREAM_IN_WRD_ADC : \
+      (wrd & 0xFF000000) == 0x0 ? STREAM_IN_WRD_DIN : \
+    ((wrd & 0xFF000000)>>24) == 0x01 ? STREAM_IN_WRD_MSG : STREAM_IN_WRD_USR
+
+
+LPCIE_EXPORT(int32_t) X502_ProcessAdcData(t_x502_hnd hnd, const uint32_t* src,  double *dest,
+                            uint32_t *size, uint32_t flags) {
+    if (size == NULL)
+        return X502_ERR_INVALID_POINTER;
+    return X502_ProcessDataWithUserExt(hnd, src, *size, flags, dest, size,
+                                        NULL, NULL, NULL, NULL);
+}
+
+LPCIE_EXPORT(int32_t) X502_ProcessData(t_x502_hnd hnd, const uint32_t *src, uint32_t size, uint32_t flags,
+                           double *adc_data, uint32_t *adc_data_size,
+                           uint32_t *din_data, uint32_t *din_data_size) {
+    return X502_ProcessDataWithUserExt(hnd, src, size, flags, adc_data, adc_data_size,
+                                      din_data, din_data_size, NULL, NULL);
+}
+
+
+LPCIE_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t* src, uint32_t size,
+                                   uint32_t flags, double *adc_data,
+                                   uint32_t *adc_data_size, uint32_t *din_data, uint32_t *din_data_size,
+                                   uint32_t *usr_data, uint32_t *usr_data_size) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err && (adc_data_size==NULL) && (adc_data!=NULL))
+        err = X502_ERR_INVALID_POINTER;
+    if (!err && (din_data_size==NULL) && (din_data!=NULL))
+        err = X502_ERR_INVALID_POINTER;
+    if (!err && (usr_data_size==NULL) && (usr_data!=NULL))
+        err = X502_ERR_INVALID_POINTER;
+    if (!err) {
+        uint32_t adc_cnt = 0, din_cnt=0, usr_cnt = 0;
+        uint32_t i;
+
+        for (i=0; (i<size) && !err; i++) {
+            register uint32_t wrd = src[i];
+            t_stream_in_wrd_type type = STREAM_IN_WRD_TYPE(wrd);
+            /* проверяем - это данные от АЦП или цифровых входов */
+            switch (type) {
+                case STREAM_IN_WRD_ADC: {
+                    uint32_t ch_num = (wrd >> 24) & 0xF;
+                    uint32_t ch_mode = (wrd >> 28) & 0x3;
+                    int32_t val;
+                    uint32_t range;
+
+                    /* проверяем совпадение каналов */
+                    switch (ch_mode) {
+                        case 0:
+                            ch_mode = X502_LCH_MODE_DIFF;
+                            break;
+                        case 1:
+                            ch_mode = X502_LCH_MODE_COMM;
+                            break;
+                        case 2:
+                            ch_mode = X502_LCH_MODE_COMM;
+                            ch_num+=16;
+                            break;
+                        case 3:
+                            ch_mode = X502_LCH_MODE_ZERO;
+                            break;
+                    }
+
+                    if (!(flags & X502_PROC_FLAGS_DONT_CHECK_CH) &&
+                            ((hnd->set.lch[hnd->proc_adc_ch].mode != ch_mode) ||
+                            (hnd->set.lch[hnd->proc_adc_ch].ch != ch_num))) {
+                        err = X502_ERR_PROC_INVALID_CH_NUM;
+                    } else {
+                        /* проверяем формат - пришло откалиброванное 24-битное слово,
+                          или неоткалиброванное 16-битное */
+                        if (wrd & 0x40000000) {
+                            val = wrd & 0xFFFFFF;
+                            if (wrd & 0x800000)
+                                val |= 0xFF000000;
+
+                            range = hnd->set.lch[hnd->proc_adc_ch].range;
+                        } else {
+                            range = (wrd >> 16) & 0x7;
+                            if (!(flags & X502_PROC_FLAGS_DONT_CHECK_CH) &&
+                                    (range != hnd->set.lch[hnd->proc_adc_ch].range)) {
+                                err = X502_ERR_PROC_INVALID_CH_RANGE;
+                            } else {
+                                val = wrd & 0xFFFF;
+                                if (wrd & 0x8000)
+                                    val |= 0xFFFF0000;
+                            }
+                        }
+                    }
+
+                    if (!err) {
+                        double res_val = val;
+                        if (flags & X502_PROC_FLAGS_VOLT) {
+                            res_val = f_scales[range]*res_val/X502_ADC_SCALE_CODE_MAX;
+                        }
+
+
+                        if ((adc_data!=NULL) && (adc_cnt<*adc_data_size)) {
+                            *adc_data++ = res_val;
+                            adc_cnt++;
+                        } else if (adc_data==NULL) {
+                            adc_cnt++;
+                        }
+
+                        if (++hnd->proc_adc_ch ==hnd->set.lch_cnt)
+                            hnd->proc_adc_ch = 0;
+                    }
+                }
+                break;
+            case STREAM_IN_WRD_DIN:
+                if ((din_data!=NULL) && (din_cnt<*din_data_size)) {
+                    *din_data++ = wrd & 0x3FFFF;
+                    din_cnt++;
+                } else if (din_data==NULL) {
+                    din_cnt++;
+                }
+                break;
+            case STREAM_IN_WRD_MSG:
+                err = wrd==X502_STREAM_IN_MSG_OVERFLOW ? X502_ERR_STREAM_OVERFLOW :
+                                                         X502_ERR_UNSUP_STREAM_MSG;
+                break;
+            case STREAM_IN_WRD_USR:
+                if ((usr_data!=NULL) && (usr_cnt<*usr_data_size)) {
+                    *usr_data++ = wrd;
+                    usr_cnt++;
+                } else if (usr_data==NULL) {
+                    usr_cnt++;
+                }
+                break;
+            }
+        }
+
+
+        if (adc_data_size!=NULL)
+            *adc_data_size = adc_cnt;
+        if (din_data_size!=NULL)
+            *din_data_size = din_cnt;
+        if (usr_data_size!=NULL)
+            *usr_data_size = usr_cnt;
+    }
 
     return err;
 }

@@ -49,6 +49,10 @@ typedef enum {
 
     E502_CM4_CMD_FPGA_REG_READ       = 0x10,
     E502_CM4_CMD_FPGA_REG_WRITE      = 0x11,
+    E502_CM4_CMD_STREAM_START        = 0x12,
+    E502_CM4_CMD_STREAM_STOP         = 0x13,
+    E502_CM4_CMD_STREAM_SET_STEP     = 0x14,
+    E502_CM4_CMD_STREAM_IS_RUNNING   = 0x15,
 
     E502_CM4_CMD_TEST_START          = 0x40,
     E502_CM4_CMD_TEST_STOP           = 0x41,
