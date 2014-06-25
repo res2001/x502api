@@ -22,30 +22,29 @@ static int f_lusb_init_done = 0;
 
 
 typedef struct {
-    uint8_t addr;
+    uint8_t addr; /* адрес конечной точки */
 
-    int32_t trans_completed;
-    uint32_t trans_busy;
-    uint32_t trans_get_pos;
+    int32_t trans_completed; /* количество завершенных запросов, но данные еще не прочитаны */
+    uint32_t trans_busy; /* количество запросов, буфер которых использовать нельзя
+                            для постановки нового запроса (сколько в процессе + completed) */
+    uint32_t trans_get_pos; /* позиция запроса, который будет использоваться для чтения/записи программой */
 
 
-    struct libusb_transfer **transfers;
+    struct libusb_transfer **transfers; /* запросы usb */
     struct {
         uint32_t *addr;
         uint32_t size;
-    } *cpl_bufs;
-    uint32_t *data;
-    unsigned transf_cnt;
-    unsigned transf_size;
+        int32_t  err;
+    } *cpl_bufs; /* результат выполнения запроса */
+    uint32_t *data; /* промежуточный буфер, используемый во всех запросах */
+    unsigned transf_cnt; /* количество выделенных запросов в transfers */
+    unsigned transf_size; /* размер в 32-битных словах буфера для каждого запроса */
 } t_transf_info;
 
 
 typedef struct {
     libusb_device_handle *devhnd;
     t_transf_info streams[X502_STREAM_CH_CNT];
-
-
-
 } t_usb_iface_data;
 
 
@@ -107,7 +106,6 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo) {
         usb_data->streams[X502_STREAM_CH_OUT].addr = 0x01;
 
         hnd->iface_data = usb_data;
-
     }
 
     return err;
@@ -148,15 +146,18 @@ static int32_t f_iface_fpga_write(t_x502_hnd hnd, uint16_t addr, uint32_t val) {
 
 static void f_usb_transf_cb(struct libusb_transfer *transfer) {
     t_transf_info *info = (t_transf_info*)transfer->user_data;
+    int pos = (info->trans_get_pos + info->trans_completed) % info->transf_cnt;
+
     if ((transfer->status == LIBUSB_TRANSFER_COMPLETED)
             || (transfer->status == LIBUSB_TRANSFER_TIMED_OUT)
             || (transfer->status == LIBUSB_TRANSFER_CANCELLED)) {
-        int pos = (info->trans_get_pos + info->trans_completed) % info->transf_cnt;
 
         info->cpl_bufs[pos].addr = (uint32_t*)transfer->buffer;
         info->cpl_bufs[pos].size = transfer->actual_length/sizeof(uint32_t);
+        info->cpl_bufs[pos].err = X502_ERR_OK;
     } else {
-
+        info->cpl_bufs[pos].err = info->addr & LIBUSB_ENDPOINT_DIR_MASK ?
+                    X502_ERR_RECV : X502_ERR_SEND;
     }
     info->trans_completed++;
 }
@@ -316,7 +317,7 @@ static int32_t f_iface_stream_running(t_x502_hnd hnd, uint32_t ch, int32_t* runn
 
 
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout) {
-    uint32_t recvd = 0;
+    int32_t recvd = 0;
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_IN];
     t_timer tmr;
@@ -335,28 +336,32 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
         libusb_handle_events_timeout_completed(NULL, &tv, &info->trans_completed);
 
         while (info->trans_completed && (size!=0) && !err) {
-            if (info->cpl_bufs[info->trans_get_pos].size) {
-                uint32_t cpy_size = info->cpl_bufs[info->trans_get_pos].size;
-                if (cpy_size > size)
-                    cpy_size = size;
-                if (cpy_size) {
-                    memcpy(&buf[recvd], info->cpl_bufs[info->trans_get_pos].addr, cpy_size*sizeof(buf[0]));
-                    recvd+=cpy_size;
-                    size-=cpy_size;
-                      info->cpl_bufs[info->trans_get_pos].size -= cpy_size;
-                    info->cpl_bufs[info->trans_get_pos].addr += cpy_size;
+            if (info->cpl_bufs[info->trans_get_pos].err != X502_ERR_OK) {
+                err = info->cpl_bufs[info->trans_get_pos].err;
+            } else {
+                if (info->cpl_bufs[info->trans_get_pos].size) {
+                    uint32_t cpy_size = info->cpl_bufs[info->trans_get_pos].size;
+                    if (cpy_size > size)
+                        cpy_size = size;
+                    if (cpy_size) {
+                        memcpy(&buf[recvd], info->cpl_bufs[info->trans_get_pos].addr, cpy_size*sizeof(buf[0]));
+                        recvd+=cpy_size;
+                        size-=cpy_size;
+                          info->cpl_bufs[info->trans_get_pos].size -= cpy_size;
+                        info->cpl_bufs[info->trans_get_pos].addr += cpy_size;
+                    }
                 }
-            }
 
-            if (info->cpl_bufs[info->trans_get_pos].size==0) {
-                info->trans_completed--;                
-                done_trans++;
-                if (++info->trans_get_pos==info->transf_cnt)
-                    info->trans_get_pos = 0;
+                if (info->cpl_bufs[info->trans_get_pos].size==0) {
+                    info->trans_completed--;
+                    done_trans++;
+                    if (++info->trans_get_pos==info->transf_cnt)
+                        info->trans_get_pos = 0;
+                }
             }
         }
 
-        if (done_trans) {
+        if (done_trans && !err) {
             info->trans_busy-=done_trans;
             f_start_rd_transfrs(hnd);
         }
@@ -368,7 +373,7 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 
 
 
-    return recvd;
+    return err == X502_ERR_OK ? recvd : err;
 }
 
 
