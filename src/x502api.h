@@ -1,6 +1,10 @@
 #ifndef X502API_H
 #define X502API_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "lpcie.h"
 
 
@@ -1404,7 +1408,9 @@ LPCIE_EXPORT(int32_t) L502_OutCycleStop(t_l502_hnd hnd, uint32_t flags);
 LPCIE_EXPORT(const char*) X502_GetErrorString(int32_t err);
 
 
-
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif // X502API_H
