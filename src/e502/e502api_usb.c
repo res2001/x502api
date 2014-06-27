@@ -10,10 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define E502_USB_VID 0x0471
-#define E502_USB_PID 0xE502
-#define E502_USB_REQ_TOUT 1000
-#define USB_TRANSFER_TOUT -1
+#define E502_USB_VID        0x0471
+#define E502_USB_PID        0xE502
+#define E502_USB_REQ_TOUT   1000
+#define USB_TRANSFER_TOUT   -1
+
+#define E502_DEVICE_NAME "E502"
 
 
 
@@ -587,8 +589,45 @@ LPCIE_EXPORT(int32_t) E502_GetUsbDevInfoList(t_lpcie_devinfo* list, uint32_t siz
 }
 
 LPCIE_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial) {
-    return X502_Open(hnd, serial, "E502", E502_GetUsbDevInfoList);
+    return X502_Open(hnd, serial, E502_DEVICE_NAME, E502_GetUsbDevInfoList);
 }
 
+LPCIE_EXPORT(int32_t) E502_GetUsbSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
+                           uint32_t flags, uint32_t *devcnt) {
+    uint32_t fnd_cnt=0, e502_cnt=0;
+    /* получаем количество устройств, поддерживаемых драйвером lpcie */
+    int32_t res = E502_GetUsbDevInfoList(NULL, 0, flags, &fnd_cnt);
+    if ((res>=0) && fnd_cnt) {
+        t_lpcie_devinfo *info_list = malloc(sizeof(t_lpcie_devinfo)*fnd_cnt);
+        if (info_list==NULL) {
+            res = X502_ERR_MEMORY_ALLOC;
+        } else {
+            /* получаем информацию по всем устройствам драйвера lpcie */
+            res = E502_GetUsbDevInfoList(info_list, fnd_cnt, flags, NULL);
+            if (res>0) {
+                int32_t i;
+                for (i=0; i < res; i++) {
+                    /* проверяем, что это устройство - E502 */
+                    if (!strcmp(info_list[i].devname, E502_DEVICE_NAME)) {
+                        /* если есть место в списке, то сохраняем серийный номер
+                           устройства */
+                        if (e502_cnt < size) {
+                            memcpy(serials[e502_cnt], info_list[i].serial,
+                                   X502_SERIAL_SIZE);
+                        }
+                        e502_cnt++;
+                    }
+                }
+            }
 
+            X502_FreeDevInfoList(info_list, fnd_cnt);
+            free(info_list);
+        }
+    }
+
+    if (devcnt!=NULL)
+        *devcnt = e502_cnt;
+
+    return res < 0 ? res : e502_cnt > size ? (int32_t)size : (int32_t)e502_cnt;
+}
 
