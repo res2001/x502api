@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define E502_USB_VID        0x0471
+#define E502_USB_VID        0x2A52
 #define E502_USB_PID        0xE502
 #define E502_USB_REQ_TOUT   1000
 #define USB_TRANSFER_TOUT   -1
