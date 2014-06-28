@@ -269,9 +269,12 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
     return f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_STOP, (ch << 16), NULL, 0, NULL, 0, NULL);
 }
 
+
 static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
     int32_t err;
     int32_t running;
+
+
     err = hnd->iface->stream_running(hnd, ch, &running);
     if (!err && running)
         err = hnd->iface->stream_stop(hnd, ch);
@@ -279,8 +282,12 @@ static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
     if (!err) {
         t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
         if (ch==X502_STREAM_CH_IN) {
+
             t_transf_info *info = &usb_data->streams[X502_STREAM_CH_IN];
+            struct timeval ztv = {0,0};
+
             unsigned pos = (info->trans_get_pos + info->trans_completed) % info->transf_cnt;
+
             while (info->trans_busy) {
                 libusb_cancel_transfer(info->transfers[pos]);
                 if (++pos==info->transf_cnt)
@@ -289,6 +296,8 @@ static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
             }
 
 
+            libusb_handle_events_timeout(NULL, &ztv);
+
 
             for (pos = 0; pos < info->transf_cnt; pos++) {
                 if (info->transfers[pos]) {
@@ -296,10 +305,12 @@ static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
                     info->transfers[pos] = NULL;
                 }
             }
+
             free(info->data);
             free(info->transfers);
             free(info->cpl_bufs);
             info->data = NULL;
+
             info->transf_cnt = info->transf_size = 0;
         }
     }
