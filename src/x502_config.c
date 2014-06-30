@@ -37,7 +37,8 @@ LPCIE_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t ph
         if ((mode != X502_LCH_MODE_COMM) && (mode != X502_LCH_MODE_DIFF) &&
                 (mode != X502_LCH_MODE_ZERO)) {
             err = X502_ERR_INVALID_LCH_MODE;
-        } else if ((phy_ch >= 32) || ((mode != X502_LCH_MODE_COMM) && (phy_ch >= 16))) {
+        } else if ((phy_ch >= X502_ADC_COMM_CH_CNT) ||
+                   ((mode != X502_LCH_MODE_COMM) && (phy_ch >= X502_ADC_DIFF_CH_CNT))) {
             err = X502_ERR_INVALID_LCH_PHY_NUMBER;
         } else if (range >= X502_ADC_RANGE_CNT) {
             err = X502_ERR_INVALID_LCH_RANGE;
