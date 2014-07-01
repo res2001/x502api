@@ -285,24 +285,25 @@ static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
 
             t_transf_info *info = &usb_data->streams[X502_STREAM_CH_IN];
             struct timeval ztv = {0,0};
+            if (info->transf_cnt) {
+                unsigned pos = (info->trans_get_pos + info->trans_completed) % info->transf_cnt;
 
-            unsigned pos = (info->trans_get_pos + info->trans_completed) % info->transf_cnt;
-
-            while (info->trans_busy) {
-                libusb_cancel_transfer(info->transfers[pos]);
-                if (++pos==info->transf_cnt)
-                    pos = 0;
-                info->trans_busy--;
-            }
-
-
-            libusb_handle_events_timeout(NULL, &ztv);
+                while (info->trans_busy) {
+                    libusb_cancel_transfer(info->transfers[pos]);
+                    if (++pos==info->transf_cnt)
+                        pos = 0;
+                    info->trans_busy--;
+                }
 
 
-            for (pos = 0; pos < info->transf_cnt; pos++) {
-                if (info->transfers[pos]) {
-                    libusb_free_transfer(info->transfers[pos]);
-                    info->transfers[pos] = NULL;
+                libusb_handle_events_timeout(NULL, &ztv);
+
+
+                for (pos = 0; pos < info->transf_cnt; pos++) {
+                    if (info->transfers[pos]) {
+                        libusb_free_transfer(info->transfers[pos]);
+                        info->transfers[pos] = NULL;
+                    }
                 }
             }
 
