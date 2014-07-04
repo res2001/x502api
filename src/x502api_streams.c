@@ -50,8 +50,8 @@ static int32_t f_stream_in_cfg(t_x502* hnd) {
        L502_DMA_IN_BUF_FOR_SEC секунд постоянного сбора, но не меньше минимального
        размера */
     total_size = (uint32_t)(X502_DMA_IN_BUF_FOR_SEC*din_freq);
-    if (total_size < X502_DMA_IN_BUF_SIZE_MIN)
-        total_size = X502_DMA_IN_BUF_SIZE_MIN;
+    if (total_size < hnd->iface->in_stream_buf_min)
+        total_size = hnd->iface->in_stream_buf_min;
 
 
 

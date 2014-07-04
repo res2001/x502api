@@ -15,6 +15,9 @@
 #define E502_USB_REQ_TOUT   1000
 #define USB_TRANSFER_TOUT   -1
 
+
+#define USB_IN_STREAM_BUF_MIN   64
+
 #define E502_DEVICE_NAME "E502"
 
 
@@ -70,6 +73,7 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 
 static const t_x502_dev_iface f_usb_iface = {
     E502_REGS_ARM_HARD_ID,
+    USB_IN_STREAM_BUF_MIN,
     f_iface_free_devinfo_data,
     f_iface_open,
     f_iface_close,

@@ -28,8 +28,6 @@ typedef struct {
 
 /* на сколько секунд данных будет рассчитан внутренний буфер */
 #define X502_DMA_IN_BUF_FOR_SEC  4
-/* минимальный размер внутреннего буфера */
-#define X502_DMA_IN_BUF_SIZE_MIN 16*1024
 /* максимальное кол-во прерываний в секунду */
 #define X502_DMA_IN_MAX_IRQ_PER_SEC  20
 
@@ -78,6 +76,7 @@ typedef int32_t (*t_x502_iface_free_devinfo_data)(void* devinfo_data);
 
 typedef struct {
     uint16_t id_reg_addr;
+    uint16_t in_stream_buf_min;
     t_x502_iface_free_devinfo_data  free_devinfo_data;
     t_x502_iface_open               open;
     t_x502_iface_close              close;
