@@ -1,5 +1,6 @@
 #include "x502api_private.h"
 #include "x502_fpga_regs.h"
+#include "l502_bf_cmd_defs.h"
 
 #include <string.h>
 
@@ -284,6 +285,35 @@ LPCIE_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
             err = hnd->iface->stream_free(hnd, X502_STREAM_CH_OUT);
 
         hnd->flags &= ~(_FLAGS_STREAM_RUN | _FLAGS_PRELOAD_DONE);
+
+        osspec_mutex_release(hnd->mutex_cfg);
+    }
+    return err;
+}
+
+LPCIE_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
+    int err = X502_CHECK_HND(hnd);
+    uint32_t bf_mode=0;
+    if (!err && (hnd->mode==X502_MODE_DSP)) {
+        /** @todo */
+#if 0
+        err = _get_bf_par(hnd, X502_BF_PARAM_STREAM_MODE, &bf_mode, 1);
+#endif
+    }
+
+    if (!err)
+        err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
+    if (!err) {
+        if (hnd->mode==X502_MODE_DSP) {
+            if (bf_mode==L502_BF_MODE_IDLE) {
+                hnd->flags &= ~_FLAGS_STREAM_RUN;
+            } else {
+                hnd->flags |= _FLAGS_STREAM_RUN;
+            }
+        }
+
+        if (!(hnd->flags & _FLAGS_STREAM_RUN))
+            err = X502_ERR_STREAM_IS_NOT_RUNNING;
 
         osspec_mutex_release(hnd->mutex_cfg);
     }
