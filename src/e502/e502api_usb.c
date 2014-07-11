@@ -206,6 +206,8 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
         info->transfers = calloc(info->transf_cnt, sizeof(info->transfers[0]));
         info->cpl_bufs  = calloc(info->transf_cnt, sizeof(info->cpl_bufs[0]));
 
+        info->trans_busy = info->trans_completed = info->trans_get_pos = 0;
+
 
         if ((info->data == NULL) || (info->transfers == NULL) || (info->cpl_bufs==NULL)) {
             err = X502_ERR_MEMORY_ALLOC;
