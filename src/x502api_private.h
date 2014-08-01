@@ -71,6 +71,7 @@ typedef int32_t (*t_x502_iface_stream_stop)(t_x502_hnd hnd, uint32_t ch);
 typedef int32_t (*t_x502_iface_stream_free)(t_x502_hnd hnd, uint32_t ch);
 typedef int32_t (*t_x502_iface_stream_running)(t_x502_hnd hnd, uint32_t ch, int32_t* running);
 typedef int32_t (*t_x502_iface_stream_read)(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout);
+typedef int32_t (*t_x502_iface_stream_write)(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout);
 
 typedef int32_t (*t_x502_iface_free_devinfo_data)(void* devinfo_data);
 
@@ -88,6 +89,7 @@ typedef struct {
     t_x502_iface_stream_free        stream_free;
     t_x502_iface_stream_running     stream_running;
     t_x502_iface_stream_read        stream_read;
+    t_x502_iface_stream_write       stream_write;
 } t_x502_dev_iface;
 
 

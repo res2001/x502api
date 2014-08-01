@@ -24,7 +24,7 @@ static int32_t f_set_streams(t_x502_hnd hnd, uint32_t streams) {
 
 /* Функция автоматического рассчета параметов DMA для входного потока
    на основе частоты сбора данных */
-static int32_t f_stream_in_cfg(t_x502* hnd) {
+static int32_t f_stream_in_cfg(t_x502 *hnd) {
     int32_t err = 0;
 
 
@@ -96,6 +96,44 @@ static int32_t f_stream_in_cfg(t_x502* hnd) {
     }
     return err;
 }
+
+
+static int32_t f_stream_out_cfg(t_x502 *hnd) {
+    t_x502_stream_ch_params params;
+
+    memset(&params, 0, sizeof(params));
+
+    params.buf_size = hnd->stream_pars[X502_STREAM_CH_OUT].buf_size ?
+                hnd->stream_pars[X502_STREAM_CH_OUT].buf_size :
+                X502_DMA_OUT_BUF_SIZE;
+
+    params.step = hnd->stream_pars[X502_STREAM_CH_OUT].step ?
+                hnd->stream_pars[X502_STREAM_CH_OUT].step :
+                X502_DMA_OUT_IRQ_STEP;
+
+    return hnd->iface->stream_cfg(hnd, X502_STREAM_CH_OUT, &params);
+}
+
+
+static int32_t f_out_stream_preload(t_x502 *hnd) {
+    int32_t err = f_stream_out_cfg(hnd);
+    if (!err)
+        err = hnd->iface->stream_start(hnd, X502_STREAM_CH_OUT, 0);
+
+    if (!err && (hnd->mode == X502_MODE_DSP)) {
+        /** @todo */
+#if 0
+        err = L502_BfExecCmd(hnd, L502_BF_CMD_CODE_PRELOAD, 0, NULL, 0,
+                             NULL, 0, L502_BF_REQ_TOUT, NULL);
+#endif
+    }
+
+    if (!err) {
+        hnd->flags |= _FLAGS_PRELOAD_DONE;
+    }
+    return err;
+}
+
 
 
 
@@ -329,3 +367,40 @@ LPCIE_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, ui
     }
     return err;
 }
+
+LPCIE_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t size, uint32_t tout) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err && (buf==NULL))
+        err = X502_ERR_INVALID_POINTER;
+
+    /* если разрешен синхронный вывод, но не было
+     * вызова X502_PreloadStart() или не был установлен синхронных режим, то
+     * делаем запуск потока вывода при первой записи */
+    if (!err && (hnd->streams & X502_STREAM_ALL_OUT)) {
+        if (!err)
+            err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
+        if (!err) {
+            if (!(hnd->flags & (_FLAGS_PRELOAD_DONE | _FLGAS_CYCLE_MODE))) {
+                err = f_out_stream_preload(hnd);
+            }
+            osspec_mutex_release(hnd->mutex_cfg);
+        }
+    }
+
+    if (!err) {
+        err = hnd->iface->stream_write(hnd, buf, size, tout);
+    }
+    return err;
+}
+
+LPCIE_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
+    int err = X502_CHECK_HND(hnd);
+    if (!err)
+        err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
+    if (!err) {
+        err = f_out_stream_preload(hnd);
+        osspec_mutex_release(hnd->mutex_cfg);
+    }
+    return err;
+}
+
