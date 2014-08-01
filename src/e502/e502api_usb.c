@@ -229,12 +229,19 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
     if (info->data == NULL) {
         info->buf_size = params->buf_size;
         info->transf_cnt  = params->buf_size/params->step;
+        info->trans_busy = info->trans_get_pos = 0;
+
         if (ch==X502_STREAM_CH_IN) {
             info->rx.transf_size = ((params->step+127)/128)*128;
             info->buf_size = info->rx.transf_size*info->transf_cnt;
             info->rx.cpl_bufs  = calloc(info->transf_cnt, sizeof(info->rx.cpl_bufs[0]));
+            info->rx.trans_completed=0;
             if (info->rx.cpl_bufs == NULL)
                 err = X502_ERR_MEMORY_ALLOC;
+        } else {
+            info->tx.err = 0;
+            info->tx.rdy_size = info->buf_size;
+            info->tx.start_pos = 0;
         }
 
         if (err == X502_ERR_OK) {
