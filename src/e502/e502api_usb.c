@@ -4,8 +4,8 @@
 #include "lboot_req.h"
 #include "libusb-1.0/libusb.h"
 #include "e502_fpga_regs.h"
+#include "osspec.h"
 #include "timer.h"
-
 
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +15,8 @@
 #define E502_USB_REQ_TOUT   1000
 #define USB_TRANSFER_TOUT   -1
 
+
+#define MUTEX_STREAM_LOCK_TOUT  200
 
 #define USB_IN_STREAM_BUF_MIN   64
 
@@ -54,10 +56,11 @@ typedef struct {
         struct {
             unsigned rdy_size; /* признак гтовности к передаче (для потока PC->E502) */
             unsigned start_pos;
-
             int32_t  err;
+            int rdy;
         } tx;
     };
+    t_mutex mutex;
 } t_transf_info;
 
 
@@ -126,11 +129,22 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo) {
 
     if (err == X502_ERR_OK) {
         t_usb_iface_data *usb_data = calloc(1, sizeof(t_usb_iface_data));
+
         usb_data->devhnd = devhnd;
+
+        /** @todo нахождение адресов кт по дускриптору конфигурации */
         usb_data->streams[X502_STREAM_CH_IN].addr  = 0x81;
         usb_data->streams[X502_STREAM_CH_OUT].addr = 0x01;
 
         hnd->iface_data = usb_data;
+
+        usb_data->streams[X502_STREAM_CH_IN].mutex = osspec_mutex_create();
+        usb_data->streams[X502_STREAM_CH_OUT].mutex = osspec_mutex_create();
+
+        if ((usb_data->streams[X502_STREAM_CH_IN].mutex == L_INVALID_MUTEX) ||
+                (usb_data->streams[X502_STREAM_CH_OUT].mutex == L_INVALID_MUTEX))  {
+            err = X502_ERR_MUTEX_CREATE;
+        }
     }
 
     return err;
@@ -139,8 +153,18 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo) {
 static int32_t f_iface_close(t_x502_hnd hnd) {
     t_usb_iface_data *usb_data = (t_usb_iface_data*)hnd->iface_data;
     int32_t err = 0;
+    unsigned ch;
 
-    err = libusb_release_interface(usb_data->devhnd, 0);
+    for (ch=0; ch < sizeof(usb_data->streams)/sizeof(usb_data->streams[0]); ch++) {
+        if (usb_data->streams[ch].mutex != L_INVALID_MUTEX) {
+            osspec_mutex_close(usb_data->streams[ch].mutex);
+            usb_data->streams[ch].mutex = L_INVALID_MUTEX;
+        }
+    }
+
+    if (libusb_release_interface(usb_data->devhnd, 0)!=LIBUSB_SUCCESS) {
+        err = X502_ERR_INTERFACE_RELEASE;
+    }
     if (!err) {
         libusb_close(usb_data->devhnd);
     }
@@ -171,6 +195,8 @@ static int32_t f_iface_fpga_write(t_x502_hnd hnd, uint16_t addr, uint32_t val) {
 
 static void f_usb_transf_rx_cb(struct libusb_transfer *transfer) {
     t_transf_info *info = (t_transf_info*)transfer->user_data;
+
+    osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
     int pos = (info->trans_get_pos + info->rx.trans_completed) % info->transf_cnt;
 
     if ((transfer->status == LIBUSB_TRANSFER_COMPLETED)
@@ -184,6 +210,7 @@ static void f_usb_transf_rx_cb(struct libusb_transfer *transfer) {
         info->rx.cpl_bufs[pos].err = X502_ERR_RECV;
     }
     info->rx.trans_completed++;
+    osspec_mutex_release(info->mutex);
 }
 
 static void f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
@@ -193,7 +220,14 @@ static void f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
         info->tx.err = X502_ERR_SEND;
     }
 
+    osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
     info->trans_busy--;
+    info->tx.rdy_size += transfer->length/sizeof(info->data[0]);
+    if (info->tx.rdy_size)
+        info->tx.rdy = 1;
+    if (++info->trans_get_pos == info->transf_cnt)
+        info->trans_get_pos = 0;
+    osspec_mutex_release(info->mutex);
 }
 
 static int32_t f_start_rd_transfrs(t_x502_hnd hnd) {
@@ -242,6 +276,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
             info->tx.err = 0;
             info->tx.rdy_size = info->buf_size;
             info->tx.start_pos = 0;
+            info->tx.rdy = 1;
         }
 
         if (err == X502_ERR_OK) {
@@ -301,7 +336,7 @@ static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     int err = 0;
 
-    if (!err)
+    if (!err && (ch==X502_STREAM_CH_IN))
         err = f_start_rd_transfrs(hnd);
 
     if (!err)
@@ -327,39 +362,42 @@ static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
 
     if (!err) {
         t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
-        if (ch==X502_STREAM_CH_IN) {
+        t_transf_info *info = &usb_data->streams[ch];
+        struct timeval ztv = {0,0};
+        if (info->transf_cnt) {
+            unsigned pos = (info->trans_get_pos +
+                            (ch==X502_STREAM_CH_IN ? info->rx.trans_completed : 0)) % info->transf_cnt;
 
-            t_transf_info *info = &usb_data->streams[X502_STREAM_CH_IN];
-            struct timeval ztv = {0,0};
-            if (info->transf_cnt) {
-                unsigned pos = (info->trans_get_pos + info->rx.trans_completed) % info->transf_cnt;
-
-                while (info->trans_busy) {
-                    libusb_cancel_transfer(info->transfers[pos]);
-                    if (++pos==info->transf_cnt)
-                        pos = 0;
-                    info->trans_busy--;
-                }
-
-
-                libusb_handle_events_timeout(NULL, &ztv);
-
-
-                for (pos = 0; pos < info->transf_cnt; pos++) {
-                    if (info->transfers[pos]) {
-                        libusb_free_transfer(info->transfers[pos]);
-                        info->transfers[pos] = NULL;
-                    }
-                }
+            while (info->trans_busy) {
+                libusb_cancel_transfer(info->transfers[pos]);
+                if (++pos==info->transf_cnt)
+                    pos = 0;
+                info->trans_busy--;
             }
 
-            free(info->data);
-            free(info->transfers);
-            free(info->rx.cpl_bufs);
-            info->data = NULL;
+            libusb_handle_events_timeout(NULL, &ztv);
 
-            info->transf_cnt = info->rx.transf_size = 0;
+            for (pos = 0; pos < info->transf_cnt; pos++) {
+                if (info->transfers[pos]) {
+                    libusb_free_transfer(info->transfers[pos]);
+                    info->transfers[pos] = NULL;
+                }
+            }
         }
+
+        free(info->data);
+        free(info->transfers);
+        info->data = NULL;
+        info->transfers = NULL;
+
+        if (ch==X502_STREAM_CH_IN) {
+            free(info->rx.cpl_bufs);
+            info->rx.cpl_bufs = NULL;
+            info->rx.transf_size = 0;
+        }
+
+        info->transf_cnt = 0;
+
     }
     return err;
 }
@@ -412,23 +450,22 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
                         info->rx.cpl_bufs[info->trans_get_pos].addr += cpy_size;
                     }
                 }
-
-                if (info->rx.cpl_bufs[info->trans_get_pos].size==0) {
-                    info->rx.trans_completed--;
-                    done_trans++;
-                    if (++info->trans_get_pos==info->transf_cnt)
-                        info->trans_get_pos = 0;
-                }
             }
+
+            osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
+            if (info->rx.cpl_bufs[info->trans_get_pos].size==0) {
+                info->rx.trans_completed--;
+                done_trans++;
+                if (++info->trans_get_pos==info->transf_cnt)
+                    info->trans_get_pos = 0;
+            }
+            osspec_mutex_release(info->mutex);
         }
 
         if (done_trans && !err) {
             info->trans_busy-=done_trans;
             f_start_rd_transfrs(hnd);
         }
-
-
-
 
     } while (!err && (size!=0) && !timer_expired(&tmr));
     return err == X502_ERR_OK ? recvd : err;
@@ -437,7 +474,7 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 
 
 static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout) {
-    int32_t recvd = 0;
+    int32_t sent = 0;
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_OUT];
     t_timer tmr;
@@ -445,75 +482,55 @@ static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_
 
     timer_set(&tmr, tout*CLOCK_CONF_SECOND/1000);
 
-    do {
-        struct timeval tv;
-        int done_trans = 0;
+    while (size!=0 && !timer_expired(&tmr)) {
+        if (info->tx.rdy) {
 
-        if ((info->trans_busy != info->transf_cnt) && info->tx.rdy_size) {
+
             uint32_t put_transf;
             uint32_t tx_size = size;
 
-            put_transf = info->trans_get_pos + info->trans_busy;
-            if (put_transf > info->transf_cnt)
-                put_transf -= info->transf_cnt;
+            osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
+            put_transf = (info->trans_get_pos + info->trans_busy) % info->transf_cnt;
 
             if (tx_size > info->tx.rdy_size)
                 tx_size = info->tx.rdy_size;
             if (tx_size > (info->buf_size - info->tx.start_pos))
                 tx_size = info->buf_size - info->tx.start_pos;
 
+            memcpy(&info->data[info->tx.start_pos], &buf[sent], tx_size*sizeof(buf[0]));
+
             libusb_fill_bulk_transfer(info->transfers[put_transf], usb_data->devhnd, info->addr,
                                      (unsigned char*)&info->data[info->tx.start_pos],
                                      tx_size*sizeof(info->data[0]),
                                      f_usb_transf_tx_cb, info, USB_TRANSFER_TOUT);
-        }
 
+            err = libusb_submit_transfer(info->transfers[put_transf]);
+            if (!err) {
+                info->trans_busy++;
+                info->tx.rdy_size -= tx_size;
+                size -= tx_size;
+                info->tx.rdy = (info->trans_busy != info->transf_cnt) && (info->tx.rdy_size!=0);
 
+                info->tx.start_pos += tx_size;
+                if (info->tx.start_pos==info->buf_size)
+                    info->tx.start_pos = 0;
+                sent += tx_size;
 
-#if 0
-        tv.tv_sec = timer_expiration(&tmr)/CLOCK_CONF_SECOND;
-        tv.tv_usec = (timer_expiration(&tmr)%CLOCK_CONF_SECOND) * 1000000/CLOCK_CONF_SECOND;
-
-
-        libusb_handle_events_timeout_completed(NULL, &tv, &info->tx_rdy);
-
-        while (info->trans_completed && (size!=0) && !err) {
-            if (info->cpl_bufs[info->trans_get_pos].err != X502_ERR_OK) {
-                err = info->cpl_bufs[info->trans_get_pos].err;
             } else {
-                if (info->cpl_bufs[info->trans_get_pos].size) {
-                    uint32_t cpy_size = info->cpl_bufs[info->trans_get_pos].size;
-                    if (cpy_size > size)
-                        cpy_size = size;
-                    if (cpy_size) {
-                        memcpy(&buf[recvd], info->cpl_bufs[info->trans_get_pos].addr, cpy_size*sizeof(buf[0]));
-                        recvd+=cpy_size;
-                        size-=cpy_size;
-                          info->cpl_bufs[info->trans_get_pos].size -= cpy_size;
-                        info->cpl_bufs[info->trans_get_pos].addr += cpy_size;
-                    }
-                }
+                err = X502_ERR_SEND;
+            }
+            osspec_mutex_release(info->mutex);
 
-                if (info->cpl_bufs[info->trans_get_pos].size==0) {
-                    info->trans_completed--;
-                    done_trans++;
-                    if (++info->trans_get_pos==info->transf_cnt)
-                        info->trans_get_pos = 0;
-                }
+            if ((size!=0) && !info->tx.rdy) {
+                struct timeval tv;
+                tv.tv_sec = timer_expiration(&tmr)/CLOCK_CONF_SECOND;
+                tv.tv_usec = (timer_expiration(&tmr)%CLOCK_CONF_SECOND) * 1000000/CLOCK_CONF_SECOND;
+                libusb_handle_events_timeout_completed(NULL, &tv, &info->tx.rdy);
             }
         }
-#endif
+    }
 
-        if (done_trans && !err) {
-            info->trans_busy-=done_trans;
-            f_start_rd_transfrs(hnd);
-        }
-
-
-
-
-    } while (!err && (size!=0) && !timer_expired(&tmr));
-    return err == X502_ERR_OK ? recvd : err;
+    return err == X502_ERR_OK ? sent : err;
 }
 
 

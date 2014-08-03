@@ -34,6 +34,7 @@ static const t_err_table f_err_tbl[] = {
     { X502_ERR_FPGA_REG_READ,           "Ошибка чтения регистра FPGA"},
     { X502_ERR_FPGA_REG_WRITE,          "Ошибка записи регистра FPGA"},
     { X502_ERR_STREAM_IS_NOT_RUNNING,   "Синхронный сбор уже остановлен"},
+    { X502_ERR_INTERFACE_RELEASE,       "Ошибка освобождения интерфейса"},
     { X502_ERR_INVALID_LTABLE_SIZE,     "Задан неверный размер логической таблицы"},
     { X502_ERR_INVALID_LCH_NUMBER,      "Задан неверный номер логического канала"},
     { X502_ERR_INVALID_LCH_RANGE,       "Неверно задано значение диапазона АЦП"},

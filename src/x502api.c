@@ -318,14 +318,6 @@ LPCIE_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info) {
 
 
 
-
-
-
-
-
-
-
-
 LPCIE_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (lch==NULL))
@@ -476,6 +468,51 @@ LPCIE_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t
             *usr_data_size = usr_cnt;
     }
 
+    return err;
+}
+
+static uint32_t f_prepare_dac_wrd(t_x502_hnd hnd, double val,
+                                  uint32_t flags, const t_x502_cbr_coef* coef) {
+    int32_t wrd = 0;
+    if (flags & X502_DAC_FLAGS_VOLT) {
+        val = (val/X502_DAC_RANGE)*X502_DAC_SCALE_CODE_MAX;
+    }
+    if (flags & X502_DAC_FLAGS_CALIBR) {
+        val = (val+coef->offs)*coef->k;
+    }
+    wrd = (int32_t)val;
+    wrd &= 0xFFFF;
+    return wrd;
+}
+
+LPCIE_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const double* dac2,
+                            const uint32_t* digout, uint32_t size, int32_t flags,
+                            uint32_t* out_buf) {
+    int err = X502_CHECK_HND(hnd);
+    if (!err && (out_buf==NULL))
+        err = X502_ERR_INVALID_POINTER;
+    if (!err && ((dac1==NULL) && (dac2==NULL) && (digout==NULL)))
+        err = X502_ERR_INVALID_POINTER;
+
+
+    if (err == X502_ERR_OK) {
+        uint32_t i;
+        for (i = 0; (i < size) && (err == X502_ERR_OK); i++) {
+            if ((dac1 != NULL) && (hnd->streams & X502_STREAM_DAC1)) {
+                uint32_t wrd = f_prepare_dac_wrd(hnd, *dac1++, flags, &hnd->info.cbr.dac[0]);
+                *out_buf++ = wrd | X502_STREAM_OUT_WORD_TYPE_DAC1;
+            }
+            if ((dac2 != NULL) && (hnd->streams & X502_STREAM_DAC2)) {
+                uint32_t wrd = f_prepare_dac_wrd(hnd, *dac2++, flags, &hnd->info.cbr.dac[1]);
+                *out_buf++ = wrd | X502_STREAM_OUT_WORD_TYPE_DAC2;
+            }
+            if ((digout != NULL) && (hnd->streams & X502_STREAM_DOUT)) {
+                uint32_t wrd = *digout++;
+                *out_buf++ = (wrd &0x3FFFF)
+                             | X502_STREAM_OUT_WORD_TYPE_DOUT;
+            }
+        }
+    }
     return err;
 }
 
