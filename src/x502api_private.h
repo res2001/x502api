@@ -27,9 +27,9 @@ typedef struct {
 
 
 /* на сколько секунд данных будет рассчитан внутренний буфер */
-#define X502_DMA_IN_BUF_FOR_SEC  4
+#define X502_DMA_IN_BUF_FOR_SEC  1
 /* максимальное кол-во прерываний в секунду */
-#define X502_DMA_IN_MAX_IRQ_PER_SEC  20
+#define X502_DMA_IN_MAX_IRQ_PER_SEC  5
 
 #define X502_DMA_OUT_BUF_SIZE  3*3*1024*1024
 #define X502_DMA_OUT_IRQ_STEP  (3*1024*1024/64)

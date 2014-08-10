@@ -53,9 +53,9 @@ LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
 
         hnd->flags &= ~_FLAGS_OPENED;
 
-        if (hnd->mutex_cfg!=L_INVALID_MUTEX) {
-            stop_err = osspec_mutex_close(hnd->mutex_cfg);
-            hnd->mutex_cfg = L_INVALID_MUTEX;
+        if (hnd->mutex_cfg!=OSSPEC_INVALID_MUTEX) {
+            stop_err = osspec_mutex_destroy(hnd->mutex_cfg);
+            hnd->mutex_cfg = OSSPEC_INVALID_MUTEX;
             if (!err)
                 err = stop_err;
         }
@@ -174,7 +174,7 @@ LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502* hnd, const t_lpcie_devinfo* inf
 
             if (!err) {
                 hnd->mutex_cfg = osspec_mutex_create();
-                if (hnd->mutex_cfg == L_INVALID_MUTEX)
+                if (hnd->mutex_cfg == OSSPEC_INVALID_MUTEX)
                     err = X502_ERR_MUTEX_CREATE;
             }
         }
