@@ -245,7 +245,7 @@ static void f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
     info->tx.buf_put_rdy += transfer->length/sizeof(info->data[0]);
     info->tx.busy_size -= transfer->length/sizeof(info->data[0]);
     info->usb_rdy = 1;
-    osspec_event_set(info->usb_wake_evt);
+    osspec_event_set(info->user_wake_evt);
     osspec_mutex_release(info->mutex);
 }
 
@@ -733,7 +733,7 @@ static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_
 
         if (!err) {
             if (rdy_size == 0) {
-                osspec_event_wait(info->usb_wake_evt, timer_expiration(&tmr)
+                osspec_event_wait(info->user_wake_evt, timer_expiration(&tmr)
                                   *1000/CLOCK_CONF_SECOND);
             } else {
                 uint32_t end_size;
