@@ -257,7 +257,6 @@ static void f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
 static void f_usb_transf_rx_cb(struct libusb_transfer *transfer) {
     t_rx_cpl_part *cpl = (t_rx_cpl_part*)transfer->user_data;
 
-
     osspec_mutex_lock(cpl->info->mutex, MUTEX_STREAM_LOCK_TOUT);
     if ((transfer->status == LIBUSB_TRANSFER_COMPLETED)
             || (transfer->status == LIBUSB_TRANSFER_TIMED_OUT)
@@ -327,8 +326,10 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
 
         if (!err) {
             int wt_buf_rdy = 0;
+
+
             osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
-            info->usb_rdy = info->transf_busy != USB_BULK_RX_MAX_TRANSF_CNT;
+            info->usb_rdy = (info->transf_busy != USB_BULK_RX_MAX_TRANSF_CNT) && (info->transf_busy < info->rx.cpl_cnt);
             if (info->rx.cpls[cpl_pos].state != RX_STATE_IDLE) {
                 wt_buf_rdy = 1;
                 osspec_event_clear(info->usb_wake_evt);
@@ -336,15 +337,15 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
             osspec_mutex_release(info->mutex);
 
 
-            if (wt_buf_rdy) {
-                /* если буфер занят - ждем события от потока чтения */
-                osspec_event_wait(info->usb_wake_evt, OSSPEC_TIMEOUT_INFINITY);
-            } else if (!info->usb_rdy) {
+            if ((info->transf_busy != 0) && !info->usb_rdy) {
                 /* иначе ждем событий от USB */
                 struct timeval tv;
                 tv.tv_sec =0;
                 tv.tv_usec = 200 * 1e3;
                 libusb_handle_events_timeout_completed(NULL, &tv, &info->usb_rdy);
+            } else if (wt_buf_rdy) {
+                /* если буфер занят - ждем события от потока чтения */
+                osspec_event_wait(info->usb_wake_evt, OSSPEC_TIMEOUT_INFINITY);
             }
         }
    }
@@ -354,7 +355,7 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
        if (busy_cnt==0) {
            osspec_mutex_release(info->mutex);
        } else {
-           unsigned pos = transf_pos > busy_cnt ? transf_pos - busy_cnt :
+           unsigned pos = transf_pos >= busy_cnt ? transf_pos - busy_cnt :
                                                   USB_BULK_RX_MAX_TRANSF_CNT - busy_cnt + transf_pos;
 
            osspec_mutex_release(info->mutex);
@@ -364,7 +365,6 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
                    pos = 0;
            }
        }
-
 
         while (info->transf_busy!=0) {
             struct timeval ztv = {0,0};
@@ -376,7 +376,8 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
                 libusb_free_transfer(transfers[idx]);
             }
         }
-    }
+   }
+
 
    if (!info->err)
        info->err = err;
@@ -459,10 +460,7 @@ static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {
             osspec_mutex_release(info->mutex);
 
 
-            if (snd_rdy_size==0) {
-                /* если буфер занят - ждем события от потока чтения */
-                osspec_event_wait(info->usb_wake_evt, OSSPEC_TIMEOUT_INFINITY);
-            }
+
 
             if (!info->usb_rdy && (info->transf_busy!=0)) {
                 /* иначе ждем событий от USB */
@@ -470,6 +468,9 @@ static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {
                 tv.tv_sec =0;
                 tv.tv_usec = 200 * 1e3;
                 libusb_handle_events_timeout_completed(NULL, &tv, &info->usb_rdy);
+            } else if (snd_rdy_size==0) {
+                /* если буфер занят - ждем события от потока чтения */
+                osspec_event_wait(info->usb_wake_evt, OSSPEC_TIMEOUT_INFINITY);
             }
         }
     }
@@ -482,7 +483,7 @@ static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {
         if (busy_cnt==0) {
             osspec_mutex_release(info->mutex);
         } else {
-            unsigned pos = transf_pos > busy_cnt ? transf_pos - busy_cnt :
+            unsigned pos = transf_pos >= busy_cnt ? transf_pos - busy_cnt :
                                                    USB_BULK_TX_MAX_TRANSF_CNT - busy_cnt + transf_pos;
 
             osspec_mutex_release(info->mutex);
@@ -543,7 +544,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
                 err = X502_ERR_MEMORY_ALLOC;
             } else {
                 unsigned i;
-                for (i=0; i < info->rx.cpl_cnt; i++) {                    
+                for (i=0; i < info->rx.cpl_cnt; i++) {
                     info->rx.cpls[i].state = RX_STATE_IDLE;
                     info->rx.cpls[i].info = info;
                 }
@@ -609,13 +610,18 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
     t_transf_info *info = &usb_data->streams[ch];
     int err = 0;
     int ioctl_err;
+    int32_t running;
 
-    ioctl_err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_STOP, (ch << 16), NULL, 0, NULL, 0, NULL);
+    ioctl_err = f_iface_stream_running(hnd, ch, &running);
+    if (!ioctl_err && running)
+        ioctl_err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_STOP, (ch << 16), NULL, 0, NULL, 0, NULL);
+
 
     if (info->thread != OSSPEC_INVALID_THREAD) {
         info->stop_req = 1;
         osspec_event_set(info->usb_wake_evt);
         err = osspec_thread_wait(info->thread, STREAM_STOP_TOUT);
+        info->thread  = OSSPEC_INVALID_THREAD;
     }
 
     return err != X502_ERR_OK ? err : ioctl_err;
