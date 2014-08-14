@@ -130,7 +130,7 @@ typedef struct {
     uint32_t sync_mode;
     uint32_t sync_start_mode;
     uint32_t ref_freq;
-    uint32_t dac_freq_div;
+    uint32_t out_freq_div;
 } t_x502_settings;
 
 

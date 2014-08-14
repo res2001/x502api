@@ -92,7 +92,7 @@ LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502* hnd, const t_lpcie_devinfo* inf
             hnd->set.sync_start_mode = X502_SYNC_INTERNAL;
 
             hnd->set.din_freq_div = 1;
-            hnd->set.dac_freq_div = 2;
+            hnd->set.out_freq_div = 2;
 
             hnd->set.ref_freq = X502_REF_FREQ_2000KHZ;
             hnd->streams = 0;

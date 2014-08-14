@@ -126,6 +126,26 @@ LPCIE_EXPORT(int32_t) X502_SetDinFreqDivider(t_x502_hnd hnd, uint32_t din_freq_d
     return err;
 }
 
+LPCIE_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_div) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+        err = X502_ERR_STREAM_IS_RUNNING;
+
+    if (!err) {
+        /** @todo Проверить, что для данной версии поддерживается значение установка
+         *  делителя (для L502) */
+        if ((out_freq_div<X502_OUT_FREQ_DIV_MIN) || (out_freq_div > X502_OUT_FREQ_DIV_MAX)) {
+            err = X502_ERR_INVALID_OUT_FREQ_DIV;
+        } else {
+            hnd->set.out_freq_div = out_freq_div;
+        }
+    }
+    return err;
+}
+
+
+
+
 
 
 LPCIE_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode) {
@@ -262,6 +282,29 @@ LPCIE_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din) {
     return err;
 }
 
+LPCIE_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+        err = X502_ERR_STREAM_IS_RUNNING;
+    if (!err && (f_dout==NULL))
+        err = X502_ERR_INVALID_POINTER;
+
+    if (!err) {
+        double ref_freq = hnd->set.ref_freq;
+        double set_freq = *f_dout;
+        if (set_freq<=0)
+            set_freq = ref_freq;
+        hnd->set.out_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
+        if (hnd->set.out_freq_div < X502_OUT_FREQ_DIV_MIN)
+            hnd->set.out_freq_div = X502_OUT_FREQ_DIV_MIN;
+        if (hnd->set.out_freq_div > X502_OUT_FREQ_DIV_MAX)
+            hnd->set.out_freq_div = X502_OUT_FREQ_DIV_MAX;
+        set_freq = ref_freq/hnd->set.out_freq_div;
+        *f_dout = set_freq;
+    }
+    return err;
+}
+
 
 
 
@@ -373,7 +416,7 @@ LPCIE_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
                                               | ((hnd->set.sync_start_mode&0x7)<<3)
                                               | ((hnd->set.ref_freq==X502_REF_FREQ_2000KHZ ?
                                                       0 : 2) << 7)
-                                              | (((hnd->set.dac_freq_div-1)&1)<<9));
+                                              | (((hnd->set.out_freq_div-1)&0x3FF)<<9));
             }
 
             if (!err) {
