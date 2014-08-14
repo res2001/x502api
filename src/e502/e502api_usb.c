@@ -66,6 +66,7 @@ typedef struct st_transf_info {
     unsigned buf_size;
 
     volatile uint32_t transf_busy;
+    int err;
 
     union {
         struct {
@@ -73,12 +74,13 @@ typedef struct st_transf_info {
             uint32_t cpl_cnt;
             uint32_t cpl_get_pos;
             uint32_t transf_size;
+            uint32_t buf_get_rdy;
         } rx;
         struct {
             uint32_t buf_pos_put;
             uint32_t buf_put_rdy;
             uint32_t busy_size;
-            int err;
+            int transf_err;
         } tx;
     };
 } t_transf_info;
@@ -106,7 +108,7 @@ static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch);
 static int32_t f_iface_stream_running(t_x502_hnd hnd, uint32_t ch, int32_t* running);
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout);
 static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout) ;
-
+static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_cnt);
 
 
 
@@ -126,7 +128,8 @@ static const t_x502_dev_iface f_usb_iface = {
     f_iface_stream_free,
     f_iface_stream_running,
     f_iface_stream_read,
-    f_iface_stream_write
+    f_iface_stream_write,
+    f_iface_stream_get_rdy_cnt
 };
 
 
@@ -236,7 +239,7 @@ static void f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
     t_transf_info *info = (t_transf_info*)transfer->user_data;
     if ((transfer->status != LIBUSB_TRANSFER_COMPLETED)
             && (transfer->status != LIBUSB_TRANSFER_CANCELLED)) {
-        info->tx.err = X502_ERR_SEND;
+        info->tx.transf_err = X502_ERR_SEND;
     }
 
 
@@ -260,6 +263,7 @@ static void f_usb_transf_rx_cb(struct libusb_transfer *transfer) {
             || (transfer->status == LIBUSB_TRANSFER_TIMED_OUT)
             || (transfer->status == LIBUSB_TRANSFER_CANCELLED)) {
         cpl->size = transfer->actual_length/sizeof(uint32_t);
+        cpl->info->rx.buf_get_rdy += cpl->size;
         cpl->state = RX_STATE_RDY;
     } else {
         cpl->state = RX_STATE_ERR;
@@ -283,13 +287,8 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
 
     unsigned idx;
     int err = 0;
-
+    info->err = 0;
     info->transf_busy = 0;
-
-
-
-
-
 
     for (idx = 0; (idx < USB_BULK_RX_MAX_TRANSF_CNT) && (err == X502_ERR_OK); idx++) {
         transfers[idx] = libusb_alloc_transfer(0);
@@ -350,7 +349,6 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
         }
    }
 
-
    if (osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT)==0) {
        unsigned busy_cnt = info->transf_busy;
        if (busy_cnt==0) {
@@ -379,6 +377,9 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
             }
         }
     }
+
+   if (!info->err)
+       info->err = err;
     return 0;
 }
 
@@ -394,8 +395,10 @@ static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {
     unsigned snd_pos = 0;
 
 
+    info->err = 0;
     info->transf_busy = 0;
     info->tx.busy_size = 0;
+    info->tx.transf_err = 0;
 
 
     for (idx = 0; (idx < USB_BULK_TX_MAX_TRANSF_CNT) && (err == X502_ERR_OK); idx++) {
@@ -446,6 +449,8 @@ static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {
             }
         }
 
+        if (!err && info->tx.transf_err)
+            err = info->tx.transf_err;
 
 
         if (!err) {
@@ -468,6 +473,9 @@ static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {
             }
         }
     }
+
+    if (!err && info->tx.transf_err)
+        err = info->tx.transf_err;
 
     if (osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT)==0) {
         unsigned busy_cnt = info->transf_busy;
@@ -498,6 +506,9 @@ static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {
          }
      }
 
+    if (!info->err)
+        info->err = err;
+
 
     return 0;
 }
@@ -514,6 +525,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
         info->buf_size = params->buf_size;
 
         info->stop_req = 0;
+        info->err = 0;
 
 
         if (ch==X502_STREAM_CH_IN) {
@@ -525,6 +537,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
             info->buf_size = info->rx.cpl_cnt*info->rx.transf_size;
 
             info->rx.cpl_get_pos = 0;
+            info->rx.buf_get_rdy = 0;
             info->rx.cpls = malloc(info->rx.cpl_cnt * sizeof(info->rx.cpls[0]));
             if (info->rx.cpls == NULL) {
                 err = X502_ERR_MEMORY_ALLOC;
@@ -611,12 +624,8 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
 
 static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
     int32_t err;
-    int32_t running;
 
-
-    err = hnd->iface->stream_running(hnd, ch, &running);
-    if (!err && running)
-        err = hnd->iface->stream_stop(hnd, ch);
+    err = hnd->iface->stream_stop(hnd, ch);
 
     if (!err) {
         t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
@@ -661,6 +670,8 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 
     do {
         int check_next = 1;
+        err = info->err;
+
         while (!err && check_next) {
             t_rx_cpl_part *cpl = &info->rx.cpls[info->rx.cpl_get_pos];
             int cur_state = cpl->state;
@@ -669,6 +680,8 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
             if (cur_state == RX_STATE_ERR) {
                 err = X502_ERR_RECV;
             } else if (cur_state == RX_STATE_RDY){
+                osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
+
                 if (cpl->size) {
                     uint32_t cpy_size = cpl->size;
                     if (cpy_size > size)
@@ -679,16 +692,16 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
                         size-=cpy_size;
                         cpl->size -= cpy_size;
                         cpl->addr += cpy_size;
+                        info->rx.buf_get_rdy += cpy_size;
                     }
                 }
 
-                if (cpl->size==0) {
-                    osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
+                if (cpl->size==0) {                    
                     cpl->state = RX_STATE_IDLE;
-                    osspec_event_set(info->usb_wake_evt);
-                    osspec_mutex_release(info->mutex);
+                    osspec_event_set(info->usb_wake_evt);                    
                     check_next = 1;
                 }
+                osspec_mutex_release(info->mutex);
             }
 
             if (check_next) {
@@ -729,7 +742,7 @@ static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_
     do {
         uint32_t rdy_size, snd_size;
         snd_size = rdy_size = info->tx.buf_put_rdy;
-        err = info->tx.err;
+        err = info->err;
 
         if (!err) {
             if (rdy_size == 0) {
@@ -770,60 +783,23 @@ static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_
             }
         }
     } while (!err && (size!=0) && !timer_expired(&tmr));
-
-#if 0
-    timer_set(&tmr, tout*CLOCK_CONF_SECOND/1000);
-
-    while (size!=0 && !timer_expired(&tmr)) {
-        if (info->tx.rdy) {
-
-
-            uint32_t put_transf;
-            uint32_t tx_size = size;
-
-            osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
-            put_transf = (info->trans_get_pos + info->trans_busy) % info->transf_cnt;
-
-            if (tx_size > info->tx.rdy_size)
-                tx_size = info->tx.rdy_size;
-            if (tx_size > (info->buf_size - info->tx.start_pos))
-                tx_size = info->buf_size - info->tx.start_pos;
-
-            memcpy(&info->data[info->tx.start_pos], &buf[sent], tx_size*sizeof(buf[0]));
-
-            libusb_fill_bulk_transfer(info->transfers[put_transf], usb_data->devhnd, info->addr,
-                                     (unsigned char*)&info->data[info->tx.start_pos],
-                                     tx_size*sizeof(info->data[0]),
-                                     f_usb_transf_tx_cb, info, USB_TRANSFER_TOUT);
-
-            err = libusb_submit_transfer(info->transfers[put_transf]);
-            if (!err) {
-                info->trans_busy++;
-                info->tx.rdy_size -= tx_size;
-                size -= tx_size;
-                info->tx.rdy = (info->trans_busy != info->transf_cnt) && (info->tx.rdy_size!=0);
-
-                info->tx.start_pos += tx_size;
-                if (info->tx.start_pos==info->buf_size)
-                    info->tx.start_pos = 0;
-                sent += tx_size;
-
-            } else {
-                err = X502_ERR_SEND;
-            }
-            osspec_mutex_release(info->mutex);
-
-            if ((size!=0) && !info->tx.rdy) {
-                struct timeval tv;
-                tv.tv_sec = timer_expiration(&tmr)/CLOCK_CONF_SECOND;
-                tv.tv_usec = (timer_expiration(&tmr)%CLOCK_CONF_SECOND) * 1000000/CLOCK_CONF_SECOND;
-                libusb_handle_events_timeout_completed(NULL, &tv, &info->tx.rdy);
-            }
-        }
-    }
-#endif
-
     return err == X502_ERR_OK ? sent : err;
+}
+
+
+
+static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_cnt) {
+    t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
+    int32_t err=0;
+    if (ch == X502_STREAM_CH_IN) {
+        *rdy_cnt = usb_data->streams[X502_STREAM_CH_IN].rx.buf_get_rdy;
+    } else if (ch == X502_STREAM_CH_OUT) {
+        *rdy_cnt = usb_data->streams[X502_STREAM_CH_OUT].tx.buf_put_rdy;
+    } else {
+        err = X502_ERR_INVALID_STREAM_CH;
+
+    }
+    return err;
 }
 
 

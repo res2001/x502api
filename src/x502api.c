@@ -36,12 +36,12 @@ LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (hnd->flags  & _FLAGS_OPENED)) {
         int32_t stop_err;
-#if 0
         if (hnd->flags & _FLAGS_STREAM_RUN) {
             /* остановка потока */
-            err = L502_StreamsStop(hnd);
+            err = X502_StreamsStop(hnd);
         }
-
+        /** @todo */
+#if 0
         if (hnd->mutex_bf!=L_INVALID_MUTEX)
         {
             stop_err = osspec_mutex_close(hnd->mutex_bf);
@@ -513,6 +513,20 @@ LPCIE_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const
             }
         }
     }
+    return err;
+}
+
+LPCIE_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t val) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err)
+        err = hnd->iface->fpga_reg_write(hnd, reg, val);
+    return err;
+}
+
+LPCIE_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err)
+        err = hnd->iface->fpga_reg_read(hnd, reg, val);
     return err;
 }
 

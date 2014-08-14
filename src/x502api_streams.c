@@ -307,9 +307,11 @@ LPCIE_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
+         int32_t stop_err1, stop_err2;
+
         if (hnd->mode==X502_MODE_FPGA) {
             err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
-        } else if (hnd->mode == X502_MODE_DSP) {
+        } else if (hnd->mode == X502_MODE_DSP) {           
             /** @todo */
 #if 0
             err = L502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_STOP, 0,
@@ -317,10 +319,12 @@ LPCIE_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
 #endif
         }
 
+        stop_err1 = hnd->iface->stream_free(hnd, X502_STREAM_CH_IN);
+        stop_err2 = hnd->iface->stream_free(hnd, X502_STREAM_CH_OUT);
         if (!err)
-            err = hnd->iface->stream_free(hnd, X502_STREAM_CH_IN);
+            err = stop_err1;
         if (!err)
-            err = hnd->iface->stream_free(hnd, X502_STREAM_CH_OUT);
+            err = stop_err2;
 
         hnd->flags &= ~(_FLAGS_STREAM_RUN | _FLAGS_PRELOAD_DONE);
 
@@ -401,6 +405,61 @@ LPCIE_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
         err = f_out_stream_preload(hnd);
         osspec_mutex_release(hnd->mutex_cfg);
     }
+    return err;
+}
+
+LPCIE_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err && (rdy_cnt==NULL))
+        err = X502_ERR_INVALID_POINTER;
+    if (!err)
+        err = hnd->iface->stream_get_rdy_cnt(hnd, X502_STREAM_CH_IN, rdy_cnt);
+    return err;
+}
+
+LPCIE_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err && (rdy_cnt==NULL))
+        err = X502_ERR_INVALID_POINTER;
+    if (!err)
+        err = hnd->iface->stream_get_rdy_cnt(hnd, X502_STREAM_CH_OUT, rdy_cnt);
+    return err;
+}
+
+
+static int32_t f_check_stream_ch_par_en(t_x502_hnd hnd, uint32_t stream_ch) {
+    int32_t err = 0;
+    if (stream_ch == X502_STREAM_CH_IN) {
+        if ((hnd->flags & _FLAGS_STREAM_RUN)
+                && (hnd->streams & X502_STREAM_ALL_IN)) {
+            err = X502_ERR_STREAM_IS_RUNNING;
+        }
+    } else if (stream_ch == X502_STREAM_CH_OUT) {
+        if ((hnd->flags & (_FLAGS_PRELOAD_DONE | _FLAGS_STREAM_RUN))
+                && (hnd->streams & X502_STREAM_ALL_OUT)) {
+            err = X502_ERR_STREAM_IS_RUNNING;
+        }
+    } else {
+        err = X502_ERR_INVALID_STREAM_CH;
+    }
+    return err;
+}
+
+LPCIE_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t size) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err)
+        err = f_check_stream_ch_par_en(hnd, ch);
+    if (!err)
+        hnd->stream_pars[ch].buf_size = size;
+    return err;
+}
+
+LPCIE_EXPORT(int32_t) X502_SetDmaIrqStep(t_x502_hnd hnd, uint32_t ch, uint32_t step) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err)
+        err = f_check_stream_ch_par_en(hnd, ch);
+    if (!err)
+        hnd->stream_pars[ch].step = step;
     return err;
 }
 
