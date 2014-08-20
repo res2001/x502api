@@ -454,7 +454,7 @@ LPCIE_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_SetDmaIrqStep(t_x502_hnd hnd, uint32_t ch, uint32_t step) {
+LPCIE_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t ch, uint32_t step) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
         err = f_check_stream_ch_par_en(hnd, ch);

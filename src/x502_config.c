@@ -10,14 +10,14 @@
     && ((mode)!=X502_SYNC_DI_SYN2_FALL) \
     ? X502_ERR_INVALID_SYNC_MODE : X502_ERR_OK
 
-static const uint32_t f_regadd_k[X502_ADC_RANGE_CNT] = {X502_REGS_IOARITH_K10,
+static const uint16_t f_regadd_k[X502_ADC_RANGE_CNT] = {X502_REGS_IOARITH_K10,
                                                         X502_REGS_IOARITH_K5,
                                                         X502_REGS_IOARITH_K2,
                                                         X502_REGS_IOARITH_K1,
                                                         X502_REGS_IOARITH_K05,
                                                         X502_REGS_IOARITH_K02};
 
-static const uint32_t f_regadd_offs[X502_ADC_RANGE_CNT] = {X502_REGS_IOARITH_B10,
+static const uint16_t f_regadd_offs[X502_ADC_RANGE_CNT] = {X502_REGS_IOARITH_B10,
                                                         X502_REGS_IOARITH_B5,
                                                         X502_REGS_IOARITH_B2,
                                                         X502_REGS_IOARITH_B1,
@@ -387,7 +387,7 @@ LPCIE_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
                 }
 
                 err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_LTABLE +
-                                                 hnd->set.lch_cnt - 1 - ch, wrd);
+                                                 (hnd->set.lch_cnt - 1 - ch) & 0xFFFF, wrd);
             }
             if (!err) {
                 err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_LCH_CNT,

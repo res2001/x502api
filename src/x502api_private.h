@@ -157,7 +157,7 @@ typedef struct st_x502 {
 } t_x502;
 
 
-typedef int32_t (*t_x502_get_devinfo_list_cb)(t_lpcie_devinfo* list, uint32_t size,
+typedef int32_t (APIENTRY *t_x502_get_devinfo_list_cb)(t_lpcie_devinfo* list, uint32_t size,
                                              uint32_t flags, uint32_t* devcnt);\
 
 

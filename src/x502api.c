@@ -519,16 +519,20 @@ LPCIE_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const
 LPCIE_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t val) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
-        err = hnd->iface->fpga_reg_write(hnd, reg, val);
+        err = hnd->iface->fpga_reg_write(hnd, reg & 0xFFFF, val);
     return err;
 }
 
 LPCIE_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
-        err = hnd->iface->fpga_reg_read(hnd, reg, val);
+        err = hnd->iface->fpga_reg_read(hnd, reg & 0xFFFF, val);
     return err;
 }
 
 
+LPCIE_EXPORT(uint32_t) X502_GetLibraryVersion(void) {
+    return (X502API_VER_MAJOR << 24) | (X502API_VER_MINOR<<16) |
+            (X502API_VER_PATCH << 8);
+}
 

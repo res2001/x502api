@@ -62,10 +62,8 @@
 
 
 
-
 /** общие для всех интерфейсов флаги, определяющие поведение загрузчика */
-typedef enum
-{
+typedef enum {
     /** - при активном запросе прошивки (tftp) - признак,
           что перезависывется резервная копия, а не основная прошивка
         - при пассивном приеме (mbrtu, usb, can_lss) - признак,
@@ -84,8 +82,7 @@ typedef enum
 } t_lboot_req_flags;
 
 /** флаги из #t_app_info */
-typedef enum
-{
+typedef enum {
     /** признак, что прошивка стабильная */
     LBOOT_APP_FLAGS_STABLE     = 0x1,
     /** признак, что это прошивка для разработчиков */
@@ -95,14 +92,14 @@ typedef enum
 
 
 
+#pragma pack(1)
 /** Информация о программе, содержащаяся в прошивке */
-struct st_app_info
-{
+struct st_app_info {
     uint32_t size; /**< размер информции о прошивке */
     uint32_t flags; /**< флаги */
     /** название устройства, для которого предназначена прошивка*/
     char devname[LBOOT_DEVNAME_SIZE];
-} __attribute__ ((packed));
+};
 typedef struct st_app_info t_app_info;
 
 
@@ -110,8 +107,7 @@ typedef struct st_app_info t_app_info;
 
 /** Информация о загрузчике, находящаяся непосредственно
     в коде самого загрузчика */
-struct lboot_info_st
-{
+struct lboot_info_st {
     /** версия загрузчика (младший байт - минорная, старший - мажорная) */
     uint16_t ver;
     uint16_t flags; /**< флаги - резерв */
@@ -138,25 +134,23 @@ struct lboot_info_st
     /** crc (но при проверке следует брать ее не отсюда,
                а по адресу = адрес начала структуры + size - 2) */
     uint16_t crc;
-} __attribute__ ((packed));
+};
 typedef struct lboot_info_st t_lboot_info;
 
 /** информация о устройстве и прошивке  */
-struct lboot_devinfo_st
-{
+struct lboot_devinfo_st {
     char devname[LBOOT_DEVNAME_SIZE]; /**< название устройства */
     char serial[LBOOT_SERIAL_SIZE];   /**< серийный номер */
     char soft_ver[LBOOT_SOFTVER_SIZE]; /**< версия прошивки */
     char brd_revision[LBOOT_REVISION_SIZE]; /**< ревизия платы */
     char brd_impl[LBOOT_IMPLEMENTATION_SIZE]; /**< опции платы */
     char spec_info[LBOOT_SPECINFO_SIZE]; /**< резерв */
-} __attribute__ ((packed));
+};
 typedef struct lboot_devinfo_st t_lboot_devinfo;
 
 
 /** стандартный заголовок запроса на перепрошивку */
-struct lboot_params_hdr_st
-{
+struct lboot_params_hdr_st {
     uint32_t size;   /**< размер структуры запроса (включая
                          специфические для интерфейса данные и crc) */
     uint32_t bootmode;  /**< режим загрузки - определяет интерфейс */
@@ -165,13 +159,12 @@ struct lboot_params_hdr_st
                             запроса на перепрошивку (0 - бесконечно) */
     uint32_t reserv[2]; /**< резерв */
     t_lboot_devinfo devinfo; /**< информация о устройстве и прошивке */
-} __attribute__ ((packed));
+};
 typedef struct lboot_params_hdr_st t_lboot_params_hdr;
 
 
 //специфические для tftp параметры
-struct st_lboot_specpar_tftp
-{
+struct st_lboot_specpar_tftp {
     uint16_t flags;  //спец флаги (резерв)
     uint16_t server_port;
     uint8_t mac[6]; //mac-адрес
@@ -181,12 +174,11 @@ struct st_lboot_specpar_tftp
     uint8_t r_ip[4]; //адрес сервера tftp
     char filename[LBOOT_REQ_MAX_FILENAME_SIZE]; //имя файла с прошивкой
     uint16_t crc;
-} __attribute__ ((packed));
+};
 typedef struct st_lboot_specpar_tftp t_lboot_specpar_tftp;
 
 //параметры для запроса прошивки по tftp
-struct st_lboot_params_tftp
-{
+struct st_lboot_params_tftp {
     t_lboot_params_hdr hdr;
     uint16_t tftp_flags;  //спец флаги (резерв)
     uint16_t server_port;
@@ -197,25 +189,23 @@ struct st_lboot_params_tftp
     uint8_t r_ip[4]; //адрес сервера tftp
     char filename[LBOOT_REQ_MAX_FILENAME_SIZE]; //имя файла с прошивкой
     uint16_t crc;
-} __attribute__ ((packed));
+};
 typedef struct st_lboot_params_tftp t_lboot_params_tftp;
 
 
 
-struct st_lboot_specpar_modbus_rtu
-{
+struct st_lboot_specpar_modbus_rtu {
    uint16_t flags ; //спец флаги
    uint8_t addr ; //адрес устройства в modbus сети
    uint8_t parity ;
    uint16_t res ;
    uint32_t baud_rate; //скорость передачи по rs-485/232
    uint16_t crc;
-}  __attribute__ ((packed));
+};
 typedef struct st_lboot_specpar_modbus_rtu t_lboot_specpar_modbus_rtu;
 
 //параметры для перепрошивки по Modbus RTU
-struct st_lboot_params_modbus_rtu
-{
+struct st_lboot_params_modbus_rtu {
     t_lboot_params_hdr hdr ;
     uint16_t flags ; //спец флаги
     uint8_t addr ; //адрес устройства в modbus сети
@@ -223,29 +213,26 @@ struct st_lboot_params_modbus_rtu
     uint16_t res ;
     uint32_t baud_rate; //скорость передачи по rs-485/232
     uint16_t crc;
-} __attribute__ ((packed));
+};
 typedef struct st_lboot_params_modbus_rtu t_lboot_params_modbus_rtu;
 
 
 
-struct st_lboot_specpar_usb
-{
+struct st_lboot_specpar_usb {
     uint16_t flags ; //спец флаги
     uint16_t crc;
-} __attribute__ ((packed));
+};
 typedef struct st_lboot_specpar_usb t_lboot_specpar_usb;
 
 //параметры для перепрошивки по USB
-struct st_lboot_params_usb
-{
+struct st_lboot_params_usb {
     t_lboot_params_hdr hdr ;
     uint16_t flags ; //спец флаги
     uint16_t crc;
-} __attribute__ ((packed));
+};
 typedef struct st_lboot_params_usb t_lboot_params_usb;
 
-struct st_lboot_specpar_can_lss
-{
+struct st_lboot_specpar_can_lss {
     uint16_t flags;
     uint8_t br_index; /* BaudRate Index */
     uint8_t res;
@@ -253,31 +240,29 @@ struct st_lboot_specpar_can_lss
     uint32_t pid;
     uint32_t rev;
     uint16_t crc;
-}__attribute__ ((packed));
+};
 typedef struct st_lboot_specpar_can_lss t_lboot_specpar_can_lss;
 
-struct st_lboot_params_can_lss
-{
+struct st_lboot_params_can_lss {
     t_lboot_params_hdr hdr;
     t_lboot_specpar_can_lss can;
-} __attribute__ ((packed));
+};
 typedef struct st_lboot_params_can_lss t_lboot_params_can_lss;
 
 
 
-struct st_lboot_params
-{
+struct st_lboot_params {
     t_lboot_params_hdr hdr ;
-    union
-    {
+    union {
         t_lboot_specpar_tftp tftp;
         t_lboot_specpar_modbus_rtu mbrtu;
         t_lboot_specpar_usb usb;
         t_lboot_specpar_can_lss can;
     };
-} __attribute__ ((packed));
-
+};
 typedef struct st_lboot_params t_lboot_params;
+
+#pragma pack()
 
 
 

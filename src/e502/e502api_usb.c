@@ -1,8 +1,8 @@
+#include "libusb-1.0/libusb.h"
 #include "e502api.h"
 #include "x502api_private.h"
 #include "e502_cm4_defs.h"
 #include "lboot_req.h"
-#include "libusb-1.0/libusb.h"
 #include "e502_fpga_regs.h"
 #include "osspec.h"
 #include "timer.h"
@@ -235,7 +235,7 @@ static int32_t f_iface_fpga_write(t_x502_hnd hnd, uint16_t addr, uint32_t val) {
 
 
 
-static void f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
+static void LIBUSB_CALL f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
     t_transf_info *info = (t_transf_info*)transfer->user_data;
     if ((transfer->status != LIBUSB_TRANSFER_COMPLETED)
             && (transfer->status != LIBUSB_TRANSFER_CANCELLED)) {
@@ -254,7 +254,7 @@ static void f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
 
 
 
-static void f_usb_transf_rx_cb(struct libusb_transfer *transfer) {
+static void LIBUSB_CALL f_usb_transf_rx_cb(struct libusb_transfer *transfer) {
     t_rx_cpl_part *cpl = (t_rx_cpl_part*)transfer->user_data;
 
     osspec_mutex_lock(cpl->info->mutex, MUTEX_STREAM_LOCK_TOUT);
@@ -277,7 +277,7 @@ static void f_usb_transf_rx_cb(struct libusb_transfer *transfer) {
 }
 
 
-static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
+static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void *arg) {
     t_usb_iface_data *usb_data = (t_usb_iface_data*)arg;
     struct libusb_transfer *transfers[USB_BULK_RX_MAX_TRANSF_CNT]; /* запросы usb */
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_IN];
@@ -341,7 +341,7 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
                 /* иначе ждем событий от USB */
                 struct timeval tv;
                 tv.tv_sec =0;
-                tv.tv_usec = 200 * 1e3;
+                tv.tv_usec = 200 * 1000;
                 libusb_handle_events_timeout_completed(NULL, &tv, &info->usb_rdy);
             } else if (wt_buf_rdy) {
                 /* если буфер занят - ждем события от потока чтения */
@@ -386,7 +386,7 @@ static OSSPEC_THREAD_FUNC_RET f_usb_rx_thread_func(void *arg) {
 
 
 
-static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {    
+static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void *arg) {
     t_usb_iface_data *usb_data = (t_usb_iface_data*)arg;
     struct libusb_transfer *transfers[USB_BULK_TX_MAX_TRANSF_CNT]; /* запросы usb */
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_OUT];
@@ -466,7 +466,7 @@ static OSSPEC_THREAD_FUNC_RET f_usb_tx_thread_func(void *arg) {
                 /* иначе ждем событий от USB */
                 struct timeval tv;
                 tv.tv_sec =0;
-                tv.tv_usec = 200 * 1e3;
+                tv.tv_usec = 200 * 1000;
                 libusb_handle_events_timeout_completed(NULL, &tv, &info->usb_rdy);
             } else if (snd_rdy_size==0) {
                 /* если буфер занят - ждем события от потока чтения */
@@ -813,54 +813,6 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
                    const void* snd_data, uint32_t snd_size,
                    void* rcv_data, uint32_t recv_size, uint32_t* recvd_size) {
     int32_t err = 0;
-#ifdef _WIN32
-    uint16_t usbreq[4];
-    if (req->RxLength > 0)
-        usbreq[0] = 1;
-    else
-        usbreq[0] = 0;
-
-    if (!err)
-    {
-        //заполняем последующие 3 слова запроса к драйверу
-        usbreq[1] = req->CmdCode & 0xFF;
-        usbreq[2] = req->Param & 0xFFFF;
-        usbreq[3] = (req->Param >> 16) & 0xFFFF;
-
-        //посылаем запрос
-        err = f_usb_ioctl(handle, DIOC_SEND_COMMAND,
-                            usbreq, sizeof(usbreq),
-                            usbreq[0] ? rcv_data : snd_data,
-                            usbreq[0] ? req->RxLength : req->TxLength,
-                            rx_size,
-                            f_ioctl_tout);
-
-        //при неудаче - пробуем получить код ошибки устройства
-        //послав ему запрос LBOOT_USBREQ_GET_LAST_ERROR
-        if (err)
-        {
-            int32_t eres;
-            int32_t devres;
-            uint32_t errs_rx_size =0;
-
-            usbreq[0] = 1;
-            usbreq[1] = E502_LPC_CMD_GET_LAST_ERROR;
-            usbreq[2] = usbreq[3] = 0;
-
-            eres = f_usb_ioctl(handle, DIOC_SEND_COMMAND,
-                               usbreq, sizeof(usbreq),
-                               &devres, sizeof(devres),
-                               &errs_rx_size, f_ioctl_tout);
-            //если успешно получили код ошибки устройства - то возвращаем его в качестве результата
-            if (!eres
-                && (errs_rx_size == sizeof(devres))
-                && (devres !=0))
-            {
-                err = devres;
-            }
-        }
-    }
-#else
     uint8_t req_type = LIBUSB_REQUEST_TYPE_VENDOR;
     uint16_t len;
     uint8_t* iobuf;
@@ -910,7 +862,6 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
             }
         }
     }
-#endif
     return err;
 }
 
@@ -1016,7 +967,7 @@ LPCIE_EXPORT(int32_t) E502_GetUsbDevInfoList(t_lpcie_devinfo* list, uint32_t siz
     if (devcnt)
         *devcnt = curcnt;
 
-    return err ? err  : curcnt > usb_devlist_size ? (int32_t)usb_devlist_size : (int32_t)curcnt ;
+    return err ? err  : curcnt > (uint32_t)usb_devlist_size ? (int32_t)usb_devlist_size : (int32_t)curcnt ;
 }
 
 LPCIE_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial) {

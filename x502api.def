@@ -1,0 +1,57 @@
+LIBRARY     x502api.dll
+
+EXPORTS
+        X502_OpenByDevinfo
+        X502_Create
+        X502_Free
+        X502_Open
+        X502_Close
+        X502_GetDevInfo
+        X502_Configure
+        X502_StreamsEnable
+        X502_StreamsDisable
+        X502_StreamsStart
+        X502_StreamsStop
+        X502_IsRunning
+        X502_Recv
+        X502_Send
+        X502_GetRecvReadyCount
+        X502_GetSendReadyCount
+        X502_GetNextExpectedLchNum
+        X502_PreloadStart
+        X502_ProcessAdcData
+        X502_ProcessData
+        X502_ProcessDataWithUserExt
+        X502_PrepareData
+        X502_SetLChannel
+        X502_SetLChannelCount
+        X502_GetLChannelCount
+        X502_SetAdcFreqDivider
+        X502_SetAdcInterframeDelay
+        X502_SetDinFreqDivider
+        X502_SetOutFreqDivider
+        X502_SetAdcFreq
+        X502_SetDinFreq        
+        X502_GetAdcFreq
+        X502_SetOutFreq
+        X502_SetRefFreq
+        X502_SetSyncMode
+        X502_SetSyncStartMode
+        X502_SetMode
+        X502_GetMode
+        X502_SetAdcCoef
+        X502_GetAdcCoef
+        X502_SetDacCoef
+        X502_GetDacCoef
+        X502_FpgaRegWrite
+        X502_FpgaRegRead
+        X502_GetLibraryVersion
+        X502_GetErrorString
+        X502_SetStreamBufSize
+        X502_SetStreamStep
+
+        E502_GetUsbDevInfoList
+        E502_GetUsbSerialList
+        E502_OpenUsb
+
+

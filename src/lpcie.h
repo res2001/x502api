@@ -23,6 +23,10 @@
 
     #define LPCIE_EXPORT(type) type APIENTRY
 #else
+    #ifndef APIENTRY
+        #define APIENTRY
+    #endif
+
     #define LPCIE_EXPORT(type) __attribute__ ((visibility("default"))) type
 #endif
 

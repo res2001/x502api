@@ -4,9 +4,9 @@ set(PROJECT x502api)
 set(X502API_VER_MAJOR 0)
 set(X502API_VER_MINOR 0)
 set(X502API_VER_PATCH 1)
-set(X502API_VERSION ${L502API_VER_MAJOR}.${L502API_VER_MINOR}.${L502API_VER_PATCH})
+set(X502API_VERSION ${X502API_VER_MAJOR}.${X502API_VER_MINOR}.${X502API_VER_PATCH})
 
-add_definitions(-DX502API_VER_MAJOR=${L502API_VER_MAJOR} -DX502API_VER_MINOR=${L502API_VER_MINOR} -DX502API_VER_PATCH=${L502API_VER_PATCH})
+add_definitions(-DX502API_VER_MAJOR=${X502API_VER_MAJOR} -DX502API_VER_MINOR=${X502API_VER_MINOR} -DX502API_VER_PATCH=${X502API_VER_PATCH})
 
 project(${PROJECT} C)
 
@@ -32,6 +32,24 @@ if(MSVC)
        if(${flag_var} MATCHES "/MD")
           string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
        endif(${flag_var} MATCHES "/MD")
+    endforeach(flag_var)
+
+    #убираем флаг /INCREMENTAL, так как в MSVC с ним могут быть
+    #внутренние ошибки линковщика
+    foreach(flag_var
+            CMAKE_SHARED_LINKER_FLAGS
+            CMAKE_SHARED_LINKER_FLAGS_DEBUG
+            CMAKE_SHARED_LINKER_FLAGS_RELEASE
+            CMAKE_SHARED_LINKER_FLAGS_MINSIZEREL
+            CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO
+            CMAKE_SHARED_EXE_FLAGS
+            CMAKE_SHARED_EXE_FLAGS_DEBUG
+            CMAKE_SHARED_EXE_FLAGS_RELEASE
+            CMAKE_SHARED_EXE_FLAGS_MINSIZEREL
+            CMAKE_SHARED_EXE_FLAGS_RELWITHDEBINFO)
+       if(${flag_var} MATCHES "/INCREMENTAL:YES")
+          string(REGEX REPLACE "/INCREMENTAL:YES" "/INCREMENTAL:NO" ${flag_var} "${${flag_var}}")
+       endif(${flag_var} MATCHES "/INCREMENTAL:YES")
     endforeach(flag_var)
 endif(MSVC)
 
@@ -67,14 +85,18 @@ include_directories(src lib/crc lib/osspec)
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
-#для linux используем libusb-1.0
-if(UNIX)
-    #ищем libusb
-    find_package(LibUSB REQUIRED)
-    include_directories(${LIBUSB_INCLUDE_DIR})
-    set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
-endif(UNIX)
 
+#ищем libusb-1.0
+find_package(LibUSB REQUIRED)
+include_directories(${LIBUSB_INCLUDE_DIR})
+set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
+
+
+#конфигурируем файл ресурсов для Windows
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/x502api.rc.in
+               ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc @ONLY)
+
+SET(SOURCES ${SOURCES} x502api.def ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc)
 
 
 #Включаем файлы для таймера и inline-функций
