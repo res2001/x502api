@@ -53,6 +53,11 @@ LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
 
         hnd->flags &= ~_FLAGS_OPENED;
 
+
+        stop_err = hnd->iface->close(hnd);
+        if (!err)
+            err = stop_err;
+
         if (hnd->mutex_cfg!=OSSPEC_INVALID_MUTEX) {
             stop_err = osspec_mutex_destroy(hnd->mutex_cfg);
             hnd->mutex_cfg = OSSPEC_INVALID_MUTEX;
@@ -61,9 +66,6 @@ LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
         }
 
 
-        stop_err = hnd->iface->close(hnd);
-        if (!err)
-            err = stop_err;
     }
     return err;
 }

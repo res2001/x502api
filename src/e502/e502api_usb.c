@@ -145,13 +145,15 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo) {
 
     usberr = libusb_open(dev, &devhnd);
     if (!usberr) {
-        err = libusb_claim_interface(devhnd, 0);
+        usberr = libusb_claim_interface(devhnd, 0);
     }
 
     err = usberr == LIBUSB_SUCCESS ? X502_ERR_OK :
           usberr == LIBUSB_ERROR_BUSY ? X502_ERR_ALREADY_OPENED :
           usberr == LIBUSB_ERROR_ACCESS ? X502_ERR_DEVICE_ACCESS_DENIED :
-          X502_ERR_DEVICE_OPEN;
+          usberr == LIBUSB_ERROR_NO_DEVICE ? X502_ERR_DEVICE_NOT_FOUND :
+                     X502_ERR_DEVICE_OPEN;
+
 
     if (err == X502_ERR_OK) {
         t_usb_iface_data *usb_data = calloc(1, sizeof(t_usb_iface_data));
@@ -204,12 +206,8 @@ static int32_t f_iface_close(t_x502_hnd hnd) {
         }
     }
 
-    if (libusb_release_interface(usb_data->devhnd, 0)!=LIBUSB_SUCCESS) {
-        err = X502_ERR_INTERFACE_RELEASE;
-    }
-    if (!err) {
-        libusb_close(usb_data->devhnd);
-    }
+    libusb_release_interface(usb_data->devhnd, 0);
+    libusb_close(usb_data->devhnd);
     return err;
 }
 

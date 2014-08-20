@@ -50,6 +50,8 @@ EXPORTS
         X502_SetStreamBufSize
         X502_SetStreamStep
 
+        X502_FreeDevInfoList
+
         E502_GetUsbDevInfoList
         E502_GetUsbSerialList
         E502_OpenUsb
