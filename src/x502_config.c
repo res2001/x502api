@@ -386,8 +386,8 @@ LPCIE_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
                     wrd |= ((avg-1) & 0x7F) << 9;
                 }
 
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_LTABLE +
-                                                 (hnd->set.lch_cnt - 1 - ch) & 0xFFFF, wrd);
+                err = hnd->iface->fpga_reg_write(hnd, (X502_REGS_IOHARD_LTABLE +
+                                                      hnd->set.lch_cnt - 1 - ch) & 0xFFFF, wrd);
             }
             if (!err) {
                 err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_LCH_CNT,
