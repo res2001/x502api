@@ -912,7 +912,7 @@ LPCIE_EXPORT(int32_t) E502_GetUsbDevInfoList(t_lpcie_devinfo* list, uint32_t siz
 
     if (!f_lusb_init_done) {
         libusb_init(NULL);
-            libusb_set_debug(NULL,  LIBUSB_LOG_LEVEL_WARNING);
+        libusb_set_debug(NULL,  LIBUSB_LOG_LEVEL_WARNING);
         f_lusb_init_done = 1;
     }
 

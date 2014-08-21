@@ -10,6 +10,8 @@
 
 #include "x502api.h"
 #include "osspec.h"
+#include "l502_bf_cmd_defs.h"
+#include "x502_fpga_regs.h"
 
 typedef struct {
     const void *iface;

@@ -58,9 +58,11 @@ set(SOURCES
     src/e502/e502api_usb.c
     src/e502/e502api.c
     src/x502api.c
-    src/x502_config.c
-    src/x502_errs.c
+    src/x502api_config.c
+    src/x502api_errs.c
     src/x502api_streams.c
+    src/x502api_async.c
+    src/x502api_bf.c
     lib/osspec/osspec.c
     lib/crc/fast_crc.c)
 
