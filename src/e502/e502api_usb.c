@@ -151,7 +151,7 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo) {
     err = usberr == LIBUSB_SUCCESS ? X502_ERR_OK :
           usberr == LIBUSB_ERROR_BUSY ? X502_ERR_ALREADY_OPENED :
           usberr == LIBUSB_ERROR_ACCESS ? X502_ERR_DEVICE_ACCESS_DENIED :
-          usberr == LIBUSB_ERROR_NO_DEVICE ? X502_ERR_DEVICE_NOT_FOUND :
+          usberr == LIBUSB_ERROR_NO_DEVICE ? X502_ERR_DEVICE_DISCONNECTED :
                      X502_ERR_DEVICE_OPEN;
 
 
@@ -833,18 +833,19 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
                 (param >> 16) & 0xFFFF,
                 iobuf, len, E502_USB_REQ_TOUT);
         if (usbres < 0) {
-            err = X502_ERR_IOCTL_FAILD;
+            err = (usbres == LIBUSB_ERROR_NO_DEVICE ? X502_ERR_DEVICE_DISCONNECTED :
+                                                     X502_ERR_IOCTL_FAILD);
         } else {
             if (recvd_size!=NULL) {
                 *recvd_size = usbres;
             } else if (usbres != len) {
-                err = X502_ERR_IOCTL_FAILD;
+                err = X502_ERR_IOCTL_INVALID_RESP_SIZE;
             }
         }
 
         //если управляющий запрос не выполнен успешно, то пытаемся получить
         //код ошибки из устройства
-        if (usbres < 0) {
+        if (err == X502_ERR_IOCTL_FAILD) {
             uint32_t devres;
             usbres = libusb_control_transfer(handle,
                     LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR,
