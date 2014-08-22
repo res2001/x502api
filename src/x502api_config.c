@@ -424,7 +424,51 @@ LPCIE_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
                                                  hnd->set.din_freq_div-1);
             }
         } else if (hnd->mode == X502_MODE_DSP) {
-            /** @todo */
+            uint32_t ch;
+            err = x502_bf_set_par(hnd, L502_BF_PARAM_LCH_CNT, &hnd->set.lch_cnt, 1);
+            for (ch=0; !err && (ch < hnd->set.lch_cnt); ch++) {
+                uint32_t ch_par[] = {ch, hnd->set.lch[ch].ch,
+                                     hnd->set.lch[ch].mode,
+                                     hnd->set.lch[ch].range,
+                                     hnd->set.lch[ch].avg > hnd->set.adc_freq_div ?
+                                        hnd->set.adc_freq_div : hnd->set.lch[ch].avg} ;
+                err = x502_bf_set_par(hnd, L502_BF_PARAM_LCH, ch_par,
+                                        sizeof(ch_par)/sizeof(ch_par[0]));
+            }
+            if (!err) {
+                err = x502_bf_set_par(hnd, L502_BF_PARAM_ADC_FREQ_DIV,
+                                  &hnd->set.adc_freq_div, 1);
+            }
+            if (!err) {
+                err = x502_bf_set_par(hnd, L502_BF_PARAM_ADC_FRAME_DELAY,
+                                      &hnd->set.adc_frame_delay, 1);
+            }
+            if (!err) {
+                err = x502_bf_set_par(hnd, L502_BF_PARAM_REF_FREQ_SRC,
+                                       &hnd->set.ref_freq, 1);
+            }
+            if (!err) {
+                err = x502_bf_set_par(hnd, L502_BF_PARAM_SYNC_MODE,
+                                      &hnd->set.sync_mode, 1);
+            }
+            if (!err) {
+                err = x502_bf_set_par(hnd, L502_BF_PARAM_SYNC_START_MODE,
+                                      &hnd->set.sync_start_mode, 1);
+            }
+            if (!err) {
+                err = x502_bf_set_par(hnd, L502_BF_PARAM_DAC_FREQ_DIV,
+                                      &hnd->set.out_freq_div, 1);
+            }
+            if (!err)
+            {
+                err = x502_bf_set_par(hnd, L502_BF_PARAM_DIN_FREQ_DIV,
+                                      &hnd->set.din_freq_div, 1);
+            }
+
+            if (!err) {
+                err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_CONFIGURE, 0, NULL,
+                                   0, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL);
+            }
         } else {
             err = X502_ERR_INVALID_MODE;
         }
@@ -458,11 +502,8 @@ LPCIE_EXPORT(int32_t) X502_SetAdcCoef(t_x502_hnd hnd, uint32_t range, double k, 
             if (!err)
                 err = hnd->iface->fpga_reg_write(hnd, f_regadd_offs[range], offs_val);
         } else if (hnd->mode == X502_MODE_DSP) {
-            /** @todo */
-#if 0
             uint32_t wrds[3] = {range, kval, offs_val};
-            err = _set_bf_par(hnd, X502_BF_PARAM_ADC_COEF, wrds, 3);
-#endif
+            err = x502_bf_set_par(hnd, L502_BF_PARAM_ADC_COEF, wrds, 3);
         } else {
             err = X502_ERR_INVALID_MODE;
         }

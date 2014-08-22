@@ -8,12 +8,7 @@ extern "C" {
 #include "lpcie.h"
 
 /** @todo
-        X502_AsyncGetAdcFrame
-        X502_BfCheckFirmwareIsLoaded
-        X502_BfLoadFirmware
-        X502_BfMemRead
-        X502_BfMemWrite
-        X502_BfExecCmd
+        X502_AsyncGetAdcFrame        
         X502_FlashRead
         X502_FlashWrite
         X502_FlashErase

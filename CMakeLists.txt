@@ -78,6 +78,7 @@ set(HEADERS
     src/e502/e502_fpga_regs.h
     src/e502/e502_cm4_defs.h    
     src/e502/e502api.h
+    src/e502/e502api_private.h
     
     src/osspec_cfg.h
     lib/osspec/osspec.h

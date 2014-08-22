@@ -38,10 +38,19 @@ typedef enum {
     /** Неверный адрес памяти BlackFin при записи или чтении по HDMA */
     E502_CM4_ERR_BF_INVALID_ADDR              = -1021,
     /** Неверный размер данных, передаваемых с управляющей командой в BlackFin */
-    E502_CM4_ERR_BF_INVALID_CMD_DATA_SIZE     = -1022
+    E502_CM4_ERR_BF_INVALID_CMD_DATA_SIZE     = -1022,
+
+
+
+    E502_CM4_ERR_UNKNOWN_CMD                  = -1023,
+    E502_CM4_ERR_INVALID_CMD_PARAMS           = -1024,
+    E502_CM4_ERR_FIRM_BUF_OVERFLOW            = -1025
 } t_e502_cm4_errs;
 
-
+typedef enum {
+    E502_STREAM_CH_IN = 0,
+    E502_STREAM_CH_OUT = 1
+} t_e502_stream_ch;
 
 typedef enum {
     E502_CM4_CMD_GET_MODULE_NAME     = 11,
@@ -53,6 +62,13 @@ typedef enum {
     E502_CM4_CMD_STREAM_STOP         = 0x13,
     E502_CM4_CMD_STREAM_SET_STEP     = 0x14,
     E502_CM4_CMD_STREAM_IS_RUNNING   = 0x15,
+    E502_CM4_CMD_FIRM_BUF_WRITE      = 0x16,
+    E502_CM4_CMD_BF_MEM_WRITE        = 0x20,
+    E502_CM4_CMD_BF_MEM_READ         = 0x21,
+    E502_CM4_CMD_BF_FIRM_LOAD        = 0x22,
+
+
+
 
     E502_CM4_CMD_TEST_START          = 0x40,
     E502_CM4_CMD_TEST_STOP           = 0x41,

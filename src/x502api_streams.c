@@ -76,23 +76,19 @@ static int32_t f_stream_in_cfg(t_x502 *hnd) {
     err = hnd->iface->stream_cfg(hnd, X502_STREAM_CH_IN, &params);
 
     if (!err && (hnd->mode == X502_MODE_DSP)) {
-        /** @todo */
-#if 0
         /* для BlackFin нужно так же установить еще шаг прерываний для
            приема данных от SPORT'а */
         uint32_t size;
-        err = _get_bf_par(hnd, L502_BF_PARAM_IN_BUF_SIZE, &size, 1);
+        err = x502_bf_get_par(hnd, L502_BF_PARAM_IN_BUF_SIZE, &size, 1);
         if (!err) {
-
-            uint32_t instep = params.irq_step;
+            uint32_t instep = params.step;
             if (instep>size/4) {
                 instep=size/4;
             }
             if (instep > 0x8000)
                 instep = 0x8000;
-            err = _set_bf_par(hnd, L502_BF_PARAM_IN_STEP_SIZE, &instep, 1);
+            err = x502_bf_set_par(hnd, L502_BF_PARAM_IN_STEP_SIZE, &instep, 1);
         }
-#endif
     }
     return err;
 }
@@ -121,11 +117,8 @@ static int32_t f_out_stream_preload(t_x502 *hnd) {
         err = hnd->iface->stream_start(hnd, X502_STREAM_CH_OUT, 0);
 
     if (!err && (hnd->mode == X502_MODE_DSP)) {
-        /** @todo */
-#if 0
-        err = L502_BfExecCmd(hnd, L502_BF_CMD_CODE_PRELOAD, 0, NULL, 0,
-                             NULL, 0, L502_BF_REQ_TOUT, NULL);
-#endif
+        err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_PRELOAD, 0, NULL, 0,
+                             NULL, 0, X502_BF_REQ_TOUT, NULL);
     }
 
     if (!err) {
@@ -144,11 +137,8 @@ LPCIE_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
         if (hnd->mode == X502_MODE_DSP) {
-            /** @todo */
-#if 0
-            err = L502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_EN, streams,
-                                 NULL, 0, NULL, 0, L502_BF_REQ_TOUT, NULL);
-#endif
+            err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_EN, streams,
+                                 NULL, 0, NULL, 0, X502_BF_REQ_TOUT, NULL);
             if (!err)
                 hnd->streams |= streams;
         } else {
@@ -181,11 +171,8 @@ LPCIE_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
 
     if (!err) {
         if (hnd->mode == X502_MODE_DSP) {
-            /** @todo */
-#if 0
-            err = L502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_DIS, streams,
-                                 NULL, 0, NULL, 0, L502_BF_REQ_TOUT, NULL);
-#endif
+            err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_DIS, streams,
+                                 NULL, 0, NULL, 0, X502_BF_REQ_TOUT, NULL);
             if (!err)
                 hnd->streams &= ~streams;
 
@@ -278,11 +265,10 @@ LPCIE_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
                 /* взводим сигнал GO, указывающий что запущен синхронных ввод-вывод */
                 err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 1);
             } else if (hnd->mode == X502_MODE_DSP) {
-                /** @todo */
-#if 0
-                err = L502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_START, 0,
-                                  NULL, 0, NULL, 0, L502_BF_CMD_DEFAULT_TOUT, NULL);
-#endif
+                err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_START, 0,
+                                  NULL, 0, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL);
+            } else {
+                err = X502_ERR_INVALID_MODE;
             }
         }
 
@@ -312,11 +298,8 @@ LPCIE_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
         if (hnd->mode==X502_MODE_FPGA) {
             err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
         } else if (hnd->mode == X502_MODE_DSP) {           
-            /** @todo */
-#if 0
-            err = L502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_STOP, 0,
-                              NULL, 0, NULL, 0, L502_BF_CMD_DEFAULT_TOUT, NULL);
-#endif
+            err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_STOP, 0,
+                              NULL, 0, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL);
         }
 
         stop_err1 = hnd->iface->stream_free(hnd, X502_STREAM_CH_IN);
@@ -337,10 +320,7 @@ LPCIE_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
     int err = X502_CHECK_HND(hnd);
     uint32_t bf_mode=0;
     if (!err && (hnd->mode==X502_MODE_DSP)) {
-        /** @todo */
-#if 0
-        err = _get_bf_par(hnd, X502_BF_PARAM_STREAM_MODE, &bf_mode, 1);
-#endif
+        err = x502_bf_get_par(hnd, L502_BF_PARAM_STREAM_MODE, &bf_mode, 1);
     }
 
     if (!err)

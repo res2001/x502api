@@ -1,7 +1,5 @@
 #include "libusb-1.0/libusb.h"
-#include "e502api.h"
-#include "x502api_private.h"
-#include "e502_cm4_defs.h"
+#include "e502api_private.h"
 #include "lboot_req.h"
 #include "e502_fpga_regs.h"
 #include "osspec.h"
@@ -14,6 +12,7 @@
 #define E502_USB_PID        0xE502
 #define E502_USB_REQ_TOUT   3000
 
+#define USB_CTL_REQ_MAX_SIZE 2048
 
 
 #define MUTEX_STREAM_LOCK_TOUT  2000
@@ -94,42 +93,46 @@ typedef struct {
 
 static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t param,
                    const void* snd_data, uint32_t snd_size,
-                   void* rcv_data, uint32_t recv_size, uint32_t* recvd_size);
+                   void* rcv_data, uint32_t recv_size, uint32_t* recvd_size, uint32_t tout);
 
 static int32_t f_iface_free_devinfo_data(void *devinfo_data);
 static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo);
 static int32_t f_iface_close(t_x502_hnd hnd);
-static int32_t f_iface_fpga_read(t_x502_hnd hnd, uint16_t addr, uint32_t *val);
-static int32_t f_iface_fpga_write(t_x502_hnd hnd, uint16_t addr, uint32_t val);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
 static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch);
 static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch);
-static int32_t f_iface_stream_running(t_x502_hnd hnd, uint32_t ch, int32_t* running);
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout);
 static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout) ;
 static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_cnt);
 
-
-
-
+static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t param,
+                                 const void* snd_data, uint32_t snd_size,
+                                 void* rcv_data, uint32_t recv_size, uint32_t* recvd_size,
+                                 uint32_t tout);
 
 static const t_x502_dev_iface f_usb_iface = {
     E502_REGS_ARM_HARD_ID,
     USB_IN_STREAM_BUF_MIN,
+    USB_CTL_REQ_MAX_SIZE,
+    USB_CTL_REQ_MAX_SIZE/4,
     f_iface_free_devinfo_data,
     f_iface_open,
     f_iface_close,
-    f_iface_fpga_read,
-    f_iface_fpga_write,
+    e502_iface_fpga_read,
+    e502_iface_fpga_write,
     f_iface_stream_cfg,
     f_iface_stream_start,
     f_iface_stream_stop,
     f_iface_stream_free,
-    f_iface_stream_running,
+    e502_iface_stream_running,
     f_iface_stream_read,
     f_iface_stream_write,
-    f_iface_stream_get_rdy_cnt
+    f_iface_stream_get_rdy_cnt,
+    e502_iface_bf_mem_block_rd,
+    e502_iface_bf_mem_block_wr,
+    e502_iface_bf_firm_load,
+    f_iface_gen_ioctl
 };
 
 
@@ -217,19 +220,6 @@ static int32_t f_iface_free_devinfo_data(void *devinfo_data) {
     libusb_unref_device(dev);
     return 0;
 }
-
-static int32_t f_iface_fpga_read(t_x502_hnd hnd, uint16_t addr, uint32_t *val) {
-    t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
-    return f_ioreq(usb_data->devhnd, E502_CM4_CMD_FPGA_REG_READ, addr, NULL, 0,
-                   val, sizeof(*val), NULL);
-}
-
-static int32_t f_iface_fpga_write(t_x502_hnd hnd, uint16_t addr, uint32_t val) {
-    t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
-    return f_ioreq(usb_data->devhnd, E502_CM4_CMD_FPGA_REG_WRITE, addr, &val, sizeof(val),
-                   NULL, 0, NULL);
-}
-
 
 
 
@@ -563,7 +553,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
         if (!err) {
             uint16_t send_step = params->step > 0xFFFF ? 0xFFFF : params->step;
             err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_SET_STEP,
-                          (ch<<16) | send_step, NULL, 0, NULL, 0, NULL);
+                          (ch<<16) | send_step, NULL, 0, NULL, 0, NULL, 0);
         }
 
 
@@ -597,7 +587,7 @@ static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle
 
     if (!err) {
         err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_START, (ch<<16),
-                      NULL, 0, NULL, 0, NULL);
+                      NULL, 0, NULL, 0, NULL, 0);
     }
 
     return err;
@@ -610,9 +600,10 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
     int ioctl_err;
     int32_t running;
 
-    ioctl_err = f_iface_stream_running(hnd, ch, &running);
+    ioctl_err = hnd->iface->stream_running(hnd, ch, &running);
     if (!ioctl_err && running)
-        ioctl_err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_STOP, (ch << 16), NULL, 0, NULL, 0, NULL);
+        ioctl_err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
+                            NULL, 0, NULL, 0, NULL, 0);
 
 
     if (info->thread != OSSPEC_INVALID_THREAD) {
@@ -651,16 +642,7 @@ static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
     return err;
 }
 
-static int32_t f_iface_stream_running(t_x502_hnd hnd, uint32_t ch, int32_t* running) {
-    t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
-    int32_t err;
-    uint8_t l_run;
-    err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_IS_RUNNING, (ch << 16), NULL, 0, &l_run, 1, NULL);
-    if (!err && (running!=NULL)) {
-        *running = l_run;
-    }
-    return err;
-}
+
 
 
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout) {
@@ -807,14 +789,20 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
 }
 
 
+
+
+
+
 static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t param,
                    const void* snd_data, uint32_t snd_size,
-                   void* rcv_data, uint32_t recv_size, uint32_t* recvd_size) {
+                   void* rcv_data, uint32_t recv_size, uint32_t* recvd_size, uint32_t tout) {
     int32_t err = 0;
     uint8_t req_type = LIBUSB_REQUEST_TYPE_VENDOR;
     uint16_t len;
     uint8_t* iobuf;
     int usbres = 0;
+    if (tout == 0)
+        tout = E502_USB_REQ_TOUT;
 
     if (recv_size > 0) {
         req_type |= LIBUSB_ENDPOINT_IN;
@@ -831,7 +819,7 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
                 req_type, cmd_code & 0xFF,
                 param & 0xFFFF,
                 (param >> 16) & 0xFFFF,
-                iobuf, len, E502_USB_REQ_TOUT);
+                iobuf, len, tout);
         if (usbres < 0) {
             err = (usbres == LIBUSB_ERROR_NO_DEVICE ? X502_ERR_DEVICE_DISCONNECTED :
                                                      X502_ERR_IOCTL_FAILD);
@@ -864,6 +852,16 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
     return err;
 }
 
+
+static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t param,
+                                 const void* snd_data, uint32_t snd_size,
+                                 void* rcv_data, uint32_t recv_size, uint32_t* recvd_size,
+                                 uint32_t tout) {
+    t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
+    return f_ioreq(usb_data->devhnd, cmd_code, param, snd_data, snd_size,
+                   rcv_data, recv_size, recvd_size, tout);
+}
+
 static int f_fill_devlist(libusb_device_handle *hnd, t_lpcie_devinfo* info) {
     int32_t err = 0;
     t_lpcie_devinfo_inptr *devinfo_ptr = calloc(1, sizeof(t_lpcie_devinfo_inptr));
@@ -877,11 +875,11 @@ static int f_fill_devlist(libusb_device_handle *hnd, t_lpcie_devinfo* info) {
 
         //получаем информацию о устройстве
         err = f_ioreq(hnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
-                      sizeof(lboot_info), NULL);
+                      sizeof(lboot_info), NULL, 0);
 
         if (!err) {
             err = f_ioreq(hnd, E502_CM4_CMD_FPGA_REG_READ, E502_REGS_ARM_HARD_ID,
-                          NULL, 0, &id, sizeof(id), NULL);
+                          NULL, 0, &id, sizeof(id), NULL, 0);
         }
 
         if (!err) {
@@ -1011,4 +1009,9 @@ LPCIE_EXPORT(int32_t) E502_GetUsbSerialList(char serials[][X502_SERIAL_SIZE], ui
 
     return res < 0 ? res : e502_cnt > size ? (int32_t)size : (int32_t)e502_cnt;
 }
+
+
+
+
+
 

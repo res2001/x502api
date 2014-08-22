@@ -52,6 +52,11 @@ EXPORTS
         X502_AsyncOutDac
         X502_AsyncOutDig
         X502_AsyncInDig
+        X502_BfCheckFirmwareIsLoaded
+        X502_BfLoadFirmware
+        X502_BfMemRead
+        X502_BfMemWrite
+        X502_BfExecCmd
 
         X502_FreeDevInfoList
 

@@ -12,6 +12,8 @@
 #include "osspec.h"
 #include "l502_bf_cmd_defs.h"
 #include "x502_fpga_regs.h"
+#include <stdio.h>
+
 
 typedef struct {
     const void *iface;
@@ -61,6 +63,7 @@ typedef struct {
 
 
 
+typedef int32_t (*t_x502_iface_free_devinfo_data)(void* devinfo_data);
 
 typedef int32_t (*t_x502_iface_open)(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo);
 typedef int32_t (*t_x502_iface_close)(t_x502_hnd hnd);
@@ -76,11 +79,22 @@ typedef int32_t (*t_x502_iface_stream_read)(t_x502_hnd hnd, uint32_t *buf, uint3
 typedef int32_t (*t_x502_iface_stream_write)(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout);
 typedef int32_t (*t_x502_iface_stream_get_rdy_cnt)(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_cnt);
 
-typedef int32_t (*t_x502_iface_free_devinfo_data)(void* devinfo_data);
+typedef int32_t (*t_x502_iface_bf_mem_block_rd)(t_x502_hnd hnd, uint32_t addr, uint32_t *block, uint32_t size);
+typedef int32_t (*t_x502_iface_bf_mem_block_wr)(t_x502_hnd hnd, uint32_t addr, const uint32_t *block, uint32_t size);
+typedef int32_t (*t_x502_iface_bf_firm_load)(t_x502_hnd hnd, FILE* f);
+
+
+typedef int32_t (*t_x502_iface_gen_ioctl)(t_x502_hnd hnd, uint32_t cmd_code, uint32_t param,
+                                          const void* snd_data, uint32_t snd_size,
+                                          void* rcv_data, uint32_t recv_size,
+                                          uint32_t* recvd_size, uint32_t tout);
+
 
 typedef struct {
     uint16_t id_reg_addr;
     uint16_t in_stream_buf_min;
+    uint16_t ioctl_max_data_size;
+    uint16_t bf_mem_block_size;
     t_x502_iface_free_devinfo_data  free_devinfo_data;
     t_x502_iface_open               open;
     t_x502_iface_close              close;
@@ -94,6 +108,10 @@ typedef struct {
     t_x502_iface_stream_read        stream_read;
     t_x502_iface_stream_write       stream_write;
     t_x502_iface_stream_get_rdy_cnt stream_get_rdy_cnt;
+    t_x502_iface_bf_mem_block_rd    bf_mem_block_rd;
+    t_x502_iface_bf_mem_block_wr    bf_mem_block_wr;
+    t_x502_iface_bf_firm_load       bf_firm_load;
+    t_x502_iface_gen_ioctl          gen_ioctl;
 } t_x502_dev_iface;
 
 
@@ -156,6 +174,10 @@ typedef struct st_x502 {
 
 
     t_mutex mutex_cfg; /* мьютекс для доступа к полям параметров и состояния модуля */
+    t_mutex mutex_bf; /* мьютекс для доступа к памяти сигнального процессора */
+
+    uint32_t bf_ver; /* версия прошивки BlackFin, если есть */
+    uint32_t bf_features; /* дополниельные возможности, поддерживаемые прошивкой */
 } t_x502;
 
 
@@ -171,6 +193,12 @@ LPCIE_EXPORT(int32_t) X502_FreeDevInfoList(t_lpcie_devinfo *list, uint32_t size)
 LPCIE_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
                                 const char *devname, t_x502_get_devinfo_list_cb get_list);
 
+
+#define x502_bf_set_par(hnd, par, data, size) X502_BfExecCmd(hnd, L502_BF_CMD_CODE_SET_PARAM, \
+                            par, data, size, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL)
+
+#define x502_bf_get_par(hnd, par, data, size) X502_BfExecCmd(hnd, L502_BF_CMD_CODE_GET_PARAM, \
+                            par, NULL, 0, data, size, X502_BF_CMD_DEFAULT_TOUT, NULL)
 
 
 #endif // X502API_PRIVATE_H

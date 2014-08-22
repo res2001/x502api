@@ -40,16 +40,6 @@ LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
             /* остановка потока */
             err = X502_StreamsStop(hnd);
         }
-        /** @todo */
-#if 0
-        if (hnd->mutex_bf!=L_INVALID_MUTEX)
-        {
-            stop_err = osspec_mutex_close(hnd->mutex_bf);
-            hnd->mutex_bf = L_INVALID_MUTEX;
-            if (!err)
-                err = stop_err;
-        }
-#endif
 
         hnd->flags &= ~_FLAGS_OPENED;
 
@@ -65,7 +55,12 @@ LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
                 err = stop_err;
         }
 
-
+        if (hnd->mutex_bf!=OSSPEC_INVALID_MUTEX) {
+            stop_err = osspec_mutex_destroy(hnd->mutex_bf);
+            hnd->mutex_bf = OSSPEC_INVALID_MUTEX;
+            if (!err)
+                err = stop_err;
+        }
     }
     return err;
 }
@@ -161,18 +156,15 @@ LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502* hnd, const t_lpcie_devinfo* inf
                 }
             }
 
-#if 0
-            if (!err && (hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
-            {
+
+            if (!err && (hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT)) {
                 hnd->mutex_bf = osspec_mutex_create();
-                if (hnd->mutex_bf == L_INVALID_MUTEX)
-                    err = L502_ERR_MUTEX_CREATE;
+                if (hnd->mutex_bf == OSSPEC_INVALID_MUTEX)
+                    err = X502_ERR_MUTEX_CREATE;
+            } else {
+                hnd->mutex_bf = OSSPEC_INVALID_MUTEX;
             }
-            else
-            {
-                hnd->mutex_bf = L_INVALID_MUTEX;
-            }
-#endif
+
 
             if (!err) {
                 hnd->mutex_cfg = osspec_mutex_create();
