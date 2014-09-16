@@ -74,7 +74,7 @@ LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502* hnd, const t_lpcie_devinfo* inf
     if (!err && (hnd->flags & _FLAGS_OPENED))
         err = X502_ERR_ALREADY_OPENED;
     if (!err) {
-        hnd->iface = (const t_x502_dev_iface *)(((t_lpcie_devinfo_inptr*)info->internal)->iface);
+        hnd->iface = (const t_x502_dev_iface *)(info->internal->iface);
         memcpy(hnd->info.serial, info->serial, X502_SERIAL_SIZE);
         memcpy(hnd->info.name, info->devname, X502_DEVNAME_SIZE);
 

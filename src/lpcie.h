@@ -86,6 +86,7 @@ typedef enum {
     LPCIE_GETDEVS_FLAGS_ONLY_NOT_OPENED = 0x1
 } t_lpcie_getdevs_flags;
 
+typedef struct st_lpcie_devinfo_inptr t_lpcie_devinfo_inptr;
 
 /** Структура, описывающая не открытое устройство, по которой с ним можно
     установить связь */
@@ -94,9 +95,9 @@ typedef struct {
     char serial[LPCIE_SERIAL_SIZE]; /** серийный номер */
     char res[124]; /** резерв */
     uint32_t flags; /** флаги из #lpcie_devinfo_flags, описывающие устройство */
-    void* internal; /** непрозрачный указатель на структуру с платформозависимой
-                      информацией об устройстве. Выделяется библиотекой при
-                      вызове LPCIE_GetDevInfoList() и должна быть освобождена
+    t_lpcie_devinfo_inptr* internal; /** непрозрачный указатель на структуру с платформозависимой
+                                         информацией об устройстве. Выделяется библиотекой при
+                                         вызове LPCIE_GetDevInfoList() и должна быть освобождена
                       с помощью LPCIE_FreeDevInfoList() */
 } t_lpcie_devinfo;
 

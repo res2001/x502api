@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 
-typedef struct {
+typedef struct st_lpcie_devinfo_inptr {
     const void *iface;
     void *iface_data;
 } t_lpcie_devinfo_inptr;

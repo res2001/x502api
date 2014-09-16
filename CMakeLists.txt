@@ -56,6 +56,7 @@ endif(MSVC)
 
 set(SOURCES
     src/e502/e502api_usb.c
+    src/e502/e502api_tcp.c
     src/e502/e502api.c
     src/x502api.c
     src/x502api_config.c
@@ -79,6 +80,7 @@ set(HEADERS
     src/e502/e502_cm4_defs.h    
     src/e502/e502api.h
     src/e502/e502api_private.h
+    src/e502/e502_tcp_protocol.h
     
     src/osspec_cfg.h
     lib/osspec/osspec.h

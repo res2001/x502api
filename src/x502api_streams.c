@@ -224,7 +224,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
         int in_started = 0;
         f_set_streams(hnd, hnd->streams);
 
-
+        /** @todo корректные действия, если сбор в Bf не остановлен */
 
         /* выполняем предзагрузку первого слова выходного потока и
            коммутатора АЦП (при наличии DSP это делает DSP) */

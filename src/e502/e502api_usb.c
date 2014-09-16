@@ -12,7 +12,7 @@
 #define E502_USB_PID        0xE502
 #define E502_USB_REQ_TOUT   3000
 
-#define USB_CTL_REQ_MAX_SIZE 2048
+#define USB_CTL_REQ_MAX_SIZE 512
 
 
 #define MUTEX_STREAM_LOCK_TOUT  2000
@@ -21,8 +21,6 @@
 #define STREAM_STOP_TOUT      1000
 
 #define USB_IN_STREAM_BUF_MIN   64
-
-#define E502_DEVICE_NAME "E502"
 
 
 #define USB_BULK_RX_MAX_TRANSF_CNT          20
@@ -684,7 +682,7 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 
                 if (cpl->size==0) {                    
                     cpl->state = RX_STATE_IDLE;
-                    osspec_event_set(info->usb_wake_evt);                    
+                    osspec_event_set(info->usb_wake_evt);
                     check_next = 1;
                 }
                 osspec_mutex_release(info->mutex);
