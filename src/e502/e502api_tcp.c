@@ -48,7 +48,10 @@
     #define MSG_NOSIGNAL 0
 #endif
 
-#define E502_TCP_REQ_TOUT 5000
+#define E502_TCP_REQ_TOUT           5000
+#define E502_TCP_STOP_WAIT_TOUT     5000
+
+
 
 #define TCP_CTL_REQ_MAX_SIZE   512
 #define TCP_IN_STREAM_BUF_MIN  128
@@ -460,40 +463,63 @@ static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle
 
 static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
     int32_t err = 0;
-    int ioctl_err;
     int32_t running;
 
-    ioctl_err = hnd->iface->stream_running(hnd, ch, &running);
-    if (!ioctl_err && running)
-        ioctl_err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
+    err = hnd->iface->stream_running(hnd, ch, &running);
+    if (!err && running)
+        err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
                                       NULL, 0, NULL, 0, NULL, 0);
-    /** @todo вычитываение данных при входном потоке */
-    return err != X502_ERR_OK ? err : ioctl_err;
+    if (!err) {
+        t_tcp_iface_data *tcp_data = (t_tcp_iface_data *)hnd->iface_data;
+        if (tcp_data->data_sock != INVALID_SOCKET) {
+            if (ch==X502_STREAM_CH_IN) {
+                /* вычитываем все данные, пока не найдем признак конца */
+                int fnd_out = 0;
+                uint32_t tmp_buf[512];
+                t_timer tmr;
+                timer_set(&tmr, TIMER_MS_TO_CLOCKS(E502_TCP_STOP_WAIT_TOUT));
+                while (!fnd_out && !err) {
+                    int32_t recvd = f_iface_stream_read(hnd, tmp_buf, sizeof(tmp_buf)/sizeof(tmp_buf[0]), 10);
+                    if (recvd < 0) {
+                        err = recvd;
+                    } else if ((recvd > 0) && (tmp_buf[recvd-1]==X502_STREAM_IN_MSG_END)) {
+                        fnd_out = 1;
+                    } else if (timer_expired(&tmr)) {
+                        err = X502_ERR_NO_STREAM_END_MSG;
+                    }
+                }
+            }
+        }
+    }
+    return err;
 }
 
 static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
-    int32_t err = 0;
-    /** @todo */
-    return err;
+    return hnd->iface->stream_stop(hnd, ch);
 }
 
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout) {
     t_tcp_iface_data *tcp_data = (t_tcp_iface_data*)hnd->iface_data;
     int32_t recvd;
     t_timer tmr;
-    timer_set(&tmr, TIMER_MS_TO_CLOCKS(tout));
 
-    if (tcp_data->recv_part_size != 0) {
-        buf[0] = tcp_data->recv_part_wrd;
-    }
-    recvd = f_recv(tcp_data->data_sock, (uint8_t*)buf + tcp_data->recv_part_size,
-                        size *sizeof(buf[0]) - tcp_data->recv_part_size, &tmr);
-    if (recvd > 0) {
-        recvd += tcp_data->recv_part_size;
-        tcp_data->recv_part_size = recvd % sizeof(buf[0]);
-        recvd /= sizeof(buf[0]);
-        if (tcp_data->recv_part_size!=0) {
-            tcp_data->recv_part_wrd = buf[recvd];
+    if (tcp_data->data_sock == INVALID_SOCKET) {
+        recvd = X502_ERR_NO_DATA_CONNECTION;
+    } else {
+        timer_set(&tmr, TIMER_MS_TO_CLOCKS(tout));
+
+        if (tcp_data->recv_part_size != 0) {
+            buf[0] = tcp_data->recv_part_wrd;
+        }
+        recvd = f_recv(tcp_data->data_sock, (uint8_t*)buf + tcp_data->recv_part_size,
+                            size *sizeof(buf[0]) - tcp_data->recv_part_size, &tmr);
+        if (recvd > 0) {
+            recvd += tcp_data->recv_part_size;
+            tcp_data->recv_part_size = recvd % sizeof(buf[0]);
+            recvd /= sizeof(buf[0]);
+            if (tcp_data->recv_part_size!=0) {
+                tcp_data->recv_part_wrd = buf[recvd];
+            }
         }
     }
     return recvd;
