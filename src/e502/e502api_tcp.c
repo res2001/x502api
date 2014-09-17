@@ -25,9 +25,16 @@
     #include <sys/select.h>
     #include <netinet/tcp.h>
     #include <netinet/in.h>
+    #include <netinet/tcp.h>
     #include <unistd.h>
     #include <sys/types.h>
     #include <arpa/inet.h>
+
+    #include <stropts.h>
+
+    #include <linux/sockios.h>
+    #include <asm-generic/ioctls.h>
+
 
 
     typedef int t_socket;
@@ -526,13 +533,83 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 }
 
 static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout) {
-    int32_t err = 0;
-    return err;
+    int32_t sent = 0;
+    t_timer tmr;
+    t_tcp_iface_data *tcp_data = (t_tcp_iface_data*)hnd->iface_data;
+
+    if (tcp_data->data_sock == INVALID_SOCKET) {
+        sent = X502_ERR_NO_DATA_CONNECTION;
+    } else {
+        timer_set(&tmr, TIMER_MS_TO_CLOCKS(tout));
+
+        /* проверяем, не осталось ли не переданного некратного слова => если осталось
+         * то пробуем сперва дослать его */
+        if (tcp_data->send_part_size!=0) {
+            sent = f_send(tcp_data->data_sock, (uint8_t*)&tcp_data->send_part_wrd,
+                          tcp_data->send_part_size, &tmr);
+            if (sent >= 0) {
+                tcp_data->send_part_size -= sent;
+                if (tcp_data->send_part_size != 0) {
+                    tcp_data->send_part_wrd >>= 8*sent;
+                }
+                sent = 0;
+            }
+        }
+
+        /* новые данные пересылаем только если старое неполное слово точно ушло */
+        if ((sent == 0) && (tcp_data->send_part_size==0)) {
+            sent = f_send(tcp_data->data_sock, (uint8_t*)buf, size * sizeof(buf[0]), &tmr);
+            if (sent >= 0) {
+                /* если не полностью передали последнее слово, то нужно сохранить
+                 * остаток слова, чтобы потом передать его */
+                tcp_data->send_part_size = sent % sizeof(buf[0]);
+                sent /= sizeof(buf[0]);
+                if (tcp_data->send_part_size!=0) {
+                    tcp_data->send_part_wrd = buf[sent] >> (8*tcp_data->send_part_size);
+                    tcp_data->send_part_size = sizeof(buf[0]) - tcp_data->send_part_size;
+                    sent++;
+                }
+            }
+        }
+    }
+
+    return sent;
 }
 
 static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_cnt) {
     int32_t err = 0;
-
+    t_tcp_iface_data *tcp_data = (t_tcp_iface_data *)hnd->iface_data;
+#ifdef _WIN32
+    if (ch == X502_STREAM_CH_IN) {
+        u_long val;
+        if (ioctlsocket(tcp_data->data_sock, FIONREAD, &val) == SOCKET_ERROR) {
+            err = X502_ERR_IOCTL_FAILD;
+        } else {
+            *rdy_cnt = val/4;
+        }
+    } else {
+        /** @todo */
+    }
+#else
+    if (ch == X502_STREAM_CH_IN) {
+        int val;
+        if (ioctl(tcp_data->data_sock, SIOCINQ, &val)==-1) {
+            err = X502_ERR_IOCTL_FAILD;
+        } else {
+            *rdy_cnt = val/4;
+        }
+    } else {
+        int buf_len, val;
+        socklen_t optlen = sizeof(buf_len);
+        if (getsockopt(tcp_data->data_sock, SOL_SOCKET, SO_SNDBUF, (char*)&buf_len, &optlen)==SOCKET_ERROR) {
+            err = X502_ERR_IOCTL_FAILD;
+        } else if (ioctl(tcp_data->data_sock, SIOCOUTQ, &val)==-1) {
+            err = X502_ERR_IOCTL_FAILD;
+        } else {
+            *rdy_cnt = (buf_len - val)/4;
+        }
+    }
+#endif
     return err;
 }
 
