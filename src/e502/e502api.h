@@ -8,7 +8,7 @@
 LPCIE_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial);
 
 
-LPCIE_EXPORT(int32_t) E502_OpenByIp(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout);
+LPCIE_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout);
 
 
 

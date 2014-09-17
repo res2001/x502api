@@ -538,7 +538,7 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
 
 
 
-LPCIE_EXPORT(int32_t) E502_OpenByIp(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout) {
+LPCIE_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err) {
         t_tcp_devinfo_data devinfo_data;

@@ -529,3 +529,27 @@ LPCIE_EXPORT(uint32_t) X502_GetLibraryVersion(void) {
             (X502API_VER_PATCH << 8);
 }
 
+
+#ifdef WIN32
+#include <winsock2.h>
+BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+    WSADATA wsaData;
+    WORD wVersionRequested;
+
+    switch (fdwReason) {
+    case DLL_PROCESS_ATTACH:
+        wVersionRequested = MAKEWORD(2, 2);
+        if (WSAStartup(wVersionRequested, &wsaData))
+            return FALSE;
+        if (wsaData.wVersion != wVersionRequested) {
+            WSACleanup();
+            return FALSE;
+        }
+        break;
+    case DLL_PROCESS_DETACH:
+        WSACleanup();
+        break;
+    }
+    return TRUE;
+}
+#endif

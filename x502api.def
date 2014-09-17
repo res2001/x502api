@@ -63,5 +63,6 @@ EXPORTS
         E502_GetUsbDevInfoList
         E502_GetUsbSerialList
         E502_OpenUsb
+        E502_OpenByIpAddr
 
 

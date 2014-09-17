@@ -96,12 +96,16 @@ find_package(LibUSB REQUIRED)
 include_directories(${LIBUSB_INCLUDE_DIR})
 set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
 
+if(WIN32)
+    #конфигурируем файл ресурсов для Windows
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/x502api.rc.in
+                   ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc @ONLY)
 
-#конфигурируем файл ресурсов для Windows
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/x502api.rc.in
-               ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc @ONLY)
+    SET(SOURCES ${SOURCES} x502api.def ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc)
 
-SET(SOURCES ${SOURCES} x502api.def ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc)
+    #подключение библиотеки для работы с сокетами
+    set(LIBS ${LIBS} Ws2_32)
+endif(WIN32)
 
 
 #Включаем файлы для таймера и inline-функций
