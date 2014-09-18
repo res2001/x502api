@@ -4,7 +4,7 @@
 uint32_t prepare_dac_wrd(t_x502_hnd hnd, double val, uint32_t flags, const t_x502_cbr_coef* coef);
 
 
-LPCIE_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, uint32_t flags) {
+X502_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, uint32_t flags) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (ch!=X502_DAC_CH1) && (ch!=X502_DAC_CH2))
         err = X502_ERR_INVALID_DAC_CHANNEL;
@@ -33,7 +33,7 @@ LPCIE_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data,
 }
 
 
-LPCIE_EXPORT(int32_t) X502_AsyncOutDig(t_x502_hnd hnd, uint32_t val, uint32_t msk) {
+X502_EXPORT(int32_t) X502_AsyncOutDig(t_x502_hnd hnd, uint32_t val, uint32_t msk) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err) {
         if(hnd->mode == X502_MODE_FPGA) {
@@ -96,7 +96,7 @@ static int32_t f_read_digin(t_x502_hnd hnd, uint32_t* din) {
 
 
 
-LPCIE_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din) {
+X502_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err & (din==NULL))
         err = X502_ERR_INVALID_POINTER;

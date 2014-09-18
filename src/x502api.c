@@ -9,7 +9,7 @@
 static const double f_scales[] = {10., 5., 2., 1., 0.5, 0.2};
 
 
-LPCIE_EXPORT(t_x502_hnd) X502_Create(void) {
+X502_EXPORT(t_x502_hnd) X502_Create(void) {
     t_x502_hnd hnd = calloc(sizeof(t_x502), 1);
     if (hnd != NULL) {
         hnd->sign = X502_SIGN;
@@ -18,7 +18,7 @@ LPCIE_EXPORT(t_x502_hnd) X502_Create(void) {
     return hnd;
 }
 
-LPCIE_EXPORT(int32_t) X502_Free(t_x502_hnd hnd) {
+X502_EXPORT(int32_t) X502_Free(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err) {
         if (hnd->flags & _FLAGS_OPENED)
@@ -32,7 +32,7 @@ LPCIE_EXPORT(int32_t) X502_Free(t_x502_hnd hnd) {
 
 
 
-LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
+X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (hnd->flags  & _FLAGS_OPENED)) {
         int32_t stop_err;
@@ -67,7 +67,7 @@ LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
 
 
 
-LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502* hnd, const t_lpcie_devinfo* info) {
+X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info) {
     int32_t err  = X502_CHECK_HND(hnd);
     if (!err && (info==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -209,7 +209,7 @@ LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502* hnd, const t_lpcie_devinfo* inf
 }
 
 
-LPCIE_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
+X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
                                 const char *devname, t_x502_get_devinfo_list_cb get_list) {
     int32_t err = X502_CHECK_HND(hnd);
     int32_t get_info_res = 0;
@@ -225,7 +225,7 @@ LPCIE_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
     }
 
     if (!err) {
-        t_lpcie_devinfo *info_list = malloc(sizeof(t_lpcie_devinfo)*fnd_cnt);
+        t_x502_devrec *info_list = malloc(sizeof(t_x502_devrec)*fnd_cnt);
         if (info_list==NULL) {
             err = X502_ERR_MEMORY_ALLOC;
         } else {
@@ -252,7 +252,7 @@ LPCIE_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
                             ((ser_size==0) || !strncmp(serial, info_list[i].serial,
                                                         ser_size))) {
                         /* пробуем открыть устройство */
-                        err = X502_OpenByDevinfo(hnd, &info_list[i]);
+                        err = X502_OpenByDevRecord(hnd, &info_list[i]);
 
                         /* если серийный номер не был указан, то сохраняем
                            код ошибки и идем дальше, пробовать открыть
@@ -275,7 +275,7 @@ LPCIE_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
             }
 
 
-            X502_FreeDevInfoList(info_list, fnd_cnt);
+            X502_FreeDevRecordList(info_list, fnd_cnt);
             free(info_list);
         }
     }
@@ -283,22 +283,25 @@ LPCIE_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
 }
 
 
-LPCIE_EXPORT(int32_t) X502_FreeDevInfoList(t_lpcie_devinfo *list, uint32_t size) {
+X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size) {
     uint32_t i;
-    for (i=0; i < size; i++) {
-        t_lpcie_devinfo_inptr* devinfo_ptr = (t_lpcie_devinfo_inptr*)list[i].internal;
-        if (devinfo_ptr!=NULL) {
-            const t_x502_dev_iface *iface = (const t_x502_dev_iface *)devinfo_ptr->iface;
-            iface->free_devinfo_data(devinfo_ptr->iface_data);
-            free(devinfo_ptr);
+    if (list!=NULL) {
+        for (i=0; i < size; i++) {
+            t_x502_devrec_inptr* devinfo_ptr = (t_x502_devrec_inptr*)list[i].internal;
+            if (devinfo_ptr!=NULL) {
+                const t_x502_dev_iface *iface = (const t_x502_dev_iface *)devinfo_ptr->iface;
+                if ((iface!=NULL) && (iface->free_devinfo_data!=NULL))
+                    iface->free_devinfo_data(devinfo_ptr->iface_data);
+                free(devinfo_ptr);
+            }
+            list[i].internal = NULL;
         }
-        list[i].internal = NULL;
     }
     return 0;
 }
 
 
-LPCIE_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info) {
+X502_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (info==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -312,7 +315,7 @@ LPCIE_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info) {
 
 
 
-LPCIE_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch) {
+X502_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (lch==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -326,7 +329,7 @@ LPCIE_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch) 
     ((wrd & 0xFF000000)>>24) == 0x01 ? STREAM_IN_WRD_MSG : STREAM_IN_WRD_USR
 
 
-LPCIE_EXPORT(int32_t) X502_ProcessAdcData(t_x502_hnd hnd, const uint32_t* src,  double *dest,
+X502_EXPORT(int32_t) X502_ProcessAdcData(t_x502_hnd hnd, const uint32_t* src,  double *dest,
                             uint32_t *size, uint32_t flags) {
     if (size == NULL)
         return X502_ERR_INVALID_POINTER;
@@ -334,7 +337,7 @@ LPCIE_EXPORT(int32_t) X502_ProcessAdcData(t_x502_hnd hnd, const uint32_t* src,  
                                         NULL, NULL, NULL, NULL);
 }
 
-LPCIE_EXPORT(int32_t) X502_ProcessData(t_x502_hnd hnd, const uint32_t *src, uint32_t size, uint32_t flags,
+X502_EXPORT(int32_t) X502_ProcessData(t_x502_hnd hnd, const uint32_t *src, uint32_t size, uint32_t flags,
                            double *adc_data, uint32_t *adc_data_size,
                            uint32_t *din_data, uint32_t *din_data_size) {
     return X502_ProcessDataWithUserExt(hnd, src, size, flags, adc_data, adc_data_size,
@@ -342,7 +345,7 @@ LPCIE_EXPORT(int32_t) X502_ProcessData(t_x502_hnd hnd, const uint32_t *src, uint
 }
 
 
-LPCIE_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t* src, uint32_t size,
+X502_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t* src, uint32_t size,
                                    uint32_t flags, double *adc_data,
                                    uint32_t *adc_data_size, uint32_t *din_data, uint32_t *din_data_size,
                                    uint32_t *usr_data, uint32_t *usr_data_size) {
@@ -478,7 +481,7 @@ uint32_t prepare_dac_wrd(t_x502_hnd hnd, double val, uint32_t flags, const t_x50
     return wrd;
 }
 
-LPCIE_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const double* dac2,
+X502_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const double* dac2,
                             const uint32_t* digout, uint32_t size, int32_t flags,
                             uint32_t* out_buf) {
     int err = X502_CHECK_HND(hnd);
@@ -509,14 +512,14 @@ LPCIE_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t val) {
+X502_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t val) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
         err = hnd->iface->fpga_reg_write(hnd, reg & 0xFFFF, val);
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val) {
+X502_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
         err = hnd->iface->fpga_reg_read(hnd, reg & 0xFFFF, val);
@@ -524,9 +527,17 @@ LPCIE_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *v
 }
 
 
-LPCIE_EXPORT(uint32_t) X502_GetLibraryVersion(void) {
+X502_EXPORT(uint32_t) X502_GetLibraryVersion(void) {
     return (X502API_VER_MAJOR << 24) | (X502API_VER_MINOR<<16) |
             (X502API_VER_PATCH << 8);
+}
+
+
+X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *rec) {
+    if (rec!=NULL) {
+        memset(rec, 0, sizeof(t_x502_devrec));
+    }
+    return 0;
 }
 
 

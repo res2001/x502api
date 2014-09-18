@@ -104,7 +104,7 @@ static const t_err_table f_err_tbl[] = {
 };
 
 
-LPCIE_EXPORT(const char*) X502_GetErrorString(int32_t err) {
+X502_EXPORT(const char*) X502_GetErrorString(int32_t err) {
     size_t i;
     const char* str = f_unknow_err;
 

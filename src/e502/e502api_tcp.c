@@ -68,6 +68,7 @@ typedef struct {
     uint16_t cmd_port;
     uint32_t ip_addr;
     uint32_t open_tout;
+    uint32_t flags;
 } t_tcp_devinfo_data;
 
 
@@ -84,7 +85,7 @@ typedef struct {
 } t_tcp_iface_data;
 
 
-static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo);
+static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
@@ -379,7 +380,7 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
 
 
 
-static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo) {
+static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
     int32_t err = X502_ERR_OK;
     t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data*)devinfo->internal->iface_data;
     t_socket s;
@@ -613,30 +614,53 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
     return err;
 }
 
+X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devinfo, uint32_t ip_addr,
+                                               uint32_t flags, uint32_t tout) {
+    int32_t err = X502_ERR_OK;
+
+    X502_FreeDevRecordList(devinfo, 1);
+
+    if (err==X502_ERR_OK) {
+        t_tcp_devinfo_data *devinfo_data = malloc(sizeof(t_tcp_devinfo_data));
+        t_x502_devrec_inptr *devinfo_ptr = malloc(sizeof(t_x502_devrec_inptr));
+
+        if ((devinfo_data==NULL) || (devinfo_ptr == NULL)) {
+            err = X502_ERR_MEMORY_ALLOC;
+        } else {
+            memset(devinfo, 0, sizeof(t_x502_devrec));
+            strcpy(devinfo->devname, E502_DEVICE_NAME);
+
+            devinfo_data->cmd_port = E502_TCP_DEFAULT_CMD_PORT;
+            devinfo_data->ip_addr = ip_addr;
+            devinfo_data->open_tout = tout;
+            devinfo_data->flags = flags;
+
+            devinfo_ptr->iface = &f_tcp_iface;
+            devinfo_ptr->iface_data = devinfo_data;
+
+            devinfo->internal = devinfo_ptr;
+        }
+
+        if (err != X502_ERR_OK) {
+            free(devinfo_data);
+            free(devinfo_ptr);
+        }
+    }
+    return err;
+}
 
 
-LPCIE_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout) {
+X502_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err) {
-        t_tcp_devinfo_data devinfo_data;
-        t_lpcie_devinfo_inptr devinfo_ptr;
-        t_lpcie_devinfo devinfo;
+        t_x502_devrec devinfo;
+        X502_DevRecordInit(&devinfo);
+        err = E502_MakeDevRecordByIpAddr(&devinfo, ip_addr, flags, tout);
+        if (err == X502_ERR_OK) {
+            err = X502_OpenByDevRecord(hnd, &devinfo);
 
-        memset(&devinfo, 0, sizeof(devinfo));
-        strcpy(devinfo.devname, E502_DEVICE_NAME);
-
-        devinfo_data.cmd_port = E502_TCP_DEFAULT_CMD_PORT;
-        devinfo_data.ip_addr = ip_addr;
-        devinfo_data.open_tout = tout;
-
-        devinfo_ptr.iface = &f_tcp_iface;
-        devinfo_ptr.iface_data = &devinfo_data;
-
-        devinfo.internal = &devinfo_ptr;
-
-
-
-        err = X502_OpenByDevinfo(hnd, &devinfo);
+            X502_FreeDevRecordList(&devinfo, 1);
+        }
     }
     return err;
 }

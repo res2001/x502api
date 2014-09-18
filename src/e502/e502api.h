@@ -4,11 +4,19 @@
 #include "x502api.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-LPCIE_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial);
+
+X502_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial);
 
 
-LPCIE_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout);
+X502_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr,
+                                        uint32_t flags, uint32_t tout);
+
+X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t ip_addr,
+                                                uint32_t flags, uint32_t tout);
 
 
 
@@ -38,6 +46,15 @@ LPCIE_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32
  @return              Если <0 - код ошибки, иначе количество сохраненных
                       серийных номеров в массиве serials (всегда <= size)
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) E502_GetSerialListUsb(char serials[][X502_SERIAL_SIZE], uint32_t size,
+X502_EXPORT(int32_t) E502_UsbGetSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
                            uint32_t flags, uint32_t *devcnt);
+
+
+X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t size,
+                                               uint32_t flags, uint32_t* devcnt) ;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // E502API_H

@@ -69,7 +69,7 @@ set(SOURCES
 
 set(HEADERS
     src/pstdint.h
-    src/lpcie.h
+    src/lstdtypes.h
     src/l502_bf_cmd_defs.h
     src/lboot_req.h
     src/x502_fpga_regs.h

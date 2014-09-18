@@ -184,7 +184,7 @@ static int32_t f_check_bf_firm(t_x502_hnd hnd) {
 
 
 
-LPCIE_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *version) {
+X502_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *version) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err) {
         err = f_check_bf_firm(hnd);
@@ -194,7 +194,7 @@ LPCIE_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *ver
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
+X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
     uint32_t* ldr_buff = NULL;
     FILE* ldr_file=NULL;
     int32_t err = X502_CHECK_HND(hnd);
@@ -233,7 +233,7 @@ LPCIE_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) 
 
 
 
-LPCIE_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
+X502_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
                                       const uint32_t* regs, uint32_t size) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
@@ -254,7 +254,7 @@ LPCIE_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
 }
 
 
-LPCIE_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr,
+X502_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr,
                                      uint32_t* regs, uint32_t size) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
@@ -337,7 +337,7 @@ static int f_bf_cmd_check(t_x502_hnd hnd, int32_t *res) {
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_BfExecCmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t par,
+X502_EXPORT(int32_t) X502_BfExecCmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t par,
                         const uint32_t* snd_data, uint32_t snd_size,
                         uint32_t* rcv_data, uint32_t rcv_size, uint32_t tout,
                         uint32_t* recvd_size) {

@@ -131,7 +131,7 @@ static int32_t f_out_stream_preload(t_x502 *hnd) {
 
 
 
-LPCIE_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
+X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
@@ -164,7 +164,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
+X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
@@ -205,7 +205,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
 
 
 
-LPCIE_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
+X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
     int err = X502_CHECK_HND(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
@@ -288,7 +288,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
 }
 
 
-LPCIE_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
+X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
     int err = X502_CHECK_HND(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
@@ -316,7 +316,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
+X502_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
     int err = X502_CHECK_HND(hnd);
     uint32_t bf_mode=0;
     if (!err && (hnd->mode==X502_MODE_DSP)) {
@@ -342,7 +342,7 @@ LPCIE_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, uint32_t tout) {
+X502_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, uint32_t tout) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (buf==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -352,7 +352,7 @@ LPCIE_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, ui
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t size, uint32_t tout) {
+X502_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t size, uint32_t tout) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (buf==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -377,7 +377,7 @@ LPCIE_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t si
     return err;
 }
 
-LPCIE_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
+X502_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
     int err = X502_CHECK_HND(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
@@ -388,7 +388,7 @@ LPCIE_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
+X502_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (rdy_cnt==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -397,7 +397,7 @@ LPCIE_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) 
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
+X502_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (rdy_cnt==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -425,7 +425,7 @@ static int32_t f_check_stream_ch_par_en(t_x502_hnd hnd, uint32_t stream_ch) {
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t size) {
+X502_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t size) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
         err = f_check_stream_ch_par_en(hnd, ch);
@@ -434,7 +434,7 @@ LPCIE_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_
     return err;
 }
 
-LPCIE_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t ch, uint32_t step) {
+X502_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t ch, uint32_t step) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err)
         err = f_check_stream_ch_par_en(hnd, ch);

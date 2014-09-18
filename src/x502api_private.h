@@ -15,10 +15,10 @@
 #include <stdio.h>
 
 
-typedef struct st_lpcie_devinfo_inptr {
+typedef struct st_x502_devrec_inptr {
     const void *iface;
     void *iface_data;
-} t_lpcie_devinfo_inptr;
+} t_x502_devrec_inptr;
 
 
 #define X502_SIGN 0xA55A0502
@@ -65,7 +65,7 @@ typedef struct {
 
 typedef int32_t (*t_x502_iface_free_devinfo_data)(void* devinfo_data);
 
-typedef int32_t (*t_x502_iface_open)(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo);
+typedef int32_t (*t_x502_iface_open)(t_x502_hnd hnd, const t_x502_devrec *devinfo);
 typedef int32_t (*t_x502_iface_close)(t_x502_hnd hnd);
 typedef int32_t (*t_x502_iface_fpga_reg_read)(t_x502_hnd hnd, uint16_t addr, uint32_t *val);
 typedef int32_t (*t_x502_iface_fpga_reg_write)(t_x502_hnd hnd, uint16_t addr, uint32_t val);
@@ -181,7 +181,7 @@ typedef struct st_x502 {
 } t_x502;
 
 
-typedef int32_t (APIENTRY *t_x502_get_devinfo_list_cb)(t_lpcie_devinfo* list, uint32_t size,
+typedef int32_t (APIENTRY *t_x502_get_devinfo_list_cb)(t_x502_devrec* list, uint32_t size,
                                              uint32_t flags, uint32_t* devcnt);\
 
 
@@ -189,8 +189,8 @@ typedef int32_t (APIENTRY *t_x502_get_devinfo_list_cb)(t_lpcie_devinfo* list, ui
 
 
 
-LPCIE_EXPORT(int32_t) X502_FreeDevInfoList(t_lpcie_devinfo *list, uint32_t size);
-LPCIE_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
+X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size);
+X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
                                 const char *devname, t_x502_get_devinfo_list_cb get_list);
 
 

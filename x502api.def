@@ -1,7 +1,10 @@
 LIBRARY     x502api.dll
 
 EXPORTS
-        X502_OpenByDevinfo
+        X502_DevRecordInit
+        X502_OpenByDevRecord
+        X502_FreeDevRecordList
+
         X502_Create
         X502_Free
         X502_Open
@@ -58,11 +61,11 @@ EXPORTS
         X502_BfMemWrite
         X502_BfExecCmd
 
-        X502_FreeDevInfoList
-
-        E502_GetUsbDevInfoList
-        E502_GetUsbSerialList
+        E502_UsbGetDevRecordsList
+        E502_UsbGetSerialList
         E502_OpenUsb
         E502_OpenByIpAddr
+        E502_MakeDevRecordByIpAddr
+
 
 

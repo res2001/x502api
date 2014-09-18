@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "lpcie.h"
+#include "lstdtypes.h"
 
 /** @todo
         X502_AsyncGetAdcFrame        
@@ -66,9 +66,9 @@ extern "C" {
 #define X502_DAC_SCALE_CODE_MAX     30000
 
 /** Максимальное количество символов в строке с названием устройства */
-#define X502_DEVNAME_SIZE     LPCIE_DEVNAME_SIZE
+#define X502_DEVNAME_SIZE     32
 /** Максимальное количество символов в строке с серийным номером */
-#define X502_SERIAL_SIZE      LPCIE_SERIAL_SIZE
+#define X502_SERIAL_SIZE      32
 
 /** Максимально возможное значение внешней опорной частоты */
 #define X502_EXT_REF_FREQ_MAX  2000000
@@ -266,16 +266,26 @@ typedef enum {
     X502_ERR_BF_INVALID_ADDR              = -191,
     /** Неверный размер данных, передаваемых с управляющей командой в BlackFin */
     X502_ERR_BF_INVALID_CMD_DATA_SIZE     = -192
-} t_lpcie_errs;
+} t_x502_errs;
 
 
-
+/** Флаги, описывающие запись о неоткрытом модуле */
+typedef enum {
+    /** Признак наличия ЦАП */
+    X502_DEVREC_FLAGS_DAC_PRESENT = 0x0001,
+    /** Признак наличия гальваноразвязки */
+    X502_DEVREC_FLAGS_GAL_PRESENT = 0x0002,
+    /** Признак наличия сигнального процессора */
+    X502_DEVREC_FLAGS_BF_PRESENT  = 0x0004,
+    /** Признак, что устройство уже открыто */
+    X502_DEVREC_FLAGS_DEV_OPENED  = 0x0100
+} x502_devrec_flags;
 
 /** Флаги, управляющие поиском присутствующих модулей */
 typedef enum {
     /** Признак, что нужно вернуть серийные номера только тех устройств,
         которые еще не открыты */
-    X502_GETDEVS_FLAGS_ONLY_NOT_OPENED = LPCIE_GETDEVS_FLAGS_ONLY_NOT_OPENED
+    X502_GETDEVS_FLAGS_ONLY_NOT_OPENED = 1
 } t_x502_getdevs_flags;
 
 
@@ -406,11 +416,11 @@ typedef enum {
 /** Флаги, определяющие наличие опций в модуле */
 typedef enum {
     /** Признак наличия двухканального канального ЦАП */
-    X502_DEVFLAGS_DAC_PRESENT         = LPCIE_DEVINFO_FLAGS_DAC_PRESENT,
+    X502_DEVFLAGS_DAC_PRESENT         = X502_DEVREC_FLAGS_DAC_PRESENT,
     /** Признак наличия гальваноразвязки */
-    X502_DEVFLAGS_GAL_PRESENT         = LPCIE_DEVINFO_FLAGS_GAL_PRESENT,
+    X502_DEVFLAGS_GAL_PRESENT         = X502_DEVREC_FLAGS_GAL_PRESENT,
     /** Признак наличия сигнального процессора BlackFin */
-    X502_DEVFLAGS_BF_PRESENT          = LPCIE_DEVINFO_FLAGS_BF_PRESENT,
+    X502_DEVFLAGS_BF_PRESENT          = X502_DEVREC_FLAGS_BF_PRESENT,
     /** Признак, что во Flash-памяти присутствует информация о модуле */
     X502_DEVFLAGS_FLASH_DATA_VALID   = 0x00010000,
     /** Признак, что во Flash-памяти присутствуют действительные калибровочные
@@ -434,6 +444,9 @@ typedef enum {
     X502_OUT_CYCLE_FLAGS_FORCE = 0x01
 } t_x502_out_cycle_flags;
 
+
+
+
 /** @} */
 
 
@@ -441,6 +454,20 @@ typedef enum {
   @addtogroup type_list Типы данных.
   @{
   *****************************************************************************/
+
+typedef struct st_x502_devrec_inptr t_x502_devrec_inptr;
+
+/** Структура, описывающая не открытое устройство, по которой с ним можно
+    установить связь */
+typedef struct {
+    char devname[X502_DEVNAME_SIZE]; /** название устройства */
+    char serial[X502_SERIAL_SIZE]; /** серийный номер */
+    char res[124]; /** резерв */
+    uint32_t flags; /** флаги из #x502_devrec_flags, описывающие устройство */
+    t_x502_devrec_inptr* internal; /** непрозрачный указатель на структуру с платформозависимой
+                                         информацией об устройстве. */
+} t_x502_devrec;
+
 
 /** @brief Описатель модуля.
 
@@ -518,7 +545,7 @@ typedef struct {
     значениями по-умолчанию.
     @return NULL в случае ошибки, иначе - описатель модуля
 *******************************************************************************/
-LPCIE_EXPORT(t_x502_hnd) X502_Create(void);
+X502_EXPORT(t_x502_hnd) X502_Create(void);
 
 /***************************************************************************//**
     @brief Освобождение описателя модуля.
@@ -529,7 +556,7 @@ LPCIE_EXPORT(t_x502_hnd) X502_Create(void);
     @param[in] hnd     Описатель устройства
     @return            Код ошибки
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_Free(t_x502_hnd hnd);
+X502_EXPORT(int32_t) X502_Free(t_x502_hnd hnd);
 /** @} */
 
 
@@ -540,8 +567,11 @@ LPCIE_EXPORT(int32_t) X502_Free(t_x502_hnd hnd);
     @{
 *******************************************************************************/
 
+X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *info);
 
-LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502_hnd hnd, const t_lpcie_devinfo* info) ;
+X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size);
+
+X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502_hnd hnd, const t_x502_devrec* info) ;
 
 
 /***************************************************************************//**
@@ -554,7 +584,7 @@ LPCIE_EXPORT(int32_t) X502_OpenByDevinfo(t_x502_hnd hnd, const t_lpcie_devinfo* 
     @param[in] hnd     Описатель модуля.
     @return            Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd);
+X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd);
 
 
 
@@ -566,7 +596,7 @@ LPCIE_EXPORT(int32_t) X502_Close(t_x502_hnd hnd);
     @param[out] info    Информация о модуле (смотри описание типа #t_x502_info).
     @return             Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info);
+X502_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info);
 
 
 /** @} */
@@ -586,7 +616,7 @@ LPCIE_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info);
     @param[in] flags   Флаги (резерв - должно быть равно 0).
     @return            Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags);
+X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags);
 
 
 /***************************************************************************//**
@@ -611,7 +641,7 @@ LPCIE_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags);
                           частоты, то это значение будет скорректировано
     @return               Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t phy_ch,
+X502_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t phy_ch,
                                        uint32_t mode, uint32_t range, uint32_t avg);
 
 
@@ -624,7 +654,7 @@ LPCIE_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t ph
                         (от 1 до #X502_LTABLE_MAX_CH_CNT)
     @return             Код ошибки
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetLChannelCount(t_x502_hnd hnd, uint32_t lch_cnt);
+X502_EXPORT(int32_t) X502_SetLChannelCount(t_x502_hnd hnd, uint32_t lch_cnt);
 
 
 /***************************************************************************//**
@@ -636,7 +666,7 @@ LPCIE_EXPORT(int32_t) X502_SetLChannelCount(t_x502_hnd hnd, uint32_t lch_cnt);
     @param[out] lch_cnt  Количество логических каналов
     @return              Код ошибки
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetLChannelCount(t_x502_hnd hnd, uint32_t* lch_cnt);
+X502_EXPORT(int32_t) X502_GetLChannelCount(t_x502_hnd hnd, uint32_t* lch_cnt);
 
 /***************************************************************************//**
     @brief Установка делителя частоты сбора для АЦП.
@@ -652,7 +682,7 @@ LPCIE_EXPORT(int32_t) X502_GetLChannelCount(t_x502_hnd hnd, uint32_t* lch_cnt);
     @param[in] adc_freq_div  Делитель частоты АЦП (от 1 до #X502_ADC_FREQ_DIV_MAX).
     @return                  Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetAdcFreqDivider(t_x502_hnd hnd, uint32_t adc_freq_div);
+X502_EXPORT(int32_t) X502_SetAdcFreqDivider(t_x502_hnd hnd, uint32_t adc_freq_div);
 
 /***************************************************************************//**
     @brief Установка значения межкадровой задержки для АЦП.
@@ -671,7 +701,7 @@ LPCIE_EXPORT(int32_t) X502_SetAdcFreqDivider(t_x502_hnd hnd, uint32_t adc_freq_d
                         #X502_ADC_INTERFRAME_DELAY_MAX)
     @return             Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetAdcInterframeDelay(t_x502_hnd hnd, uint32_t delay);
+X502_EXPORT(int32_t) X502_SetAdcInterframeDelay(t_x502_hnd hnd, uint32_t delay);
 
 /***************************************************************************//**
     @brief Установка делителя частоты синхронного ввода с цифровых линий.
@@ -689,7 +719,7 @@ LPCIE_EXPORT(int32_t) X502_SetAdcInterframeDelay(t_x502_hnd hnd, uint32_t delay)
                              (от 1 до #X502_DIN_FREQ_DIV_MAX).
     @return                  Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetDinFreqDivider(t_x502_hnd hnd, uint32_t din_freq_div);
+X502_EXPORT(int32_t) X502_SetDinFreqDivider(t_x502_hnd hnd, uint32_t din_freq_div);
 
 
 
@@ -713,7 +743,7 @@ LPCIE_EXPORT(int32_t) X502_SetDinFreqDivider(t_x502_hnd hnd, uint32_t din_freq_d
                              (от #X502_OUT_FREQ_DIV_MIN до #X502_OUT_FREQ_DIV_MAX).
     @return                  Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_div);
+X502_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_div);
 
 
 
@@ -757,7 +787,7 @@ LPCIE_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_d
                               сбора кадров (нулевую межкадровую задержку).
     @return                Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_frame);
+X502_EXPORT(int32_t) X502_SetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_frame);
 
 
 
@@ -785,7 +815,7 @@ LPCIE_EXPORT(int32_t) X502_SetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_f
                            реально установленное значение частоты.
     @return                Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din);
+X502_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din);
 
 
 
@@ -813,7 +843,7 @@ LPCIE_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din);
                            реально установленное значение частоты.
     @return                Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout);
+X502_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout);
 
 
 
@@ -831,7 +861,7 @@ LPCIE_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout);
     @param[out] f_frame  Если не NULL, то на выходе возвращается текущее
                          значение частоты кадров АЦП.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_frame);
+X502_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_frame);
 
 
 
@@ -857,7 +887,7 @@ LPCIE_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_f
                             выбранную опорную частоту.
     @return                 Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetRefFreq(t_x502_hnd hnd, uint32_t freq);
+X502_EXPORT(int32_t) X502_SetRefFreq(t_x502_hnd hnd, uint32_t freq);
 
 /***************************************************************************//**
     @brief Установка режима генерации частоты синхронизации.
@@ -879,7 +909,7 @@ LPCIE_EXPORT(int32_t) X502_SetRefFreq(t_x502_hnd hnd, uint32_t freq);
                             будет источником частоты синхронизации.
     @return                 Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetSyncMode(t_x502_hnd hnd, uint32_t sync_mode);
+X502_EXPORT(int32_t) X502_SetSyncMode(t_x502_hnd hnd, uint32_t sync_mode);
 
 /***************************************************************************//**
     @brief Установка режима запуска частоты синхронизации.
@@ -906,7 +936,7 @@ LPCIE_EXPORT(int32_t) X502_SetSyncMode(t_x502_hnd hnd, uint32_t sync_mode);
                                 условие запуска частоты синхронизации.
     @return                     Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetSyncStartMode(t_x502_hnd hnd, uint32_t sync_start_mode);
+X502_EXPORT(int32_t) X502_SetSyncStartMode(t_x502_hnd hnd, uint32_t sync_start_mode);
 
 
 /***************************************************************************//**
@@ -927,7 +957,7 @@ LPCIE_EXPORT(int32_t) X502_SetSyncStartMode(t_x502_hnd hnd, uint32_t sync_start_
     @param[in] mode         Режим работы модуля из #t_x502_mode.
     @return                 Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode);
+X502_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode);
 /***************************************************************************//**
     @brief Получение текущего режима работы модуля.
 
@@ -937,7 +967,7 @@ LPCIE_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode);
                             работы модуля (из #t_x502_mode).
     @return                 Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetMode(t_x502_hnd hnd, uint32_t* mode);
+X502_EXPORT(int32_t) X502_GetMode(t_x502_hnd hnd, uint32_t* mode);
 /***************************************************************************//**
     @brief Установить коэффициенты для калибровки значений АЦП.
 
@@ -960,7 +990,7 @@ LPCIE_EXPORT(int32_t) X502_GetMode(t_x502_hnd hnd, uint32_t* mode);
     @param[in] offs         Устанавливаемое значение смещения нуля.
     @return                 Код ошибки.
     ***************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetAdcCoef(t_x502_hnd hnd, uint32_t range, double k, double offs);
+X502_EXPORT(int32_t) X502_SetAdcCoef(t_x502_hnd hnd, uint32_t range, double k, double offs);
 
 /***************************************************************************//**
     @brief Получение текущих калибровочных коэффициентов АЦП.
@@ -977,7 +1007,7 @@ LPCIE_EXPORT(int32_t) X502_SetAdcCoef(t_x502_hnd hnd, uint32_t range, double k, 
     @param[in] offs         В данной переменной возвращается текущее смещение нуля.
     @return                 Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetAdcCoef(t_x502_hnd hnd, uint32_t range, double* k, double* offs);
+X502_EXPORT(int32_t) X502_GetAdcCoef(t_x502_hnd hnd, uint32_t range, double* k, double* offs);
 
 
 
@@ -1005,7 +1035,7 @@ LPCIE_EXPORT(int32_t) X502_GetAdcCoef(t_x502_hnd hnd, uint32_t range, double* k,
     @param[in] offs         Устанавливаемое значение смещения нуля.
     @return                 Код ошибки.
     ***************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetDacCoef(t_x502_hnd hnd, uint32_t ch, double k, double offs);
+X502_EXPORT(int32_t) X502_SetDacCoef(t_x502_hnd hnd, uint32_t ch, double k, double offs);
 
 
 /***************************************************************************//**
@@ -1023,7 +1053,7 @@ LPCIE_EXPORT(int32_t) X502_SetDacCoef(t_x502_hnd hnd, uint32_t ch, double k, dou
     @param[in] offs         В данной переменной возвращается текущее смещение нуля.
     @return                 Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetDacCoef(t_x502_hnd hnd, uint32_t ch, double* k, double* offs);
+X502_EXPORT(int32_t) X502_GetDacCoef(t_x502_hnd hnd, uint32_t ch, double* k, double* offs);
 
 
 /** @} */
@@ -1051,7 +1081,7 @@ LPCIE_EXPORT(int32_t) X502_GetDacCoef(t_x502_hnd hnd, uint32_t ch, double* k, do
     @param[in] flags        Флаги из #t_x502_dacout_flags.
     @return                 Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, uint32_t flags);
+X502_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, uint32_t flags);
 
 /***************************************************************************//**
     @brief Асинхронный вывод данных на цифровые выходы.
@@ -1077,7 +1107,7 @@ LPCIE_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data,
                             и на старшую половину val).
     @return                 Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_AsyncOutDig(t_x502_hnd hnd, uint32_t val, uint32_t msk);
+X502_EXPORT(int32_t) X502_AsyncOutDig(t_x502_hnd hnd, uint32_t val, uint32_t msk);
 
 
 /***************************************************************************//**
@@ -1103,7 +1133,7 @@ LPCIE_EXPORT(int32_t) X502_AsyncOutDig(t_x502_hnd hnd, uint32_t val, uint32_t ms
                             равны нулю!
     @return                 Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din);
+X502_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din);
 
 
 /***************************************************************************//**
@@ -1137,7 +1167,7 @@ LPCIE_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din);
                             в управляющей таблице АЦП.
     @return                 Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
+X502_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
                                        uint32_t tout, double* data);
 
 /** @} */
@@ -1168,7 +1198,7 @@ LPCIE_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
                        должны быть разрешены.
     @return            Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams);
+X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams);
 /****************************************************************************//**
     @brief Запрещение синхронных потоков на ввод/вывод.
 
@@ -1180,7 +1210,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams);
                        должны быть запрещены.
     @return            Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams);
+X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams);
 
 /***************************************************************************//**
     @brief Запуск синхронных потоков ввода/вывода.
@@ -1200,7 +1230,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams);
     @param[in] hnd     Описатель модуля.
     @return            Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd);
+X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd);
 
 /***************************************************************************//**
     @brief Останов синхронных потоков ввода/вывода.
@@ -1212,7 +1242,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd);
     @param[in] hnd     Описатель модуля.
     @return            Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd);
+X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd);
 
 
 /***************************************************************************//**
@@ -1226,7 +1256,7 @@ LPCIE_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd);
     @param[in] hnd     Описатель модуля.
     @return            Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd);
+X502_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd);
 
 
 
@@ -1258,7 +1288,7 @@ LPCIE_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd);
     @return             Если < 0 - код ошибки.
                         Если >= 0 - количество считанных слов.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, uint32_t tout);
+X502_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, uint32_t tout);
 
 
 /***************************************************************************//**
@@ -1288,7 +1318,7 @@ LPCIE_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, ui
     @return             Если < 0 - код ошибки.
                         Если >= 0 - количество записанных слов.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t size, uint32_t tout);
+X502_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t size, uint32_t tout);
 
 
 
@@ -1317,7 +1347,7 @@ LPCIE_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t si
     @param[in]  flags    Набор флагов из #t_x502_proc_flags
     @return               Код ошибки.
    ****************************************************************************/
-LPCIE_EXPORT(int32_t) X502_ProcessAdcData(t_x502_hnd hnd, const uint32_t* src,
+X502_EXPORT(int32_t) X502_ProcessAdcData(t_x502_hnd hnd, const uint32_t* src,
                                           double *dest, uint32_t *size, uint32_t flags);
 
 /***************************************************************************//**
@@ -1368,7 +1398,7 @@ LPCIE_EXPORT(int32_t) X502_ProcessAdcData(t_x502_hnd hnd, const uint32_t* src,
                           din_data = NULL.
     @return               Код ошибки.
    ****************************************************************************/
-LPCIE_EXPORT(int32_t) X502_ProcessData(t_x502_hnd hnd, const uint32_t* src, uint32_t size,
+X502_EXPORT(int32_t) X502_ProcessData(t_x502_hnd hnd, const uint32_t* src, uint32_t size,
                      uint32_t flags, double *adc_data, uint32_t *adc_data_size,
                      uint32_t *din_data, uint32_t *din_data_size);
 
@@ -1402,7 +1432,7 @@ LPCIE_EXPORT(int32_t) X502_ProcessData(t_x502_hnd hnd, const uint32_t* src, uint
                                 Может быть NULL только если usr_data = NULL.
     @return                     Код ошибки.
    ****************************************************************************/
-LPCIE_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t* src, uint32_t size,
+X502_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t* src, uint32_t size,
                                    uint32_t flags, double *adc_data,
                                    uint32_t *adc_data_size, uint32_t *din_data,
                                    uint32_t *din_data_size,
@@ -1449,7 +1479,7 @@ LPCIE_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t
                                 массивов)
     @return                     Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const double* dac2,
+X502_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const double* dac2,
                             const uint32_t* digout, uint32_t size, int32_t flags,
                             uint32_t* out_buf);
 
@@ -1465,7 +1495,7 @@ LPCIE_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const
     @param[out] rdy_cnt          Количество готовых к приему отсчетов.
     @return                      Код ошибки.
     ***************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt);
+X502_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt);
 
 
 /***************************************************************************//**
@@ -1480,7 +1510,7 @@ LPCIE_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt);
                                  свободное место в буфере на передачу.
     @return                      Код ошибки.
     ***************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt);
+X502_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt);
 
 /***************************************************************************//**
     @brief Получить номер следующего ожидаемого логического канала АЦП для
@@ -1510,7 +1540,7 @@ LPCIE_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt);
     @param[out] lch              Номер логического канала (начиная с нуля).
     @return                      Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch);
+X502_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch);
 
 
 
@@ -1529,7 +1559,7 @@ LPCIE_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch);
     @param[in] hnd        Описатель модуля.
     @return               Код ошибки.
     ***************************************************************************/
-LPCIE_EXPORT(int32_t) X502_PreloadStart(t_x502_hnd hnd);
+X502_EXPORT(int32_t) X502_PreloadStart(t_x502_hnd hnd);
 
 
 #if 0
@@ -1550,7 +1580,7 @@ LPCIE_EXPORT(int32_t) X502_PreloadStart(t_x502_hnd hnd);
                           суммарно для всех используемых каналов вывода.
     @return               Код ошибки.
     ***************************************************************************/
-LPCIE_EXPORT(int32_t) L502_OutCycleLoadStart(t_l502_hnd hnd, uint32_t size);
+X502_EXPORT(int32_t) L502_OutCycleLoadStart(t_l502_hnd hnd, uint32_t size);
 
 /***************************************************************************//**
     @brief Установка ранее загруженного циклического сигнала на вывод
@@ -1571,7 +1601,7 @@ LPCIE_EXPORT(int32_t) L502_OutCycleLoadStart(t_l502_hnd hnd, uint32_t size);
     @param[in] flags      Флаги из #t_l502_out_cycle_flags.
     @return               Код ошибки.
     ***************************************************************************/
-LPCIE_EXPORT(int32_t) L502_OutCycleSetup(t_l502_hnd hnd, uint32_t flags);
+X502_EXPORT(int32_t) L502_OutCycleSetup(t_l502_hnd hnd, uint32_t flags);
 
 
 /***************************************************************************//**
@@ -1591,7 +1621,7 @@ LPCIE_EXPORT(int32_t) L502_OutCycleSetup(t_l502_hnd hnd, uint32_t flags);
     @param[in] flags      Флаги из #t_l502_out_cycle_flags.
     @return               Код ошибки.
     ***************************************************************************/
-LPCIE_EXPORT(int32_t) L502_OutCycleStop(t_l502_hnd hnd, uint32_t flags);
+X502_EXPORT(int32_t) L502_OutCycleStop(t_l502_hnd hnd, uint32_t flags);
 
 #endif
 
@@ -1610,7 +1640,7 @@ LPCIE_EXPORT(int32_t) L502_OutCycleStop(t_l502_hnd hnd, uint32_t flags);
     @param[in] size       Размер буфера в 32-битных отсчетах
     @return               Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t size);
+X502_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t size);
 
 /***************************************************************************//**
     @brief Установка шага при передаче потока на ввод или вывод.
@@ -1627,7 +1657,7 @@ LPCIE_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_
     @param[in] step       Шаг прерывания в 32-битных отсчетах
     @return               Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t dma_ch, uint32_t step);
+X502_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t dma_ch, uint32_t step);
 
 /** @} */
 
@@ -1648,7 +1678,7 @@ LPCIE_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t dma_ch, uint32
     @param[in] filename      Имя файла с загружаемой прошивкой.
     @return                  Код ошибки.
   *****************************************************************************/
-LPCIE_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename);
+X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename);
 
 
 
@@ -1672,7 +1702,7 @@ LPCIE_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename);
                              успешной проверки.
     @return                  Код ошибки.
   *****************************************************************************/
-LPCIE_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *version);
+X502_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *version);
 
 /***************************************************************************//**
     @brief Чтение блока данных из памяти сигнального процессора.
@@ -1692,7 +1722,7 @@ LPCIE_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *ver
     @param[in] size          Количество считываемых 32-битных слов.
     @return                  Код ошибки.
  ******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr, uint32_t* regs,
+X502_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr, uint32_t* regs,
                                       uint32_t size);
 
 /***************************************************************************//**
@@ -1717,7 +1747,7 @@ LPCIE_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr, uint32_t* re
                              (должно быть кратно 8).
     @return                  Код ошибки.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
+X502_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
                                       const uint32_t* regs, uint32_t size);
 
 
@@ -1766,7 +1796,7 @@ LPCIE_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
                              кодом завершения, то этот код и будет возвращен
                              функцией.
 *******************************************************************************/
-LPCIE_EXPORT(int32_t) X502_BfExecCmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t par,
+X502_EXPORT(int32_t) X502_BfExecCmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t par,
                                      const uint32_t* snd_data, uint32_t snd_size,
                                      uint32_t* rcv_data, uint32_t rcv_size,
                                      uint32_t tout, uint32_t* recvd_size);
@@ -1799,7 +1829,7 @@ LPCIE_EXPORT(int32_t) X502_BfExecCmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t
 
   @return 32-битное число, представляющее собой версию библиотеки
   *****************************************************************************/
-LPCIE_EXPORT(uint32_t) X502_GetLibraryVersion(void);
+X502_EXPORT(uint32_t) X502_GetLibraryVersion(void);
 
 /***************************************************************************//**
     @brief Получение строки об ошибке.
@@ -1814,7 +1844,7 @@ LPCIE_EXPORT(uint32_t) X502_GetLibraryVersion(void);
     @param[in] err   Код ошибки, для которого нужно вернуть строку.
     @return          Указатель на строку, соответствующую коду ошибки
  ******************************************************************************/
-LPCIE_EXPORT(const char*) X502_GetErrorString(int32_t err);
+X502_EXPORT(const char*) X502_GetErrorString(int32_t err);
 
 
 #ifdef __cplusplus

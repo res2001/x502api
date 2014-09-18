@@ -94,7 +94,7 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
                    void* rcv_data, uint32_t recv_size, uint32_t* recvd_size, uint32_t tout);
 
 static int32_t f_iface_free_devinfo_data(void *devinfo_data);
-static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo);
+static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
@@ -138,9 +138,9 @@ static const t_x502_dev_iface f_usb_iface = {
 
 
 
-static int32_t f_iface_open(t_x502_hnd hnd, const t_lpcie_devinfo *devinfo) {
+static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
     int32_t err, usberr;
-    libusb_device *dev = (libusb_device *)(((t_lpcie_devinfo_inptr*)devinfo->internal)->iface_data);
+    libusb_device *dev = (libusb_device *)(((t_x502_devrec_inptr*)devinfo->internal)->iface_data);
     libusb_device_handle *devhnd;
 
 
@@ -860,9 +860,9 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
                    rcv_data, recv_size, recvd_size, tout);
 }
 
-static int f_fill_devlist(libusb_device_handle *hnd, t_lpcie_devinfo* info) {
+static int f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec* info) {
     int32_t err = 0;
-    t_lpcie_devinfo_inptr *devinfo_ptr = calloc(1, sizeof(t_lpcie_devinfo_inptr));
+    t_x502_devrec_inptr *devinfo_ptr = calloc(1, sizeof(t_x502_devrec_inptr));
     if (devinfo_ptr==NULL)  {
         err = X502_ERR_MEMORY_ALLOC;
     }
@@ -899,7 +899,7 @@ static int f_fill_devlist(libusb_device_handle *hnd, t_lpcie_devinfo* info) {
 
 
 
-LPCIE_EXPORT(int32_t) E502_GetUsbDevInfoList(t_lpcie_devinfo* list, uint32_t size,
+X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t size,
                                              uint32_t flags, uint32_t* devcnt) {
     uint32_t curcnt=0;
     int32_t err =0;
@@ -926,7 +926,7 @@ LPCIE_EXPORT(int32_t) E502_GetUsbDevInfoList(t_lpcie_devinfo* list, uint32_t siz
                     && (devdescr.idProduct == E502_USB_PID)) {
                 int32_t cur_err = libusb_open(usb_devlist[i], &usbhnd);
                 if (!cur_err) {
-                    t_lpcie_devinfo info;
+                    t_x502_devrec info;
                     int info_used = 0;
                     memset(&info,0, sizeof(info));
 
@@ -934,8 +934,8 @@ LPCIE_EXPORT(int32_t) E502_GetUsbDevInfoList(t_lpcie_devinfo* list, uint32_t siz
                    if (f_fill_devlist(usbhnd, &info)==0) {
                        /* если нужны только не открытые, то уже открытое
                         * устройство пропускаем */
-                       if (!(flags & LPCIE_GETDEVS_FLAGS_ONLY_NOT_OPENED) ||
-                               !(info.flags & LPCIE_DEVINFO_FLAGS_DEV_OPENED)) {
+                       if (!(flags & X502_GETDEVS_FLAGS_ONLY_NOT_OPENED) ||
+                               !(info.flags & X502_DEVREC_FLAGS_DEV_OPENED)) {
                            /* если есть место в списке - то сохраняем
                             * полученную информацию */
                            if ((list!=NULL) && (curcnt < size)) {
@@ -947,7 +947,7 @@ LPCIE_EXPORT(int32_t) E502_GetUsbDevInfoList(t_lpcie_devinfo* list, uint32_t siz
                    }
 
                    if (!info_used)
-                       X502_FreeDevInfoList(&info,1);
+                       X502_FreeDevRecordList(&info,1);
 
                    libusb_close(usbhnd);
 
@@ -965,22 +965,22 @@ LPCIE_EXPORT(int32_t) E502_GetUsbDevInfoList(t_lpcie_devinfo* list, uint32_t siz
     return err ? err  : curcnt > (uint32_t)usb_devlist_size ? (int32_t)usb_devlist_size : (int32_t)curcnt ;
 }
 
-LPCIE_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial) {
-    return X502_Open(hnd, serial, E502_DEVICE_NAME, E502_GetUsbDevInfoList);
+X502_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial) {
+    return X502_Open(hnd, serial, E502_DEVICE_NAME, E502_UsbGetDevRecordsList);
 }
 
-LPCIE_EXPORT(int32_t) E502_GetUsbSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
+X502_EXPORT(int32_t) E502_GetUsbSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
                            uint32_t flags, uint32_t *devcnt) {
     uint32_t fnd_cnt=0, e502_cnt=0;
     /* получаем количество устройств, поддерживаемых драйвером lpcie */
-    int32_t res = E502_GetUsbDevInfoList(NULL, 0, flags, &fnd_cnt);
+    int32_t res = E502_UsbGetDevRecordsList(NULL, 0, flags, &fnd_cnt);
     if ((res>=0) && fnd_cnt) {
-        t_lpcie_devinfo *info_list = malloc(sizeof(t_lpcie_devinfo)*fnd_cnt);
+        t_x502_devrec *info_list = malloc(sizeof(t_x502_devrec)*fnd_cnt);
         if (info_list==NULL) {
             res = X502_ERR_MEMORY_ALLOC;
         } else {
             /* получаем информацию по всем устройствам драйвера lpcie */
-            res = E502_GetUsbDevInfoList(info_list, fnd_cnt, flags, NULL);
+            res = E502_UsbGetDevRecordsList(info_list, fnd_cnt, flags, NULL);
             if (res>0) {
                 int32_t i;
                 for (i=0; i < res; i++) {
@@ -997,7 +997,7 @@ LPCIE_EXPORT(int32_t) E502_GetUsbSerialList(char serials[][X502_SERIAL_SIZE], ui
                 }
             }
 
-            X502_FreeDevInfoList(info_list, fnd_cnt);
+            X502_FreeDevRecordList(info_list, fnd_cnt);
             free(info_list);
         }
     }
