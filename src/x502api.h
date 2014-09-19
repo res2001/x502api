@@ -30,6 +30,9 @@ extern "C" {
   @{
   *****************************************************************************/
 
+
+#define X502_DEVREC_SIGN       0x4C524543
+
 /** Максимальное количество логических каналов в таблице*/
 #define X502_LTABLE_MAX_CH_CNT      256
 /** Количество диапазонов для измерения напряжений */
@@ -66,9 +69,12 @@ extern "C" {
 #define X502_DAC_SCALE_CODE_MAX     30000
 
 /** Максимальное количество символов в строке с названием устройства */
-#define X502_DEVNAME_SIZE     32
+#define X502_DEVNAME_SIZE      32
 /** Максимальное количество символов в строке с серийным номером */
-#define X502_SERIAL_SIZE      32
+#define X502_SERIAL_SIZE       32
+/** Максимальное количество символов в строке с описанием подключения */
+#define X502_LOCATION_STR_SIZE 64
+
 
 /** Максимально возможное значение внешней опорной частоты */
 #define X502_EXT_REF_FREQ_MAX  2000000
@@ -156,6 +162,8 @@ typedef enum {
     X502_ERR_IOCTL_INVALID_RESP_SIZE      = -27,
     /** Неверный тип устройства */
     X502_ERR_INVALID_DEVICE               = -28,
+    /** Недействительная запись о устройстве */
+    X502_ERR_INVALID_DEVICE_RECORD        = -29,
 
     /** Задан неверный размер логической таблицы */
     X502_ERR_INVALID_LTABLE_SIZE          = -102,
@@ -268,6 +276,14 @@ typedef enum {
     X502_ERR_BF_INVALID_CMD_DATA_SIZE     = -192
 } t_x502_errs;
 
+
+/** Интерфейс соединения с модулем */
+typedef enum {
+    X502_IFACE_UNKNOWN = 0, /**< Неизвестный интерфейс */
+    X502_IFACE_PCI     = 1, /**< Устройство подключено по PCI/PCIe */
+    X502_IFACE_USB     = 2, /**< Устройство подключено по USB */
+    X502_IFACE_TCP     = 3  /**< Устройство подключено по Ethernet через TCP/IP */
+} t_x502_iface;
 
 /** Флаги, описывающие запись о неоткрытом модуле */
 typedef enum {
@@ -460,11 +476,14 @@ typedef struct st_x502_devrec_inptr t_x502_devrec_inptr;
 /** Структура, описывающая не открытое устройство, по которой с ним можно
     установить связь */
 typedef struct {
-    char devname[X502_DEVNAME_SIZE]; /** название устройства */
-    char serial[X502_SERIAL_SIZE]; /** серийный номер */
-    char res[124]; /** резерв */
-    uint32_t flags; /** флаги из #x502_devrec_flags, описывающие устройство */
-    t_x502_devrec_inptr* internal; /** непрозрачный указатель на структуру с платформозависимой
+    uint32_t sign;  /**< Признак действительной структуры. Должен равнять X502_DEVREC_SIGN */
+    char devname[X502_DEVNAME_SIZE]; /**< название устройства */
+    char serial[X502_SERIAL_SIZE]; /**< серийный номер */
+    char location[X502_LOCATION_STR_SIZE]; /**< описание подключения (если есть) */
+    uint32_t flags; /**< Флаги из #x502_devrec_flags, описывающие устройство */
+    uint8_t  iface; /**< Интерфейс, по которому подключено устройство */
+    char res[123]; /** резерв */
+    t_x502_devrec_inptr* internal; /**< Непрозрачный указатель на структуру с платформозависимой
                                          информацией об устройстве. */
 } t_x502_devrec;
 

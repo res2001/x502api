@@ -887,6 +887,7 @@ static int f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec* info) {
             devinfo_ptr->iface = &f_usb_iface;
             devinfo_ptr->iface_data = libusb_ref_device(libusb_get_device(hnd));
             info->internal = devinfo_ptr;
+            info->iface = X502_IFACE_USB;
         }
     }
 
@@ -928,7 +929,7 @@ X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t siz
                 if (!cur_err) {
                     t_x502_devrec info;
                     int info_used = 0;
-                    memset(&info,0, sizeof(info));
+                    X502_DevRecordInit(&info);
 
 
                    if (f_fill_devlist(usbhnd, &info)==0) {

@@ -40,6 +40,7 @@ static const t_err_table f_err_tbl[] = {
     { X502_ERR_DEVICE_DISCONNECTED,     "Устройство было отключено"},
     { X502_ERR_IOCTL_INVALID_RESP_SIZE, "Неверный размер ответа на управляющий запрос"},
     { X502_ERR_INVALID_DEVICE,          "Неверный тип устройства"},
+    { X502_ERR_INVALID_DEVICE_RECORD,   "Недействительная запись о устройстве"},
     { X502_ERR_INVALID_LTABLE_SIZE,     "Задан неверный размер логической таблицы"},
     { X502_ERR_INVALID_LCH_NUMBER,      "Задан неверный номер логического канала"},
     { X502_ERR_INVALID_LCH_RANGE,       "Неверно задано значение диапазона АЦП"},

@@ -69,8 +69,8 @@ X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
 
 X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info) {
     int32_t err  = X502_CHECK_HND(hnd);
-    if (!err && (info==NULL))
-        err = X502_ERR_INVALID_POINTER;
+    if (!err && ((info==NULL) || (info->sign!=X502_DEVREC_SIGN)))
+        err = X502_ERR_INVALID_DEVICE_RECORD;
     if (!err && (hnd->flags & _FLAGS_OPENED))
         err = X502_ERR_ALREADY_OPENED;
     if (!err) {
@@ -285,19 +285,24 @@ X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
 
 X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size) {
     uint32_t i;
+    int32_t err = X502_ERR_OK;
     if (list!=NULL) {
-        for (i=0; i < size; i++) {
-            t_x502_devrec_inptr* devinfo_ptr = (t_x502_devrec_inptr*)list[i].internal;
-            if (devinfo_ptr!=NULL) {
-                const t_x502_dev_iface *iface = (const t_x502_dev_iface *)devinfo_ptr->iface;
-                if ((iface!=NULL) && (iface->free_devinfo_data!=NULL))
-                    iface->free_devinfo_data(devinfo_ptr->iface_data);
-                free(devinfo_ptr);
+        for (i=0; (i < size) && (err==X502_ERR_OK); i++) {
+            if (list[i].sign!=X502_DEVREC_SIGN) {
+                err = X502_ERR_INVALID_DEVICE_RECORD;
+            } else {
+                t_x502_devrec_inptr* devinfo_ptr = (t_x502_devrec_inptr*)list[i].internal;
+                if (devinfo_ptr!=NULL) {
+                    const t_x502_dev_iface *iface = (const t_x502_dev_iface *)devinfo_ptr->iface;
+                    if ((iface!=NULL) && (iface->free_devinfo_data!=NULL))
+                        iface->free_devinfo_data(devinfo_ptr->iface_data);
+                    free(devinfo_ptr);
+                }
+                list[i].internal = NULL;
             }
-            list[i].internal = NULL;
         }
     }
-    return 0;
+    return err;
 }
 
 
@@ -536,6 +541,7 @@ X502_EXPORT(uint32_t) X502_GetLibraryVersion(void) {
 X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *rec) {
     if (rec!=NULL) {
         memset(rec, 0, sizeof(t_x502_devrec));
+        rec->sign = X502_DEVREC_SIGN;
     }
     return 0;
 }

@@ -617,11 +617,12 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
     return err;
 }
 
-X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devinfo, uint32_t ip_addr,
+X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t ip_addr,
                                                uint32_t flags, uint32_t tout) {
-    int32_t err = X502_ERR_OK;
+    int32_t err = (devrec == NULL) || (devrec->sign!=X502_DEVREC_SIGN) ?
+                X502_ERR_INVALID_DEVICE_RECORD : X502_ERR_OK;
 
-    X502_FreeDevRecordList(devinfo, 1);
+    X502_FreeDevRecordList(devrec, 1);
 
     if (err==X502_ERR_OK) {
         t_tcp_devinfo_data *devinfo_data = malloc(sizeof(t_tcp_devinfo_data));
@@ -630,18 +631,25 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devinfo, uint32_t
         if ((devinfo_data==NULL) || (devinfo_ptr == NULL)) {
             err = X502_ERR_MEMORY_ALLOC;
         } else {
-            memset(devinfo, 0, sizeof(t_x502_devrec));
-            strcpy(devinfo->devname, E502_DEVICE_NAME);
+            strcpy(devrec->devname, E502_DEVICE_NAME);
 
             devinfo_data->cmd_port = E502_TCP_DEFAULT_CMD_PORT;
             devinfo_data->ip_addr = ip_addr;
             devinfo_data->open_tout = tout;
             devinfo_data->flags = flags;
 
+
             devinfo_ptr->iface = &f_tcp_iface;
             devinfo_ptr->iface_data = devinfo_data;
 
-            devinfo->internal = devinfo_ptr;
+
+            devrec->internal = devinfo_ptr;
+            devrec->iface = X502_IFACE_TCP;
+            sprintf(devrec->location, "%d.%d.%d.%d",
+                    (ip_addr>>24) & 0xFF,
+                    (ip_addr>>16) & 0xFF,
+                    (ip_addr>>8) & 0xFF,
+                    (ip_addr>>0) & 0xFF);
         }
 
         if (err != X502_ERR_OK) {
