@@ -79,3 +79,22 @@ int32_t e502_iface_bf_firm_load(t_x502_hnd hnd, FILE* f) {
 
     return err;
 }
+
+
+int32_t e502_iface_flash_rd(t_x502_hnd hnd, uint32_t addr, uint8_t* data, uint32_t size) {
+    return  hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_FLASH_RD, addr, NULL, 0,
+                                  data, size, NULL, 0);
+}
+
+int32_t e502_iface_flash_wr(t_x502_hnd hnd, uint32_t addr, const uint8_t* data, uint32_t size) {
+    return  hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_FLASH_WR, addr, data, size,
+                                  NULL, 0, NULL, 0);
+}
+
+int32_t e502_iface_flash_erase(t_x502_hnd hnd, uint32_t addr, uint32_t size) {
+    return hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_FLASH_ERASE, addr, &size, sizeof(size), NULL, 0, NULL, 0);
+}
+
+int32_t e502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* prot_data, uint32_t size) {
+    return hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_FLASH_SET_PORT, prot, prot_data, size, NULL, 0, NULL, 0);
+}

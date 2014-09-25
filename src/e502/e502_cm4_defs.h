@@ -70,6 +70,11 @@ typedef enum {
     E502_CM4_CMD_STREAM_SET_STEP     = 0x14,
     E502_CM4_CMD_STREAM_IS_RUNNING   = 0x15,
     E502_CM4_CMD_FIRM_BUF_WRITE      = 0x16,
+    E502_CM4_CMD_FLASH_RD            = 0x17,
+    E502_CM4_CMD_FLASH_WR            = 0x18,
+    E502_CM4_CMD_FLASH_ERASE         = 0x19,
+    E502_CM4_CMD_FLASH_SET_PORT      = 0x1A,
+
     E502_CM4_CMD_BF_MEM_WRITE        = 0x20,
     E502_CM4_CMD_BF_MEM_READ         = 0x21,
     E502_CM4_CMD_BF_FIRM_LOAD        = 0x22,

@@ -60,6 +60,14 @@ EXPORTS
         X502_BfMemRead
         X502_BfMemWrite
         X502_BfExecCmd
+        X502_FlashRead
+        X502_FlashWrite
+        X502_FlashErase
+        X502_FlashWriteEnable
+        X502_FlashWriteDisable
+        X502_FlashSetProtection
+        X502_ReloadDevInfo
+
 
         E502_UsbGetDevRecordsList
         E502_UsbGetSerialList

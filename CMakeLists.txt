@@ -64,6 +64,7 @@ set(SOURCES
     src/x502api_streams.c
     src/x502api_async.c
     src/x502api_bf.c
+    src/x502api_eeprom.c
     lib/osspec/osspec.c
     lib/crc/fast_crc.c)
 
@@ -75,12 +76,14 @@ set(HEADERS
     src/x502_fpga_regs.h
     src/x502api.h
     src/x502api_private.h    
+    src/x502_eeprom.h
 
     src/e502/e502_fpga_regs.h
     src/e502/e502_cm4_defs.h    
     src/e502/e502api.h
     src/e502/e502api_private.h
     src/e502/e502_tcp_protocol.h
+
     
     src/osspec_cfg.h
     lib/osspec/osspec.h

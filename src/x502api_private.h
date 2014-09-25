@@ -83,6 +83,14 @@ typedef int32_t (*t_x502_iface_bf_mem_block_rd)(t_x502_hnd hnd, uint32_t addr, u
 typedef int32_t (*t_x502_iface_bf_mem_block_wr)(t_x502_hnd hnd, uint32_t addr, const uint32_t *block, uint32_t size);
 typedef int32_t (*t_x502_iface_bf_firm_load)(t_x502_hnd hnd, FILE* f);
 
+typedef int32_t (*t_x502_iface_flash_rd)(t_x502_hnd hnd, uint32_t addr, uint8_t* data, uint32_t size);
+typedef int32_t (*t_x502_iface_flash_wr)(t_x502_hnd hnd, uint32_t addr, const uint8_t* data, uint32_t size);
+typedef int32_t (*t_x502_iface_flash_erase)(t_x502_hnd hnd, uint32_t addr, uint32_t size);
+typedef int32_t (*t_x502_iface_flash_set_prot)(t_x502_hnd hnd, uint32_t flags,
+                                               const uint8_t* prot_data, uint32_t size);
+
+
+typedef int32_t (*t_x502_iface_reload_devinfo)(t_x502_hnd hnd);
 
 typedef int32_t (*t_x502_iface_gen_ioctl)(t_x502_hnd hnd, uint32_t cmd_code, uint32_t param,
                                           const void* snd_data, uint32_t snd_size,
@@ -90,11 +98,15 @@ typedef int32_t (*t_x502_iface_gen_ioctl)(t_x502_hnd hnd, uint32_t cmd_code, uin
                                           uint32_t* recvd_size, uint32_t tout);
 
 
+
+
 typedef struct {
     uint16_t id_reg_addr;
     uint16_t in_stream_buf_min;
     uint16_t ioctl_max_data_size;
     uint16_t bf_mem_block_size;
+    uint16_t flash_rd_size;  /**< Максимальный размер чтения из flash-памяти за один запрос */
+    uint16_t flash_wr_size;  /**< Максимальный размер записи во flash-память за один запрос */
     t_x502_iface_free_devinfo_data  free_devinfo_data;
     t_x502_iface_open               open;
     t_x502_iface_close              close;
@@ -111,6 +123,11 @@ typedef struct {
     t_x502_iface_bf_mem_block_rd    bf_mem_block_rd;
     t_x502_iface_bf_mem_block_wr    bf_mem_block_wr;
     t_x502_iface_bf_firm_load       bf_firm_load;
+    t_x502_iface_flash_rd           flash_rd;
+    t_x502_iface_flash_wr           flash_wr;
+    t_x502_iface_flash_erase        flash_erase;
+    t_x502_iface_flash_set_prot     flash_set_prot;
+    t_x502_iface_reload_devinfo     reload_dev_info;
     t_x502_iface_gen_ioctl          gen_ioctl;
 } t_x502_dev_iface;
 
@@ -187,7 +204,7 @@ typedef int32_t (APIENTRY *t_x502_get_devinfo_list_cb)(t_x502_devrec* list, uint
 
 
 
-
+int x502_check_eeprom(t_x502_hnd hnd);
 
 X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size);
 X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,

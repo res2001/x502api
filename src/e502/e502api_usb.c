@@ -114,6 +114,8 @@ static const t_x502_dev_iface f_usb_iface = {
     USB_IN_STREAM_BUF_MIN,
     USB_CTL_REQ_MAX_SIZE,
     USB_CTL_REQ_MAX_SIZE/4,
+    USB_CTL_REQ_MAX_SIZE, //flash rd size
+    USB_CTL_REQ_MAX_SIZE, //flash wr size
     f_iface_free_devinfo_data,
     f_iface_open,
     f_iface_close,
@@ -130,6 +132,11 @@ static const t_x502_dev_iface f_usb_iface = {
     e502_iface_bf_mem_block_rd,
     e502_iface_bf_mem_block_wr,
     e502_iface_bf_firm_load,
+    e502_iface_flash_rd,
+    e502_iface_flash_wr,
+    e502_iface_flash_erase,
+    e502_iface_flash_set_prot,
+    NULL,
     f_iface_gen_ioctl
 };
 

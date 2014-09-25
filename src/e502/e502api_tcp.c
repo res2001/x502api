@@ -105,6 +105,8 @@ static const t_x502_dev_iface f_tcp_iface = {
     TCP_IN_STREAM_BUF_MIN,
     TCP_CTL_REQ_MAX_SIZE,
     TCP_CTL_REQ_MAX_SIZE/4,
+    TCP_CTL_REQ_MAX_SIZE, //flash rd size
+    TCP_CTL_REQ_MAX_SIZE, //flash wr size
     NULL,
     f_iface_open,
     f_iface_close,
@@ -121,6 +123,11 @@ static const t_x502_dev_iface f_tcp_iface = {
     e502_iface_bf_mem_block_rd,
     e502_iface_bf_mem_block_wr,
     e502_iface_bf_firm_load,
+    e502_iface_flash_rd,
+    e502_iface_flash_wr,
+    e502_iface_flash_erase,
+    e502_iface_flash_set_prot,
+    NULL,
     f_iface_gen_ioctl
 };
 

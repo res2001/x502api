@@ -14,4 +14,11 @@ int32_t e502_iface_bf_mem_block_rd(t_x502_hnd hnd, uint32_t addr, uint32_t *bloc
 int32_t e502_iface_bf_mem_block_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t *block, uint32_t size);
 int32_t e502_iface_bf_firm_load(t_x502_hnd hnd, FILE* f);
 
+
+
+int32_t e502_iface_flash_rd(t_x502_hnd hnd, uint32_t addr, uint8_t* data, uint32_t size);
+int32_t e502_iface_flash_wr(t_x502_hnd hnd, uint32_t addr, const uint8_t* data, uint32_t size);
+int32_t e502_iface_flash_erase(t_x502_hnd hnd, uint32_t addr, uint32_t size);
+int32_t e502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* prot_data, uint32_t size);
+
 #endif // E502API_PRIVATE_H

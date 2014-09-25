@@ -188,10 +188,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
                 hnd->info.cbr.dac[i].k = 1;
             }
 
-#if 0
-            /** @todo */
-            _check_eeprom(hnd);
-#endif
+            x502_check_eeprom(hnd);
         }
 
         /* записываем конфигурацию по умолчанию, чтобы быть уверенным,
