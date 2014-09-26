@@ -31,6 +31,9 @@
 #define USB_BULK_TX_MAX_TRANSF_SIZE         (32*1024)
 #define USB_BULK_TX_TRANSFER_TOUT           -1
 
+#ifndef LIBUSB_CALL
+    #define LIBUSB_CALL
+#endif
 
 static int f_lusb_init_done = 0;
 
@@ -915,7 +918,6 @@ X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t siz
 
     if (!f_lusb_init_done) {
         libusb_init(NULL);
-        libusb_set_debug(NULL,  LIBUSB_LOG_LEVEL_WARNING);
         f_lusb_init_done = 1;
     }
 

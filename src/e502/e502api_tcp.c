@@ -30,7 +30,8 @@
     #include <sys/types.h>
     #include <arpa/inet.h>
 
-    #include <stropts.h>
+    #include <sys/ioctl.h>
+    //#include <stropts.h>
 
     #include <linux/sockios.h>
     #include <asm-generic/ioctls.h>
@@ -132,7 +133,7 @@ static const t_x502_dev_iface f_tcp_iface = {
 };
 
 
-static LINLINE void f_set_timeval_left(t_timer* tmr, struct timeval* tval) {
+static void f_set_timeval_left(t_timer* tmr, struct timeval* tval) {
     t_clock left = timer_expiration(tmr);
     tval->tv_sec = left / CLOCK_CONF_SECOND;
     tval->tv_usec = (left % CLOCK_CONF_SECOND) * 1000000/CLOCK_CONF_SECOND;

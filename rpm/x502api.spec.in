@@ -1,0 +1,106 @@
+Name: @PACKAGE_NAME@
+Version: @PACKAGE_VERSION@
+Release: 1
+Group:   Development/Libraries/C and C++
+
+Vendor: L Card
+URL: http://www.lcard.ru
+License: LGPL-3.0+
+
+Source: @PACKAGE_SRC_TAR_NAME@
+
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
+
+BuildRequires: cmake >= 2.6, udev
+
+
+# включаем зависимость от libusb-1.0
+%if 0%{?fedora}
+BuildRequires: libusb1-devel
+%endif
+
+%if 0%{?suse_version}
+BuildRequires: libusb-1_0-devel
+%endif
+
+%if 0%{?rhel_version} || 0%{?centos_version}
+BuildRequires: libusbx-devel
+%endif
+Requires: udev
+
+
+
+Summary: Source package for library for L502 and E502 devices
+
+%description 
+This package contain library for control L-Card data acqusition 
+L502 and E502 devices.
+
+%prep
+#извлечение исходников из архива
+%setup
+
+%build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+
+
+
+%package -n libx502api1
+Summary: Library for control L Card L502 and E502 devices
+Group:   System/Libraries
+
+
+
+%post -n libx502api1
+ldconfig
+
+if [ $1 -eq 1 ] ; then
+
+  if [ -x /sbin/udevadm ]; then
+      /sbin/udevadm control --reload-rules
+      /sbin/udevadm trigger --subsystem-match=usb --attr-match=idVendor=2a52 --attr-match=idProduct=e502
+  fi
+fi
+
+
+%postun -n libx502api1
+ldconfig
+
+%files -n libx502api1
+%defattr(-,root,root)
+/lib/udev/rules.d/e502.rules
+%defattr(0644,root,root)
+/usr/lib/libx502api.so.*
+
+%description -n libx502api1
+This package contain the shared object files for control L Card L502 data acquisition module with PCI-Express interface.
+
+
+#---------- package with developers files  ---------------
+%package -n libx502api1-devel
+Summary: Developer files for  L Card L502 board
+Group:   Development/Libraries/C and C++
+Requires: libx502api1 = @PACKAGE_VERSION@
+
+%description -n libx502api1-devel
+This package contain developer files such as headers and linker files for x502api library
+that need for control L Card L502 PCI-Express module.
+
+You need these files if you writing your own software. Non-developers likely 
+have little use for this package.
+
+%files -n libx502api1-devel
+%defattr(0644,root,root)
+/usr/include/*
+/usr/lib/lib*.so
+
+

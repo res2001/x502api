@@ -1,0 +1,29 @@
+Source: @PACKAGE_NAME@
+Priority: optional
+Maintainer: Borisov Alexey <borisov@lcard.ru>
+Build-Depends: debhelper (>= 8.0.0), cmake, libusb-1.0-0-dev
+Standards-Version: 3.9.3
+Section: libs
+Homepage: "http://www.lcard.ru"
+
+Package: libx502api1-dev
+Section: libdevel
+Architecture: any
+Depends: libx502api1 (= ${binary:Version}), ${misc:Depends},
+Description:Library for control L Card L502/E502 modules
+ Library that allow you control L Card L502 and E502 data acquisition modules.
+ .
+ This package contains the development files.
+ .
+ You need these files if you writing your own software. Non-developers likely 
+ have little use for this package.
+
+Package: libx502api1
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, udev
+Description:Library for control L Card L502/E502 module
+ Library that allow you control L Card L502 and E502 data acquisition modules.
+ .
+ This package contains the shared object files.
+

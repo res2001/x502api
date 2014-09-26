@@ -6,6 +6,7 @@ set(X502API_VER_MINOR 0)
 set(X502API_VER_PATCH 1)
 set(X502API_VERSION ${X502API_VER_MAJOR}.${X502API_VER_MINOR}.${X502API_VER_PATCH})
 
+
 add_definitions(-DX502API_VER_MAJOR=${X502API_VER_MAJOR} -DX502API_VER_MINOR=${X502API_VER_MINOR} -DX502API_VER_PATCH=${X502API_VER_PATCH})
 
 project(${PROJECT} C)
@@ -139,6 +140,23 @@ target_link_libraries(${PROJECT} ${LIBS})
 
 if(UNIX)
     install(TARGETS ${PROJECT} DESTINATION lib)
-    install(FILES src/${PROJECT}.h src/lpcie.h src/pstdint.h
+    install(FILES src/${PROJECT}.h src/lstdtypes.h src/pstdint.h src/e502/e502api.h
             DESTINATION include)
+    install(FILES e502.rules DESTINATION /lib/udev/rules.d)
 endif(UNIX)
+
+
+#цели для сборки пакетов
+if(UNIX AND CMAKE_PACKAGES)
+    set(PACKAGE_NAME     ${PROJECT})
+    set(PACKAGE_VERSION  ${X502API_VERSION})
+    set(PACKAGE_ARCH_INSTALL_FILE ${PACKAGE_NAME}.install)
+    include(${CMAKE_PACKAGES})
+endif(UNIX AND CMAKE_PACKAGES)
+
+
+
+
+
+
+

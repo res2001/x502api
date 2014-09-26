@@ -15,10 +15,10 @@
 #include <stdio.h>
 
 
-typedef struct st_x502_devrec_inptr {
+struct st_x502_devrec_inptr {
     const void *iface;
     void *iface_data;
-} t_x502_devrec_inptr;
+};
 
 
 #define X502_SIGN 0xA55A0502

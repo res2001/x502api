@@ -1,0 +1,16 @@
+# This is a default template for a post-install scriptlet.
+# Uncomment only required functions and remove any functions
+# you don't need (and this header).
+
+## arg 1:  the new package version
+post_install() {
+  # обновляем правила udev, чтобы разрешить доступ к крейтам по USB
+  if [ -x /sbin/udevadm ]; then
+      /sbin/udevadm control --reload-rules
+      /sbin/udevadm trigger --subsystem-match=usb --attr-match=idVendor=2a52 --attr-match=idProduct=e502
+  fi 
+  exit 0
+}
+
+
+# vim:set ts=2 sw=2 et:
