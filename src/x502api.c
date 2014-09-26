@@ -543,6 +543,50 @@ X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *rec) {
     return 0;
 }
 
+X502_EXPORT(int32_t) X502_LedBlink(t_x502_hnd hnd) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err) {
+        if (hnd->mode == X502_MODE_DSP) {
+            /** @todo */
+            err = X502_ERR_NOT_IMPLEMENTED;
+        } else {
+            int32_t err2;
+            err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_LED, 0);
+            SLEEP_MS(200);
+            err2 = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_LED, 1);
+            if (!err)
+                err = err2;
+        }
+    }
+    return err;
+}
+
+X502_EXPORT(int32_t) X502_SetDigInPullup(t_x502_hnd hnd, uint32_t pullups) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (!err) {
+        if (hnd->mode==X502_MODE_FPGA) {
+            uint32_t val = 0;
+            if (pullups & X502_PULLUPS_DI_L)
+                val |= 0x1;
+            if (pullups & X502_PULLUPS_DI_H)
+                val |= 0x2;
+            if (pullups & X502_PULLUPS_DI_SYN1)
+                val |= 0x4;
+            if (pullups & X502_PULLUPS_DI_SYN2)
+                val |= 0x8;
+            if (pullups & X502_PULLDOWN_CONV_IN)
+                val |= 0x10;
+            if (pullups & X502_PULLDOWN_SYNC_IN)
+                val |= 0x20;
+            err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_DIGIN_PULLUP, val);
+        } else if (hnd->mode == X502_MODE_DSP) {
+            err = X502_ERR_NOT_IMPLEMENTED;
+        } else {
+            err = X502_ERR_INVALID_MODE;
+        }
+    }
+    return err;
+}
 
 #ifdef WIN32
 #include <winsock2.h>

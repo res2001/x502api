@@ -67,6 +67,8 @@ EXPORTS
         X502_FlashWriteDisable
         X502_FlashSetProtection
         X502_ReloadDevInfo
+        X502_LedBlink
+        X502_SetDigInPullup
 
 
         E502_UsbGetDevRecordsList
