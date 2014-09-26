@@ -136,7 +136,7 @@ static const t_x502_dev_iface f_usb_iface = {
     e502_iface_flash_wr,
     e502_iface_flash_erase,
     e502_iface_flash_set_prot,
-    NULL,
+    e502_iface_reload_dev_info,
     f_iface_gen_ioctl
 };
 
@@ -848,8 +848,7 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
                     E502_USB_REQ_TOUT);
 
             //если успешно получили код ошибки устройства - то возвращаем его в качестве результата
-            if ((usbres == sizeof(devres))
-                && (devres !=0)) {
+            if ((usbres == sizeof(devres)) && (devres !=0)) {
                 err = devres;
             }
         }

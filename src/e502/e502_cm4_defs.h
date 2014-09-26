@@ -74,6 +74,7 @@ typedef enum {
     E502_CM4_CMD_FLASH_WR            = 0x18,
     E502_CM4_CMD_FLASH_ERASE         = 0x19,
     E502_CM4_CMD_FLASH_SET_PORT      = 0x1A,
+    E502_CM4_CMD_FLASH_RELOAD_INFO   = 0x1B,
 
     E502_CM4_CMD_BF_MEM_WRITE        = 0x20,
     E502_CM4_CMD_BF_MEM_READ         = 0x21,

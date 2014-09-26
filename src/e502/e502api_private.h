@@ -20,5 +20,6 @@ int32_t e502_iface_flash_rd(t_x502_hnd hnd, uint32_t addr, uint8_t* data, uint32
 int32_t e502_iface_flash_wr(t_x502_hnd hnd, uint32_t addr, const uint8_t* data, uint32_t size);
 int32_t e502_iface_flash_erase(t_x502_hnd hnd, uint32_t addr, uint32_t size);
 int32_t e502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* prot_data, uint32_t size);
+int32_t e502_iface_reload_dev_info(t_x502_hnd hnd);
 
 #endif // E502API_PRIVATE_H

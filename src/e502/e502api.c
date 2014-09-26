@@ -98,3 +98,7 @@ int32_t e502_iface_flash_erase(t_x502_hnd hnd, uint32_t addr, uint32_t size) {
 int32_t e502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* prot_data, uint32_t size) {
     return hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_FLASH_SET_PORT, prot, prot_data, size, NULL, 0, NULL, 0);
 }
+
+int32_t e502_iface_reload_dev_info(t_x502_hnd hnd) {
+    return hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_FLASH_RELOAD_INFO, 0, NULL, 0, NULL, 0, NULL, 0);
+}
