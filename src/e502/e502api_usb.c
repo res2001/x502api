@@ -531,6 +531,10 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
                 info->rx.transf_size = USB_BULK_RX_MAX_TRANSF_SIZE;
 
             info->rx.cpl_cnt = info->buf_size/info->rx.transf_size;
+            /* буфер разбиваем на столько частей, чтобы можно было запустить
+             * в параллель все USB_BULK_RX_MAX_TRANSF_CNT трансферов */
+            if (info->rx.cpl_cnt < USB_BULK_RX_MAX_TRANSF_CNT)
+                info->rx.cpl_cnt = USB_BULK_RX_MAX_TRANSF_CNT;
             info->buf_size = info->rx.cpl_cnt*info->rx.transf_size;
 
             info->rx.cpl_get_pos = 0;
