@@ -560,7 +560,7 @@ static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_
             sent = f_send(tcp_data->data_sock, (uint8_t*)&tcp_data->send_part_wrd,
                           tcp_data->send_part_size, &tmr);
             if (sent >= 0) {
-                tcp_data->send_part_size -= sent;
+                tcp_data->send_part_size -= (uint8_t)sent;
                 if (tcp_data->send_part_size != 0) {
                     tcp_data->send_part_wrd >>= 8*sent;
                 }

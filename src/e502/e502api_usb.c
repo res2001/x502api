@@ -982,7 +982,7 @@ X502_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial) {
     return X502_Open(hnd, serial, E502_DEVICE_NAME, E502_UsbGetDevRecordsList);
 }
 
-X502_EXPORT(int32_t) E502_GetUsbSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
+X502_EXPORT(int32_t) E502_UsbGetSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
                            uint32_t flags, uint32_t *devcnt) {
     uint32_t fnd_cnt=0, e502_cnt=0;
     /* получаем количество устройств, поддерживаемых драйвером lpcie */
