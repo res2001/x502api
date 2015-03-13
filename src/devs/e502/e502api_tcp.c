@@ -1,6 +1,6 @@
 #include "e502api_private.h"
 #include "e502_tcp_protocol.h"
-#include "timer.h"
+#include "ltimer.h"
 #include "lboot_req.h"
 #include "e502_fpga_regs.h"
 
@@ -133,10 +133,10 @@ static const t_x502_dev_iface f_tcp_iface = {
 };
 
 
-static void f_set_timeval_left(t_timer* tmr, struct timeval* tval) {
-    t_clock left = timer_expiration(tmr);
-    tval->tv_sec = left / CLOCK_CONF_SECOND;
-    tval->tv_usec = (left % CLOCK_CONF_SECOND) * 1000000/CLOCK_CONF_SECOND;
+static void f_set_timeval_left(t_ltimer* tmr, struct timeval* tval) {
+    t_lclock_ticks left = ltimer_expiration(tmr);
+    tval->tv_sec = left / LCLOCK_TICKS_PER_SECOND;
+    tval->tv_usec = (left % LCLOCK_TICKS_PER_SECOND) * 1000000/LCLOCK_TICKS_PER_SECOND;
 }
 
 static int32_t f_con_sock(t_socket *psock, uint32_t ip_addr, uint16_t port, uint32_t tout) {
@@ -171,8 +171,8 @@ static int32_t f_con_sock(t_socket *psock, uint32_t ip_addr, uint16_t port, uint
     }
 
     while (!connected && (err==X502_ERR_OK)) {
-        t_timer tmr;
-        timer_set(&tmr, TIMER_MS_TO_CLOCKS(tout));
+        t_ltimer tmr;
+        ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
 
         if (SOCKET_ERROR == connect(s, (struct sockaddr*)&peer, sizeof(peer))) {
             int sockerr = 0;
@@ -230,7 +230,7 @@ static int32_t f_con_sock(t_socket *psock, uint32_t ip_addr, uint16_t port, uint
 }
 
 
-static int32_t f_recv(t_socket s, uint8_t *buf, uint32_t size, t_timer *ptmr) {
+static int32_t f_recv(t_socket s, uint8_t *buf, uint32_t size, t_ltimer *ptmr) {
     int32_t err = X502_ERR_OK;
     uint32_t offset = 0;
     int timed_out = 0;
@@ -248,7 +248,7 @@ static int32_t f_recv(t_socket s, uint8_t *buf, uint32_t size, t_timer *ptmr) {
                      * Но скорее всего управление стоит вернуть сразу, хотя
                      * может сделать опцию... */
                     if (SOCK_ERR_SIGBREAK()) {
-                        timer_set(ptmr, 0);
+                        ltimer_set(ptmr, 0);
                         timed_out = 1;
                     } else {
                         err = X502_ERR_RECV;
@@ -278,7 +278,7 @@ static int32_t f_recv(t_socket s, uint8_t *buf, uint32_t size, t_timer *ptmr) {
     return err ? err : (int32_t)offset;
 }
 
-int32_t f_send(t_socket s, const uint8_t *buf, uint32_t size, t_timer *ptmr) {
+int32_t f_send(t_socket s, const uint8_t *buf, uint32_t size, t_ltimer *ptmr) {
     int32_t err = X502_ERR_OK;
     uint32_t offset = 0;
     int timed_out = 0;
@@ -298,7 +298,7 @@ int32_t f_send(t_socket s, const uint8_t *buf, uint32_t size, t_timer *ptmr) {
                     switch (select((int)s+1, NULL, &fd_w, NULL, &tval)) {
                         case SOCKET_ERROR:
                             if (SOCK_ERR_SIGBREAK()) {
-                                timer_set(ptmr, 0);
+                                ltimer_set(ptmr, 0);
                                 timed_out = 1;
                             } else {
                                 err = X502_ERR_SEND;
@@ -308,7 +308,7 @@ int32_t f_send(t_socket s, const uint8_t *buf, uint32_t size, t_timer *ptmr) {
                             timed_out = 1;
                             break;
                         default:
-                            if (timer_expired(ptmr))
+                            if (ltimer_expired(ptmr))
                                 timed_out = 1;
                             break;
                     }
@@ -325,12 +325,12 @@ int32_t f_send(t_socket s, const uint8_t *buf, uint32_t size, t_timer *ptmr) {
 }
 
 
-static int32_t f_recv_exact(t_socket s, uint8_t *buf, uint32_t size, t_timer *ptmr) {
+static int32_t f_recv_exact(t_socket s, uint8_t *buf, uint32_t size, t_ltimer *ptmr) {
     int32_t ret = f_recv(s, buf, size, ptmr);
     return ret == (int32_t)size ? X502_ERR_OK : ret < 0 ? ret : X502_ERR_RECV_INSUFFICIENT_WORDS;
 }
 
-static int32_t f_send_exact(t_socket s, const uint8_t *buf, uint32_t size, t_timer *ptmr) {
+static int32_t f_send_exact(t_socket s, const uint8_t *buf, uint32_t size, t_ltimer *ptmr) {
     int32_t ret = f_send(s, buf, size, ptmr);
     return ret == (int32_t)size ? X502_ERR_OK : ret < 0 ? ret : X502_ERR_SEND_INSUFFICIENT_WORDS;
 }
@@ -343,10 +343,10 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
     t_e502_tcp_cmd_hdr cmd_hdr;
     t_e502_tcp_resp_hdr cmd_resp;
     int32_t err = X502_ERR_OK;
-    t_timer tmr;
+    t_ltimer tmr;
     t_socket s = ((t_tcp_iface_data*)hnd->iface_data)->cmd_sock;
 
-    timer_set(&tmr, TIMER_MS_TO_CLOCKS(tout == 0 ? E502_TCP_REQ_TOUT : tout));
+    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout == 0 ? E502_TCP_REQ_TOUT : tout));
     cmd_hdr.sign = E502_TCP_CMD_SIGNATURE;
     cmd_hdr.cmd = cmd_code;
     cmd_hdr.par = param;
@@ -504,12 +504,12 @@ static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout) {
     t_tcp_iface_data *tcp_data = (t_tcp_iface_data*)hnd->iface_data;
     int32_t recvd;
-    t_timer tmr;
+    t_ltimer tmr;
 
     if (tcp_data->data_sock == INVALID_SOCKET) {
         recvd = X502_ERR_NO_DATA_CONNECTION;
     } else {
-        timer_set(&tmr, TIMER_MS_TO_CLOCKS(tout));
+        ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
 
         if (tcp_data->recv_part_size != 0) {
             buf[0] = tcp_data->recv_part_wrd;
@@ -530,13 +530,13 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 
 static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout) {
     int32_t sent = 0;
-    t_timer tmr;
+    t_ltimer tmr;
     t_tcp_iface_data *tcp_data = (t_tcp_iface_data*)hnd->iface_data;
 
     if (tcp_data->data_sock == INVALID_SOCKET) {
         sent = X502_ERR_NO_DATA_CONNECTION;
     } else {
-        timer_set(&tmr, TIMER_MS_TO_CLOCKS(tout));
+        ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
 
         /* проверяем, не осталось ли не переданного некратного слова => если осталось
          * то пробуем сперва дослать его */

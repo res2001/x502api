@@ -1,4 +1,5 @@
 lib/lcspec=https://bitbucket.org/lcard/lcspec
-lib/timer=https://bitbucket.org/lcard/timer
+lib/ltimer=https://bitbucket.org/lcard/ltimer
 lib/crc=https://bitbucket.org/lcard/CRClib
 lib/osspec=https://bitbucket.org/lcard/osspec
+packages=https://bitbucket.org/lcard/cmake_obs_packages

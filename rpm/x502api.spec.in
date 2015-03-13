@@ -54,6 +54,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 
+#---------- x502api  ---------------
+
 %package -n libx502api1
 Summary: Library for control L Card L502 and E502 devices
 Group:   System/Libraries
@@ -61,6 +63,27 @@ Group:   System/Libraries
 
 
 %post -n libx502api1
+ldconfig
+
+%postun -n libx502api1
+ldconfig
+
+%files -n libx502api1
+%defattr(0644,root,root)
+/usr/lib/libx502api.so.*
+
+%description -n libx502api1
+This package contain the shared with general functions for E502 and L502 devices.
+
+
+#---------- e502api  ---------------
+
+%package -n libe502api1
+Summary: Library for control L Card E502 device
+Group:   System/Libraries
+
+
+%post -n libe502api1
 ldconfig
 
 if [ $1 -eq 1 ] ; then
@@ -72,24 +95,30 @@ if [ $1 -eq 1 ] ; then
 fi
 
 
-%postun -n libx502api1
+%postun -n libe502api1
 ldconfig
 
-%files -n libx502api1
+%files -n libe502api1
 %defattr(-,root,root)
-/lib/udev/rules.d/e502.rules
+/usr/lib/udev/rules.d/e502.rules
 %defattr(0644,root,root)
-/usr/lib/libx502api.so.*
+/usr/lib/libe502api.so.*
 
-%description -n libx502api1
-This package contain the shared object files for control L Card L502 data acquisition module with PCI-Express interface.
+%description -n libe502api1
+This package contain the shared object files for control L Card E502 data acquisition module with USB and Ethernet interface.
+
+
+
+
+
 
 
 #---------- package with developers files  ---------------
 %package -n libx502api1-devel
 Summary: Developer files for  L Card L502 board
 Group:   Development/Libraries/C and C++
-Requires: libx502api1 = @PACKAGE_VERSION@
+Requires: libx502api1 = @PACKAGE_VERSION@,
+Requires: libe502api1 = @PACKAGE_VERSION@,          
 
 %description -n libx502api1-devel
 This package contain developer files such as headers and linker files for x502api library

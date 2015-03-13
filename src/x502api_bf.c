@@ -1,5 +1,5 @@
 #include "x502api_private.h"
-#include "timer.h"
+#include "ltimer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -343,10 +343,10 @@ X502_EXPORT(int32_t) X502_BfExecCmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t 
                         uint32_t* recvd_size) {
     t_l502_bf_cmd cmd;
     int done = 0;
-    t_timer tmr;
+    t_ltimer tmr;
     int err;
 
-    timer_set(&tmr, tout*CLOCK_CONF_SECOND/1000);
+    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
     err = f_bf_start_cmd(hnd, cmd_code, par, snd_data, snd_size);
     while (!err && !done) {
         err = f_bf_cmd_check(hnd, &cmd.result);
@@ -362,7 +362,7 @@ X502_EXPORT(int32_t) X502_BfExecCmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t 
             if (!err)
                 err = cmd.result;
         } else if (err==X502_ERR_BF_CMD_IN_PROGRESS) {
-            if (timer_expired(&tmr)) {
+            if (ltimer_expired(&tmr)) {
                 err = X502_ERR_BF_CMD_TIMEOUT;
                 osspec_mutex_release(hnd->mutex_bf);
             } else {

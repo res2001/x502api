@@ -3,7 +3,7 @@
 #include "lboot_req.h"
 #include "e502_fpga_regs.h"
 #include "osspec.h"
-#include "timer.h"
+#include "ltimer.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -661,10 +661,10 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
     int32_t recvd = 0;
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_IN];
-    t_timer tmr;
+    t_ltimer tmr;
     int err = 0;
 
-    timer_set(&tmr, tout*CLOCK_CONF_SECOND/1000);
+    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
 
     do {
         int check_next = 1;
@@ -718,10 +718,9 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
             }
             osspec_mutex_release(info->mutex);
 
-            osspec_event_wait(info->user_wake_evt, timer_expiration(&tmr)
-                                    *1000/CLOCK_CONF_SECOND);
+            osspec_event_wait(info->user_wake_evt, LTIMER_CLOCK_TICKS_TO_MS(ltimer_expiration(&tmr)));
         }
-    } while (!err && (size!=0) && !timer_expired(&tmr));
+    } while (!err && (size!=0) && !ltimer_expired(&tmr));
 
     return err == X502_ERR_OK ? recvd : err;
 }
@@ -731,11 +730,11 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout) {
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_OUT];
-    t_timer tmr;
+    t_ltimer tmr;
     int32_t sent = 0;
     int err = 0;
 
-    timer_set(&tmr, tout*CLOCK_CONF_SECOND/1000);
+    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
 
     do {
         uint32_t rdy_size, snd_size;
@@ -744,8 +743,8 @@ static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_
 
         if (!err) {
             if (rdy_size == 0) {
-                osspec_event_wait(info->user_wake_evt, timer_expiration(&tmr)
-                                  *1000/CLOCK_CONF_SECOND);
+                osspec_event_wait(info->user_wake_evt,
+                                  LTIMER_CLOCK_TICKS_TO_MS(ltimer_expiration(&tmr)));
             } else {
                 uint32_t end_size;
                 uint32_t put_pos;
@@ -780,7 +779,7 @@ static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_
                 size-=snd_size;
             }
         }
-    } while (!err && (size!=0) && !timer_expired(&tmr));
+    } while (!err && (size!=0) && !ltimer_expired(&tmr));
     return err == X502_ERR_OK ? sent : err;
 }
 

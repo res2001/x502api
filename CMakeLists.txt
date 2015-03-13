@@ -6,10 +6,21 @@ set(X502API_VER_MINOR 0)
 set(X502API_VER_PATCH 1)
 set(X502API_VERSION ${X502API_VER_MAJOR}.${X502API_VER_MINOR}.${X502API_VER_PATCH})
 
-
 add_definitions(-DX502API_VER_MAJOR=${X502API_VER_MAJOR} -DX502API_VER_MINOR=${X502API_VER_MINOR} -DX502API_VER_PATCH=${X502API_VER_PATCH})
 
 project(${PROJECT} C)
+
+
+if(UNIX)
+    set(CMAKE_PACKAGES ${CMAKE_CURRENT_SOURCE_DIR}/packages/packages.cmake)
+    if(NOT OSC_PROJECT)
+        set(OSC_PROJECT      home:l-card)
+    endif(NOT OSC_PROJECT)
+endif(UNIX)
+
+set(X502API_LIB_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+set(LTIMER_DIR       ${X502API_LIB_DIR}/ltimer)
+set(LCSPEC_DIR       ${X502API_LIB_DIR}/lcspec)
 
 #для GCC устанавливаем повышенный уроень предупреждения компилятора
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -21,7 +32,6 @@ if(CMAKE_COMPILER_IS_GNUCC)
         -Wwrite-strings  -Wsign-compare -Wlogical-op -Waggregate-return -Winline
         -Wno-unused-parameter -Wno-unused-variable -Wno-aggregate-return)
     add_definitions(${WARNOPTS})
-
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 #при сборке MSVC компилируем runtime-библиотеку статически, чтобы не зависеть от версии
@@ -55,10 +65,9 @@ if(MSVC)
 endif(MSVC)
 
 
+include(${LTIMER_DIR}/ltimer.cmake)
+
 set(SOURCES
-    src/e502/e502api_usb.c
-    src/e502/e502api_tcp.c
-    src/e502/e502api.c
     src/x502api.c
     src/x502api_config.c
     src/x502api_errs.c
@@ -67,7 +76,8 @@ set(SOURCES
     src/x502api_bf.c
     src/x502api_eeprom.c
     lib/osspec/osspec.c
-    lib/crc/fast_crc.c)
+    lib/crc/fast_crc.c
+    ${LTIMER_SOURCES})
 
 set(HEADERS
     src/pstdint.h
@@ -78,27 +88,13 @@ set(HEADERS
     src/x502api.h
     src/x502api_private.h    
     src/x502_eeprom.h
-
-    src/e502/e502_fpga_regs.h
-    src/e502/e502_cm4_defs.h    
-    src/e502/e502api.h
-    src/e502/e502api_private.h
-    src/e502/e502_tcp_protocol.h
-
-    
     src/osspec_cfg.h
     lib/osspec/osspec.h
-    src/fast_crc_cfg.h)
+    src/fast_crc_cfg.h
+    ${LTIMER_HEADERS})
 
-include_directories(src lib/crc lib/osspec)
+include_directories(src lib/crc ${X502API_LIB_DIR}/osspec)
 
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
-
-#ищем libusb-1.0
-find_package(LibUSB REQUIRED)
-include_directories(${LIBUSB_INCLUDE_DIR})
-set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
 
 if(WIN32)
     #конфигурируем файл ресурсов для Windows
@@ -112,18 +108,6 @@ if(WIN32)
 endif(WIN32)
 
 
-#Включаем файлы для таймера и inline-функций
-set(HEADERS ${HEADERS} lib/timer/timer.h lib/lcspec/lcspec.h)
-include_directories(lib/timer lib/lcspec)
-if(UNIX)
-    set(SOURCES ${SOURCES} lib/timer/ports/linux/clock.c)
-    include_directories(lib/timer/ports/linux)
-elseif(WIN32)
-    set(SOURCES ${SOURCES} lib/timer/ports/win/clock.c)
-    include_directories(lib/timer/ports/win)
-endif(UNIX)
-
-
 add_library(${PROJECT} SHARED ${HEADERS} ${SOURCES})
 
 #устанавливаем версию библиотеки для SO-файла
@@ -132,19 +116,19 @@ set_target_properties(${PROJECT} PROPERTIES SOVERSION 1)
 
 
 if(UNIX)
-    target_link_libraries(${PROJECT} rt)
     set_target_properties(${PROJECT} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 endif(UNIX)
 
 target_link_libraries(${PROJECT} ${LIBS})
 
+
 if(UNIX)
     install(TARGETS ${PROJECT} DESTINATION lib)
-    install(FILES src/${PROJECT}.h src/lstdtypes.h src/pstdint.h src/e502/e502api.h
-            DESTINATION include)
-    install(FILES e502.rules DESTINATION /lib/udev/rules.d)
+    install(FILES src/${PROJECT}.h src/lstdtypes.h src/pstdint.h DESTINATION include)
 endif(UNIX)
 
+
+add_subdirectory(src/devs)
 
 #цели для сборки пакетов
 if(UNIX AND CMAKE_PACKAGES)

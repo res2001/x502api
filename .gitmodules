@@ -1,13 +1,16 @@
 [submodule "lib/lcspec"]
 	path = lib/lcspec
 	url = ../lcspec
-[submodule "lib/timer"]
-	path = lib/timer
-	url = ../timer
-[submodule "lib/crc"]
-	path = lib/crc
-	url = ../crclib
+[submodule "packages"]
+	path = packages
+	url = ../cmake_obs_packages
 [submodule "lib/osspec"]
 	path = lib/osspec
 	url = ../osspec
+[submodule "lib/ltimer"]
+	path = lib/ltimer
+	url = ../ltimer
+[submodule "lib/crc"]
+	path = lib/crc
+	url = ../crclib
 

@@ -1,5 +1,5 @@
 #include "x502api_private.h"
-#include "timer.h"
+#include "ltimer.h"
 
 uint32_t prepare_dac_wrd(t_x502_hnd hnd, double val, uint32_t flags, const t_x502_cbr_coef* coef);
 
@@ -73,15 +73,15 @@ static int32_t f_read_digin(t_x502_hnd hnd, uint32_t* din) {
     int32_t err = 0;
     uint32_t val;
     int rdy=0;
-    t_timer tmr;
+    t_ltimer tmr;
 
     /* читаем состояние входов, чтобы сбросить флаг готовности */
     err = hnd->iface->fpga_reg_read(hnd, X502_REGS_IOARITH_DIN_ASYNC, &val);
 
     /* читаем синхронный ввод до готовности данных или пока не
        выйдем по таймауту*/
-    timer_set(&tmr, 500*CLOCK_CONF_SECOND/1000);
-    while (!rdy && !timer_expired(&tmr) && !err) {
+    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(500));
+    while (!rdy && !ltimer_expired(&tmr) && (err == X502_ERR_OK)) {
         err = hnd->iface->fpga_reg_read(hnd, X502_REGS_IOARITH_DIN_ASYNC, &val);
         if (!err && (val&0x80000000)) {
             rdy = 1;

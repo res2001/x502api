@@ -20,6 +20,16 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
 
 
 
+
+
+
+
+
+
+
+
+
+
 /***************************************************************************//**
     @brief Получение списка серийных номеров модулей E502, подключенных по USB.
 
@@ -47,7 +57,7 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
                       серийных номеров в массиве serials (всегда <= size)
 *******************************************************************************/
 X502_EXPORT(int32_t) E502_UsbGetSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
-                           uint32_t flags, uint32_t *devcnt);
+                                           uint32_t flags, uint32_t *devcnt);
 
 
 X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t size,
