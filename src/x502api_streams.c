@@ -132,7 +132,7 @@ static int32_t f_out_stream_preload(t_x502 *hnd) {
 
 
 X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
@@ -165,7 +165,7 @@ X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
 }
 
 X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
 
@@ -206,7 +206,7 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
 
 
 X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
-    int err = X502_CHECK_HND(hnd);
+    int err = X502_CHECK_HND_OPEND(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -289,7 +289,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
 
 
 X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
-    int err = X502_CHECK_HND(hnd);
+    int err = X502_CHECK_HND_OPEND(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
@@ -317,7 +317,7 @@ X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
 }
 
 X502_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
-    int err = X502_CHECK_HND(hnd);
+    int err = X502_CHECK_HND_OPEND(hnd);
     uint32_t bf_mode=0;
     if (!err && (hnd->mode==X502_MODE_DSP)) {
         err = x502_bf_get_par(hnd, L502_BF_PARAM_STREAM_MODE, &bf_mode, 1);
@@ -343,7 +343,7 @@ X502_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
 }
 
 X502_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, uint32_t tout) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err && (buf==NULL))
         err = X502_ERR_INVALID_POINTER;
     if (!err) {
@@ -353,7 +353,7 @@ X502_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, uin
 }
 
 X502_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t size, uint32_t tout) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err && (buf==NULL))
         err = X502_ERR_INVALID_POINTER;
 
@@ -378,7 +378,7 @@ X502_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t siz
 }
 
 X502_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
-    int err = X502_CHECK_HND(hnd);
+    int err = X502_CHECK_HND_OPEND(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
@@ -389,7 +389,7 @@ X502_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
 }
 
 X502_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err && (rdy_cnt==NULL))
         err = X502_ERR_INVALID_POINTER;
     if (!err)
@@ -398,7 +398,7 @@ X502_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
 }
 
 X502_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err && (rdy_cnt==NULL))
         err = X502_ERR_INVALID_POINTER;
     if (!err)
@@ -426,7 +426,7 @@ static int32_t f_check_stream_ch_par_en(t_x502_hnd hnd, uint32_t stream_ch) {
 }
 
 X502_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t size) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err)
         err = f_check_stream_ch_par_en(hnd, ch);
     if (!err)
@@ -435,7 +435,7 @@ X502_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t
 }
 
 X502_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t ch, uint32_t step) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err)
         err = f_check_stream_ch_par_en(hnd, ch);
     if (!err)

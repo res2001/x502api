@@ -654,7 +654,7 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
 
 
 X502_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err) {
         t_x502_devrec devinfo;
         X502_DevRecordInit(&devinfo);

@@ -24,8 +24,12 @@ struct st_x502_devrec_inptr {
 #define X502_SIGN 0xA55A0502
 
 
-#define X502_CHECK_HND(hnd) ((hnd) ? (hnd)->sign == X502_SIGN ? X502_ERR_OK \
+#define X502_CHECK_HND(hnd) ((hnd!=NULL) ? (hnd)->sign == X502_SIGN ? X502_ERR_OK \
     : X502_ERR_INVALID_HANDLE : X502_ERR_INVALID_HANDLE)
+
+#define X502_CHECK_HND_OPEND(hnd) ((hnd!=NULL) ? (hnd)->sign == X502_SIGN ? \
+            (((hnd)->flags & PRIV_FLAGS_OPENED) ? X502_ERR_OK : X502_ERR_DEVICE_NOT_OPENED) \
+        : X502_ERR_INVALID_HANDLE : X502_ERR_INVALID_HANDLE)
 
 
 
@@ -145,7 +149,7 @@ typedef enum {
 
 
 typedef enum {
-    _FLAGS_OPENED             = 0x0001,
+    PRIV_FLAGS_OPENED             = 0x0001,
     _FLAGS_PRELOAD_DONE       = 0x0002,
     _FLGAS_CYCLE_MODE         = 0x0004,
     _FLAGS_STREAM_RUN         = 0x0080

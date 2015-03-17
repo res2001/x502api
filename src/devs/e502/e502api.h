@@ -63,6 +63,50 @@ X502_EXPORT(int32_t) E502_UsbGetSerialList(char serials[][X502_SERIAL_SIZE], uin
 X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t size,
                                                uint32_t flags, uint32_t* devcnt) ;
 
+
+
+
+
+
+
+
+
+
+typedef struct st_e502_eth_config_state* t_e502_eth_config_hnd;
+
+
+
+
+X502_EXPORT(t_e502_eth_config_hnd) E502_EthConfigCreate(void);
+X502_EXPORT(int32_t) E502_EthConfigFree(t_e502_eth_config_hnd cfg);
+
+
+X502_EXPORT(int32_t) E502_EthConfigRead(t_x502_hnd hnd, t_e502_eth_config_hnd cfg_hnd);
+X502_EXPORT(int32_t) E502_EthConfigWrite(t_x502_hnd hnd, t_e502_eth_config_hnd cfg, const char *passwd);
+
+
+
+X502_EXPORT(int32_t) E502_EthConfigGetEnabled(t_e502_eth_config_hnd cfg, int32_t *en);
+X502_EXPORT(int32_t) E502_EthConfigSetEnabled(t_e502_eth_config_hnd cfg, int32_t en);
+X502_EXPORT(int32_t) E502_EthConfigGetAutoIPEnabled(t_e502_eth_config_hnd cfg, int32_t *en);
+X502_EXPORT(int32_t) E502_EthConfigSetAutoIPEnabled(t_e502_eth_config_hnd cfg, int32_t en);
+X502_EXPORT(int32_t) E502_EthConfigGetUserMACEnabled(t_e502_eth_config_hnd cfg, int32_t *en);
+X502_EXPORT(int32_t) E502_EthConfigSetUserMACEnabled(t_e502_eth_config_hnd cfg, int32_t en);
+X502_EXPORT(int32_t) E502_EthConfigGetIPv4Addr(t_e502_eth_config_hnd cfg_hnd, uint32_t *addr);
+X502_EXPORT(int32_t) E502_EthConfigSetIPv4Addr(t_e502_eth_config_hnd cfg_hnd, uint32_t addr);
+X502_EXPORT(int32_t) E502_EthConfigGetIPv4Mask(t_e502_eth_config_hnd cfg_hnd, uint32_t *mask);
+X502_EXPORT(int32_t) E502_EthConfigSetIPv4Mask(t_e502_eth_config_hnd cfg_hnd, uint32_t mask);
+X502_EXPORT(int32_t) E502_EthConfigGetIPv4Gate(t_e502_eth_config_hnd cfg_hnd, uint32_t *gate);
+X502_EXPORT(int32_t) E502_EthConfigSetIPv4Gate(t_e502_eth_config_hnd cfg_hnd, uint32_t gate);
+X502_EXPORT(int32_t) E502_EthConfigGetUserMac(t_e502_eth_config_hnd cfg, uint8_t *mac);
+X502_EXPORT(int32_t) E502_EthConfigSetUserMac(t_e502_eth_config_hnd cfg, const uint8_t *mac);
+X502_EXPORT(int32_t) E502_EthConfigGetFactoryMac(t_e502_eth_config_hnd cfg, uint8_t *mac);
+X502_EXPORT(int32_t) E502_EthConfigGetInstanceName(t_e502_eth_config_hnd cfg, char *name);
+X502_EXPORT(int32_t) E502_EthConfigSetInstanceName(t_e502_eth_config_hnd cfg, const char *name);
+
+X502_EXPORT(int32_t) E502_EthConfigSetNewPassword(t_e502_eth_config_hnd cfg, const char *new_passwd);
+
+
 #ifdef __cplusplus
 }
 #endif

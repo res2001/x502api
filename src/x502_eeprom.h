@@ -61,7 +61,7 @@ typedef struct {
     uint32_t format;
     char name[X502_DEVNAME_SIZE];
     char serial[X502_SERIAL_SIZE];
-    uint8_t mac[6];
+    uint8_t factory_mac[X502_MAC_ADDR_SIZE];
     char res[64-18];
 } t_x502_eeprom_hdr;
 

@@ -10,7 +10,7 @@
 
 X502_EXPORT(int32_t) X502_FlashRead(t_x502_hnd hnd, uint32_t addr, uint8_t* data,
                                     uint32_t size) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (err==X502_ERR_OK) {
         err = X502_CHECK_ADDR(addr, size);
     }
@@ -34,7 +34,7 @@ X502_EXPORT(int32_t) X502_FlashRead(t_x502_hnd hnd, uint32_t addr, uint8_t* data
 
 X502_EXPORT(int32_t) X502_FlashWrite(t_x502_hnd hnd, uint32_t addr,
                                      const uint8_t* data, uint32_t size) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (err==X502_ERR_OK) {
         err = X502_CHECK_ADDR(addr, size);
     }
@@ -54,7 +54,7 @@ X502_EXPORT(int32_t) X502_FlashWrite(t_x502_hnd hnd, uint32_t addr,
 }
 
 X502_EXPORT(int32_t) X502_FlashErase(t_x502_hnd hnd, uint32_t addr, uint32_t size) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (err==X502_ERR_OK) {
         err = X502_CHECK_ADDR(addr, size);
     }
@@ -65,7 +65,7 @@ X502_EXPORT(int32_t) X502_FlashErase(t_x502_hnd hnd, uint32_t addr, uint32_t siz
 }
 
 X502_EXPORT(int32_t) X502_FlashWriteEnable(t_x502_hnd hnd) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (err==X502_ERR_OK) {
         err = hnd->iface->flash_set_prot(hnd, X502_EEPROM_PROT_WR_USER, NULL, 0);
     }
@@ -73,7 +73,7 @@ X502_EXPORT(int32_t) X502_FlashWriteEnable(t_x502_hnd hnd) {
 }
 
 X502_EXPORT(int32_t) X502_FlashWriteDisable(t_x502_hnd hnd) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (err==X502_ERR_OK) {
         err = hnd->iface->flash_set_prot(hnd, X502_EEPROM_PROT_ALL, NULL, 0);
     }
@@ -82,7 +82,7 @@ X502_EXPORT(int32_t) X502_FlashWriteDisable(t_x502_hnd hnd) {
 
 
 X502_EXPORT(int32_t) X502_FlashSetProtection(t_x502_hnd hnd, uint32_t prot, uint8_t *prot_data, uint32_t prot_data_size) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (err==X502_ERR_OK) {
         err = hnd->iface->flash_set_prot(hnd, prot, prot_data, prot_data_size);
     }
@@ -122,6 +122,7 @@ int x502_check_eeprom(t_x502_hnd hnd) {
                     hnd->info.devflags |= X502_DEVFLAGS_FLASH_DATA_VALID;
                     memcpy(hnd->info.serial, pdescr->hdr.serial, sizeof(pdescr->hdr.serial));
                     memcpy(hnd->info.name, pdescr->hdr.name, sizeof(pdescr->hdr.name));
+                    memcpy(hnd->info.factory_mac, pdescr->hdr.factory_mac, sizeof(pdescr->hdr.factory_mac));
 
                     if ((pdescr->cbr_adc.hdr.cbr_sign == X502_EEPROM_CBR_SIGN) &&
                             (pdescr->cbr_adc.hdr.format == X502_EEPROM_CBR_FROMAT) &&
@@ -163,7 +164,7 @@ int x502_check_eeprom(t_x502_hnd hnd) {
 
 
 X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if ((err==X502_ERR_OK) && (hnd->iface->reload_dev_info!=NULL))
         err = hnd->iface->reload_dev_info(hnd);
     if (err==X502_ERR_OK)

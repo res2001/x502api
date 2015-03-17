@@ -10,6 +10,7 @@ set(SOURCES
     e502api_usb.c
     e502api_tcp.c
     e502api.c
+    e502api_eth_config.c
     ${LTIMER_SOURCES}
     ${X502API_LIB_DIR}/osspec/osspec.c
     )
@@ -17,7 +18,8 @@ set(SOURCES
 set(HEADERS
     ${LTIMER_HEADERS}
     e502_fpga_regs.h
-    e502_cm4_defs.h    
+    e502_cm4_defs.h
+    e502_eth_config.h
     e502api.h
     e502api_private.h
     e502_tcp_protocol.h)

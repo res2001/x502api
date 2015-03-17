@@ -4,19 +4,18 @@
 
 typedef enum {
     E502_CM4_ERR_OK                     = 0,
-    E502_CM4_ERR_FPGA_NSTATUS_TOUT      = -1001, /* при загрузке ПЛИС не дождались сигнала перехода в режим загрузки */
-    E502_CM4_ERR_FPGA_CONF_DONE_TOUT    = -1002, /* при загрузке ПЛИС не дождались сигнала завершения загрузки */
-    E502_CM4_ERR_FPGA_WF_NOT_PRESENT    = -1003, /* нет прошивки ПЛИС во flash-памяти */
-    E502_CM4_ERR_FPGA_REG_NACK          = -1004, /* обращение к регистру ПЛИС вернуло NACK */
-    E502_CM4_ERR_FPGA_REG_ERROR         = -1005, /* обращение к регистру ПЛИС вернуло ERROR */
-    E502_CM4_ERR_FPGA_REG_WT_TOUT       = -1006, /* превышено ожидание завершения обращения к регистру ПЛИС */
-    E502_CM4_ERR_TEST_INVALID_NUM       = -1007, /* неизвестный номер теста */
-    E502_CM4_ERR_TEST_VALUE_MISMATH     = -1008, /* несовпадение ожидаемых значений при проходе теста */
-    E502_CM4_ERR_TEST_NOT_RUNNING       = -1009, /* тест не запущен */
-    E502_CM4_ERR_TEST_ALREADY_RUNNING   = -1010, /* тест уже запщен */
-    E502_CM4_ERR_BF_LDR_FILE_SIZE       = -1011, /* не полный файл прошивки BlackFin */
-    /** Неверный формат файла прошивки BlackFin */
-    E502_CM4_ERR_LDR_FILE_FORMAT        = -1012,
+    E502_CM4_ERR_FPGA_NSTATUS_TOUT      = -1001, /**< При загрузке ПЛИС не удалось дождаться сигнала перехода в режим загрузки */
+    E502_CM4_ERR_FPGA_CONF_DONE_TOUT    = -1002, /**< При загрузке ПЛИС не удалось дождаться сигнала завершения загрузки */
+    E502_CM4_ERR_FPGA_WF_NOT_PRESENT    = -1003, /**< Не обнаружена прошивка ПЛИС во flash-памяти модуля */
+    E502_CM4_ERR_FPGA_REG_NACK          = -1004, /**< Обращение к регистру ПЛИС вернуло ответ NACK */
+    E502_CM4_ERR_FPGA_REG_ERROR         = -1005, /**< Обращение к регистру ПЛИС вернуло ответ ERROR */
+    E502_CM4_ERR_FPGA_REG_WT_TOUT       = -1006, /**< Не удалось дожлаться ответ на обращение к регистру ПЛИС */
+    E502_CM4_ERR_TEST_INVALID_NUM       = -1007, /**< Неподдерживаемый номер теста */
+    E502_CM4_ERR_TEST_VALUE_MISMATH     = -1008, /**< Несовпадение ожидаемых значений при проходе теста */
+    E502_CM4_ERR_TEST_NOT_RUNNING       = -1009, /**< Тест не запущен */
+    E502_CM4_ERR_TEST_ALREADY_RUNNING   = -1010, /**< Tест уже запщен */
+    E502_CM4_ERR_BF_LDR_FILE_SIZE       = -1011, /**< Не удалось найти конец файла прошивки BlackFin */
+    E502_CM4_ERR_LDR_FILE_FORMAT        = -1012, /**< Неверный формат файла прошивки BlackFin */
     /** Используются возможность LDR-файла, недоступные при записи прошивки
         BlackFin по HDMA */
     E502_CM4_ERR_LDR_FILE_UNSUP_FEATURE       = -1013,
@@ -38,13 +37,16 @@ typedef enum {
     /** Неверный адрес памяти BlackFin при записи или чтении по HDMA */
     E502_CM4_ERR_BF_INVALID_ADDR              = -1021,
     /** Неверный размер данных, передаваемых с управляющей командой в BlackFin */
-    E502_CM4_ERR_BF_INVALID_CMD_DATA_SIZE     = -1022,
-
-    E502_CM4_ERR_UNKNOWN_CMD                  = -1023,
-    E502_CM4_ERR_INVALID_CMD_PARAMS           = -1024,
-    E502_CM4_ERR_FIRM_BUF_OVERFLOW            = -1025,
-    E502_CM4_ERR_CMD_SIGNATURE                = -1026,
-    E502_CM4_ERR_INVALID_CMD_DATA_SIZE        = -1027
+    E502_CM4_ERR_BF_INVALID_CMD_DATA_SIZE     = -1022,    
+    E502_CM4_ERR_UNKNOWN_CMD                  = -1023, /**< Неподдерживаемый код команды */
+    E502_CM4_ERR_INVALID_CMD_PARAMS           = -1024, /**< Неверные параметры переданной команды */
+    E502_CM4_ERR_FIRM_BUF_OVERFLOW            = -1025, /**< Переполнение буфера для приема прошивки */
+    E502_CM4_ERR_CMD_SIGNATURE                = -1026, /**< Неверный признак начала команды */
+    E502_CM4_ERR_INVALID_CMD_DATA_SIZE        = -1027, /**< Неверное количество данных в команде */
+    E502_CM4_ERR_FLASH_PROT_CODE              = -1028, /**< Неверный код настройки защиты Flash-памяти */
+    E502_CM4_ERR_FLASH_OP                     = -1029, /**< Ошибка выполнения операции с Flash-памятью */
+    E502_CM4_ERR_FLASH_DATA_COMPARE           = -1030, /**< Ошибка сравнения записанных данных во Flash-память */
+    E502_CM4_ERR_INVALID_PASSWORD             = -1031  /**< Неверный пароль для изменения сетевых настроек */
 } t_e502_cm4_errs;
 
 typedef enum {
@@ -63,6 +65,7 @@ typedef enum {
     E502_CM4_CMD_GET_MODULE_NAME     = 11,
     E502_CM4_CMD_GET_USB_SPEED       = 6,
 
+    E502_CM4_CMD_BOOT                = 0x0F,
     E502_CM4_CMD_FPGA_REG_READ       = 0x10,
     E502_CM4_CMD_FPGA_REG_WRITE      = 0x11,
     E502_CM4_CMD_STREAM_START        = 0x12,
@@ -73,13 +76,15 @@ typedef enum {
     E502_CM4_CMD_FLASH_RD            = 0x17,
     E502_CM4_CMD_FLASH_WR            = 0x18,
     E502_CM4_CMD_FLASH_ERASE         = 0x19,
-    E502_CM4_CMD_FLASH_SET_PORT      = 0x1A,
+    E502_CM4_CMD_FLASH_SET_PROTECT   = 0x1A,
     E502_CM4_CMD_FLASH_RELOAD_INFO   = 0x1B,
-
+    E502_CM4_CMD_ETH_CFG_SET         = 0x1C,
+    E502_CM4_CMD_ETH_CFG_GET         = 0x1D,
     E502_CM4_CMD_BF_MEM_WRITE        = 0x20,
     E502_CM4_CMD_BF_MEM_READ         = 0x21,
     E502_CM4_CMD_BF_FIRM_LOAD        = 0x22,
     E502_CM4_CMD_DROP_DATA_CON       = 0x23,
+
 
     E502_CM4_CMD_TEST_START          = 0x40,
     E502_CM4_CMD_TEST_STOP           = 0x41,
@@ -89,11 +94,6 @@ typedef enum {
     E502_CM4_CMD_GET_MODULE_MODE     = 0x81,
     E502_CM4_CMD_GET_LAST_ERROR      = 0x82
 } t_e502_cm4_cmd_codes;
-
-
-
-
-
 
 
 typedef enum {

@@ -5,7 +5,7 @@ uint32_t prepare_dac_wrd(t_x502_hnd hnd, double val, uint32_t flags, const t_x50
 
 
 X502_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, uint32_t flags) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err && (ch!=X502_DAC_CH1) && (ch!=X502_DAC_CH2))
         err = X502_ERR_INVALID_DAC_CHANNEL;
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_DAC_PRESENT))
@@ -34,7 +34,7 @@ X502_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, 
 
 
 X502_EXPORT(int32_t) X502_AsyncOutDig(t_x502_hnd hnd, uint32_t val, uint32_t msk) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err) {
         if(hnd->mode == X502_MODE_FPGA) {
             err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
@@ -83,7 +83,7 @@ static int32_t f_read_digin(t_x502_hnd hnd, uint32_t* din) {
     ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(500));
     while (!rdy && !ltimer_expired(&tmr) && (err == X502_ERR_OK)) {
         err = hnd->iface->fpga_reg_read(hnd, X502_REGS_IOARITH_DIN_ASYNC, &val);
-        if (!err && (val&0x80000000)) {
+        if (!err && (val & 0x80000000)) {
             rdy = 1;
             *din = (val & 0x3FFFF);
         }
@@ -97,7 +97,7 @@ static int32_t f_read_digin(t_x502_hnd hnd, uint32_t* din) {
 
 
 X502_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err & (din==NULL))
         err = X502_ERR_INVALID_POINTER;
     if (!err)

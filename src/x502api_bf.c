@@ -185,7 +185,7 @@ static int32_t f_check_bf_firm(t_x502_hnd hnd) {
 
 
 X502_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *version) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err) {
         err = f_check_bf_firm(hnd);
         if (!err && version)
@@ -197,7 +197,7 @@ X502_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *vers
 X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
     uint32_t* ldr_buff = NULL;
     FILE* ldr_file=NULL;
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
 
 
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
@@ -235,7 +235,7 @@ X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
 
 X502_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
                                       const uint32_t* regs, uint32_t size) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
         err = X502_ERR_BF_NOT_PRESENT;;
     if (!err)
@@ -256,7 +256,7 @@ X502_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
 
 X502_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr,
                                      uint32_t* regs, uint32_t size) {
-    int32_t err = X502_CHECK_HND(hnd);
+    int32_t err = X502_CHECK_HND_OPEND(hnd);
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
         err = X502_ERR_BF_NOT_PRESENT;
     if (!err)
@@ -275,7 +275,7 @@ X502_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr,
 
 static int f_bf_start_cmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t par,
                           const uint32_t* data, uint32_t size) {
-    int err = X502_CHECK_HND(hnd);
+    int err = X502_CHECK_HND_OPEND(hnd);
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
         err = X502_ERR_BF_NOT_PRESENT;
     if (size > L502_BF_CMD_DATA_SIZE_MAX)

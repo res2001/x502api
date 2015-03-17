@@ -27,7 +27,7 @@ int32_t e502_iface_stream_running(t_x502_hnd hnd, uint32_t ch, int32_t* running)
 
 
 int32_t e502_iface_bf_mem_block_rd(t_x502_hnd hnd, uint32_t addr, uint32_t *block, uint32_t size) {
-    return  hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_BF_MEM_READ, addr, NULL, 0,
+    return hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_BF_MEM_READ, addr, NULL, 0,
                                   block, size*4, NULL, 0);
 }
 
@@ -96,7 +96,7 @@ int32_t e502_iface_flash_erase(t_x502_hnd hnd, uint32_t addr, uint32_t size) {
 }
 
 int32_t e502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* prot_data, uint32_t size) {
-    return hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_FLASH_SET_PORT, prot, prot_data, size, NULL, 0, NULL, 0);
+    return hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_FLASH_SET_PROTECT, prot, prot_data, size, NULL, 0, NULL, 0);
 }
 
 int32_t e502_iface_reload_dev_info(t_x502_hnd hnd) {

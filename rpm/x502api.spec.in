@@ -23,17 +23,17 @@ BuildRequires: libusb1-devel
 BuildRequires: libusb-1_0-devel
 %endif
 
-%if 0%{?rhel_version} || 0%{?centos_version}
+%if 0%{?rhel_version} || 0%{?rhel} || 0%{?centos_version}
 BuildRequires: libusbx-devel
 %endif
-Requires: udev
 
 
 
-Summary: Source package for library for L502 and E502 devices
+
+Summary: Source package for libraries for L502 and E502 devices
 
 %description 
-This package contain library for control L-Card data acqusition 
+This package contain libraries for control L Card data acqusition 
 L502 and E502 devices.
 
 %prep
@@ -73,7 +73,7 @@ ldconfig
 /usr/lib/libx502api.so.*
 
 %description -n libx502api1
-This package contain the shared with general functions for E502 and L502 devices.
+This package contain the shared object files with general functions for E502 and L502 devices.
 
 
 #---------- e502api  ---------------
@@ -81,7 +81,7 @@ This package contain the shared with general functions for E502 and L502 devices
 %package -n libe502api1
 Summary: Library for control L Card E502 device
 Group:   System/Libraries
-
+Requires: udev
 
 %post -n libe502api1
 ldconfig
@@ -121,8 +121,8 @@ Requires: libx502api1 = @PACKAGE_VERSION@,
 Requires: libe502api1 = @PACKAGE_VERSION@,          
 
 %description -n libx502api1-devel
-This package contain developer files such as headers and linker files for x502api library
-that need for control L Card L502 PCI-Express module.
+This package contain developer files such as headers and linker files for libraries
+for control L Card L502 and E502 devices.
 
 You need these files if you writing your own software. Non-developers likely 
 have little use for this package.

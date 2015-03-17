@@ -2,6 +2,8 @@
 #include "x502api.h"
 #include "l502_bf_cmd_defs.h"
 
+#include "devs/e502/e502_cm4_defs.h"
+
 static const char* f_unknow_err = "Неизвестная ошибка.";
 
 typedef struct
@@ -41,6 +43,8 @@ static const t_err_table f_err_tbl[] = {
     { X502_ERR_IOCTL_INVALID_RESP_SIZE, "Неверный размер ответа на управляющий запрос"},
     { X502_ERR_INVALID_DEVICE,          "Неверный тип устройства"},
     { X502_ERR_INVALID_DEVICE_RECORD,   "Недействительная запись о устройстве"},
+    { X502_ERR_INVALID_CONFIG_HANDLE,   "Неверный хендл конфигурации модуля"},
+    { X502_ERR_DEVICE_NOT_OPENED,       "Связь с устройством закрыта или не была установлена"},
     { X502_ERR_INVALID_LTABLE_SIZE,     "Задан неверный размер логической таблицы"},
     { X502_ERR_INVALID_LCH_NUMBER,      "Задан неверный номер логического канала"},
     { X502_ERR_INVALID_LCH_RANGE,       "Неверно задано значение диапазона АЦП"},
@@ -101,7 +105,39 @@ static const t_err_table f_err_tbl[] = {
     { L502_BF_ERR_STREAM_RUNNING,       "Ошибка BlackFin: команда не допустима при запущеном сборе"},
     { L502_BF_ERR_STREAM_STOPPED,       "Ошибка BlackFin: команда допустима только при запущеном сборе"},
     { L502_BF_ERR_NO_TEST_IN_PROGR,     "Ошибка BlackFin: не выполняется ни одного теста"},
-    { L502_BF_ERR_TEST_VALUE,           "Ошибка BlackFin: неверное значение при выполнении теста"}
+    { L502_BF_ERR_TEST_VALUE,           "Ошибка BlackFin: неверное значение при выполнении теста"},
+
+    { E502_CM4_ERR_FPGA_NSTATUS_TOUT,   "Ошибка Cortex-M4: При загрузке ПЛИС не удалось дождаться сигнала перехода в режим загрузки"},
+    { E502_CM4_ERR_FPGA_CONF_DONE_TOUT, "Ошибка Cortex-M4: При загрузке ПЛИС не удалось дождаться сигнала завершения загрузки"},
+    { E502_CM4_ERR_FPGA_WF_NOT_PRESENT, "Ошибка Cortex-M4: Не обнаружена прошивка ПЛИС во flash-памяти модуля"},
+    { E502_CM4_ERR_FPGA_REG_NACK,       "Ошибка Cortex-M4: Обращение к регистру ПЛИС вернуло ответ NACK"},
+    { E502_CM4_ERR_FPGA_REG_ERROR,      "Ошибка Cortex-M4: Обращение к регистру ПЛИС вернуло ответ ERROR"},
+    { E502_CM4_ERR_FPGA_REG_WT_TOUT,    "Ошибка Cortex-M4: Не удалось дожлаться ответ на обращение к регистру ПЛИС"},
+    { E502_CM4_ERR_TEST_INVALID_NUM,    "Ошибка Cortex-M4: Неподдерживаемый номер теста"},
+    { E502_CM4_ERR_TEST_VALUE_MISMATH,  "Ошибка Cortex-M4: Несовпадение ожидаемых значений при проходе теста"},
+    { E502_CM4_ERR_TEST_NOT_RUNNING,    "Ошибка Cortex-M4: Тест не запущен"},
+    { E502_CM4_ERR_TEST_ALREADY_RUNNING,"Ошибка Cortex-M4: Tест уже запщен"},
+    { E502_CM4_ERR_BF_LDR_FILE_SIZE,    "Ошибка Cortex-M4: Не удалось найти конец файла прошивки BlackFin"},
+    { E502_CM4_ERR_LDR_FILE_FORMAT,     "Ошибка Cortex-M4: Неверный формат файла прошивки BlackFin"},
+    { E502_CM4_ERR_LDR_FILE_UNSUP_FEATURE, "Ошибка Cortex-M4: Используются возможность LDR-файла, недоступные при записи прошивки BlackFin по HDMA"},
+    { E502_CM4_ERR_LDR_FILE_UNSUP_STARTUP_ADDR, "Ошибка Cortex-M4: Неверный стартовый адрес программы в прошивке BlackFin"},
+    { E502_CM4_ERR_BF_REQ_TIMEOUT,      "Ошибка Cortex-M4: Истек таймаут выполнения запроса на чтения/запись памяти BlackFin"},
+    { E502_CM4_ERR_BF_CMD_IN_PROGRESS,  "Ошибка Cortex-M4: Команда для BlackFin все еще находится в процессе обработки"},
+    { E502_CM4_ERR_BF_CMD_TIMEOUT,      "Ошибка Cortex-M4: Истекло время выполнения управляющей команды процессором BlackFin"},
+    { E502_CM4_ERR_BF_CMD_RETURN_INSUF_DATA, "Ошибка Cortex-M4: Возвращено недостаточно данных в ответ на команду к BlackFin"},
+    { E502_CM4_ERR_BF_LOAD_RDY_TOUT,    "Ошибка Cortex-M4: Истек таймаут ожидания готовности процессора BlackFin к записи прошивки"},
+    { E502_CM4_ERR_BF_NOT_PRESENT,      "Ошибка Cortex-M4: Попытка выполнить операцию для которой нужен сигнальный процессор при отсутствии сигнального процессора в модуле"},
+    { E502_CM4_ERR_BF_INVALID_ADDR,     "Ошибка Cortex-M4: Неверный адрес памяти BlackFin при записи или чтении по HDMA"},
+    { E502_CM4_ERR_BF_INVALID_CMD_DATA_SIZE, "Ошибка Cortex-M4: Неверный размер данных, передаваемых с управляющей командой в BlackFin"},
+    { E502_CM4_ERR_UNKNOWN_CMD,         "Ошибка Cortex-M4: Неподдерживаемый код команды"},
+    { E502_CM4_ERR_INVALID_CMD_PARAMS,  "Ошибка Cortex-M4: Неверные параметры переданной команды"},
+    { E502_CM4_ERR_FIRM_BUF_OVERFLOW,   "Ошибка Cortex-M4: Переполнение буфера для приема прошивки"},
+    { E502_CM4_ERR_CMD_SIGNATURE,       "Ошибка Cortex-M4: Неверный признак начала команды"},
+    { E502_CM4_ERR_INVALID_CMD_DATA_SIZE, "Ошибка Cortex-M4: Неверное количество данных в команде"},
+    { E502_CM4_ERR_FLASH_PROT_CODE,     "Ошибка Cortex-M4: Неверный код настройки защиты Flash-памяти"},
+    { E502_CM4_ERR_FLASH_OP,            "Ошибка Cortex-M4: Ошибка выполнения операции с Flash-памятью"},
+    { E502_CM4_ERR_FLASH_DATA_COMPARE,  "Ошибка Cortex-M4: Ошибка сравнения записанных данных во Flash-память"},
+    { E502_CM4_ERR_INVALID_PASSWORD,    "Ошибка Cortex-M4: Неверный пароль для изменения сетевых настроек"}
 };
 
 
