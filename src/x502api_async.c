@@ -5,7 +5,7 @@ uint32_t prepare_dac_wrd(t_x502_hnd hnd, double val, uint32_t flags, const t_x50
 
 
 X502_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, uint32_t flags) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (ch!=X502_DAC_CH1) && (ch!=X502_DAC_CH2))
         err = X502_ERR_INVALID_DAC_CHANNEL;
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_DAC_PRESENT))
@@ -20,7 +20,7 @@ X502_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, 
         }
 
         if (hnd->mode == X502_MODE_FPGA) {
-            err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_ASYNC_OUT, wr_val);
+            err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_ASYNC_OUT, wr_val);
         } else if (hnd->mode == X502_MODE_DSP) {
             err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_ASYNC_OUT,  ch==X502_DAC_CH1 ?
                                  L502_BF_CMD_ASYNC_TYPE_DAC1 : L502_BF_CMD_ASYNC_TYPE_DAC2,
@@ -34,7 +34,7 @@ X502_EXPORT(int32_t) X502_AsyncOutDac(t_x502_hnd hnd, uint32_t ch, double data, 
 
 
 X502_EXPORT(int32_t) X502_AsyncOutDig(t_x502_hnd hnd, uint32_t val, uint32_t msk) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err) {
         if(hnd->mode == X502_MODE_FPGA) {
             err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
@@ -46,7 +46,7 @@ X502_EXPORT(int32_t) X502_AsyncOutDig(t_x502_hnd hnd, uint32_t val, uint32_t msk
                     val |= hnd->last_dout & msk;
                 }
 
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_ASYNC_OUT,
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_ASYNC_OUT,
                                                  val | X502_STREAM_OUT_WORD_TYPE_DOUT);
                 /* сохраняем выведенное значения, для последующего использования
                    в маске */
@@ -76,13 +76,13 @@ static int32_t f_read_digin(t_x502_hnd hnd, uint32_t* din) {
     t_ltimer tmr;
 
     /* читаем состояние входов, чтобы сбросить флаг готовности */
-    err = hnd->iface->fpga_reg_read(hnd, X502_REGS_IOARITH_DIN_ASYNC, &val);
+    err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_IOARITH_DIN_ASYNC, &val);
 
     /* читаем синхронный ввод до готовности данных или пока не
        выйдем по таймауту*/
     ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(500));
     while (!rdy && !ltimer_expired(&tmr) && (err == X502_ERR_OK)) {
-        err = hnd->iface->fpga_reg_read(hnd, X502_REGS_IOARITH_DIN_ASYNC, &val);
+        err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_IOARITH_DIN_ASYNC, &val);
         if (!err && (val & 0x80000000)) {
             rdy = 1;
             *din = (val & 0x3FFFF);
@@ -97,7 +97,7 @@ static int32_t f_read_digin(t_x502_hnd hnd, uint32_t* din) {
 
 
 X502_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err & (din==NULL))
         err = X502_ERR_INVALID_POINTER;
     if (!err)
@@ -108,12 +108,12 @@ X502_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din) {
                 err = f_read_digin(hnd, din);
             } else {
                 /* запрещаем прием данных */
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOARITH_IN_STREAM_ENABLE, 0);
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOARITH_IN_STREAM_ENABLE, 0);
                 if (!err) {
-                    err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_PRELOAD_ADC, 1);
+                    err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_PRELOAD_ADC, 1);
                     if (!err) {
                         /* запускаем чтение цифровых входов */
-                        err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 1);
+                        err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 1);
                     }
                 }
 
@@ -122,7 +122,7 @@ X502_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din) {
                     err = f_read_digin(hnd, din);
 
                     /* останавливаем сбор данных */
-                    stop_err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
+                    stop_err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
                     if (!err)
                         err = stop_err;
                 }

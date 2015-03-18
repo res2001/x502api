@@ -84,9 +84,9 @@ static int32_t f_bf_mem_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t* regs, 
 
     /* данные записываем блоками по L502_BF_REQ_DATA_SIZE */
     while (!err && size) {
-        int put_size = (size < hnd->iface->bf_mem_block_size) ? size :
-                                         hnd->iface->bf_mem_block_size;
-        err = hnd->iface->bf_mem_block_wr(hnd, addr, regs, put_size);
+        int put_size = (size < hnd->iface_hnd->bf_mem_block_size) ? size :
+                                         hnd->iface_hnd->bf_mem_block_size;
+        err = hnd->iface_hnd->bf_mem_block_wr(hnd, addr, regs, put_size);
         if (!err) {
             size -= put_size;
             regs += put_size;
@@ -99,10 +99,10 @@ static int32_t f_bf_mem_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t* regs, 
 int32_t f_bf_mem_rd(t_x502_hnd hnd, uint32_t addr, uint32_t* regs, uint32_t size) {
     int err = 0;
     while (!err && size) {
-        int get_size = (size < hnd->iface->bf_mem_block_size) ? size :
-                                         hnd->iface->bf_mem_block_size;
+        int get_size = (size < hnd->iface_hnd->bf_mem_block_size) ? size :
+                                         hnd->iface_hnd->bf_mem_block_size;
 
-        err = hnd->iface->bf_mem_block_rd(hnd, addr, regs, get_size);
+        err = hnd->iface_hnd->bf_mem_block_rd(hnd, addr, regs, get_size);
 
         if (!err) {
             size -= get_size;
@@ -118,7 +118,7 @@ int32_t f_bf_mem_rd(t_x502_hnd hnd, uint32_t addr, uint32_t* regs, uint32_t size
 
 
 static int32_t f_check_bf_firm(t_x502_hnd hnd) {
-    int32_t err = hnd->iface->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
+    int32_t err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
     if (!err) {
         uint32_t rcv_wrds[2], recvd;
 
@@ -185,7 +185,7 @@ static int32_t f_check_bf_firm(t_x502_hnd hnd) {
 
 
 X502_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *version) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err) {
         err = f_check_bf_firm(hnd);
         if (!err && version)
@@ -197,7 +197,7 @@ X502_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *vers
 X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
     uint32_t* ldr_buff = NULL;
     FILE* ldr_file=NULL;
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
 
 
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
@@ -213,7 +213,7 @@ X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
     if (!err) {
         err = osspec_mutex_lock(hnd->mutex_bf, BF_MUTEX_LOCK_TOUT);
         if (!err) {
-            err = hnd->iface->bf_firm_load(hnd, ldr_file);
+            err = hnd->iface_hnd->bf_firm_load(hnd, ldr_file);
             osspec_mutex_release(hnd->mutex_bf);
         }
     }
@@ -235,7 +235,7 @@ X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
 
 X502_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
                                       const uint32_t* regs, uint32_t size) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
         err = X502_ERR_BF_NOT_PRESENT;;
     if (!err)
@@ -256,7 +256,7 @@ X502_EXPORT(int32_t) X502_BfMemWrite(t_x502_hnd hnd, uint32_t addr,
 
 X502_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr,
                                      uint32_t* regs, uint32_t size) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
         err = X502_ERR_BF_NOT_PRESENT;
     if (!err)
@@ -275,7 +275,7 @@ X502_EXPORT(int32_t) X502_BfMemRead(t_x502_hnd hnd, uint32_t addr,
 
 static int f_bf_start_cmd(t_x502_hnd hnd, uint16_t cmd_code, uint32_t par,
                           const uint32_t* data, uint32_t size) {
-    int err = X502_CHECK_HND_OPEND(hnd);
+    int err = X502_CHECK_HND_OPENED(hnd);
     if (!err && !(hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT))
         err = X502_ERR_BF_NOT_PRESENT;
     if (size > L502_BF_CMD_DATA_SIZE_MAX)

@@ -79,6 +79,7 @@ typedef struct st_e502_eth_config_state* t_e502_eth_config_hnd;
 
 X502_EXPORT(t_e502_eth_config_hnd) E502_EthConfigCreate(void);
 X502_EXPORT(int32_t) E502_EthConfigFree(t_e502_eth_config_hnd cfg);
+X502_EXPORT(int32_t) E502_GetIpAddr(t_x502_hnd hnd, uint32_t *ip_addr);
 
 
 X502_EXPORT(int32_t) E502_EthConfigRead(t_x502_hnd hnd, t_e502_eth_config_hnd cfg_hnd);
@@ -105,6 +106,9 @@ X502_EXPORT(int32_t) E502_EthConfigGetInstanceName(t_e502_eth_config_hnd cfg, ch
 X502_EXPORT(int32_t) E502_EthConfigSetInstanceName(t_e502_eth_config_hnd cfg, const char *name);
 
 X502_EXPORT(int32_t) E502_EthConfigSetNewPassword(t_e502_eth_config_hnd cfg, const char *new_passwd);
+
+
+X502_EXPORT(int32_t) E502_SwitchToBootloader(t_x502_hnd hnd);
 
 
 #ifdef __cplusplus

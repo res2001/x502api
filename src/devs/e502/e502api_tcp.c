@@ -412,7 +412,7 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
 
             hnd->iface_data = iface_data;
 
-            err = hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
+            err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
                                         sizeof(lboot_info), NULL, 0);
 
             if (err == X502_ERR_OK) {
@@ -481,7 +481,7 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
     int32_t err = 0;
     int32_t running;
 
-    err = hnd->iface->stream_running(hnd, ch, &running);
+    err = hnd->iface_hnd->stream_running(hnd, ch, &running);
     if (!err && running) {
         err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
                                       NULL, 0, NULL, 0, NULL, 0);       
@@ -490,7 +490,7 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
 }
 
 static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
-    int32_t err =  hnd->iface->stream_stop(hnd, ch);
+    int32_t err =  hnd->iface_hnd->stream_stop(hnd, ch);
     if (err == X502_ERR_OK) {
         t_tcp_iface_data *tcp_data = (t_tcp_iface_data *)hnd->iface_data;
         if (tcp_data->data_sock!=INVALID_SOCKET) {
@@ -654,8 +654,8 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
 
 
 X502_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
-    if (!err) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (err == X502_ERR_OK) {
         t_x502_devrec devinfo;
         X502_DevRecordInit(&devinfo);
         err = E502_MakeDevRecordByIpAddr(&devinfo, ip_addr, flags, tout);
@@ -663,6 +663,20 @@ X502_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_
             err = X502_OpenByDevRecord(hnd, &devinfo);
 
             X502_FreeDevRecordList(&devinfo, 1);
+        }
+    }
+    return err;
+}
+
+
+X502_EXPORT(int32_t) E502_GetIpAddr(t_x502_hnd hnd, uint32_t *ip_addr) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK) {
+        if (hnd->iface != X502_IFACE_TCP) {
+            err = X502_ERR_INVALID_OP_FOR_IFACE;
+        } else {
+            t_tcp_iface_data *tcp_data = (t_tcp_iface_data *)hnd->iface_data;
+            *ip_addr = tcp_data->ip_addr;
         }
     }
     return err;

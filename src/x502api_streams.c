@@ -9,7 +9,7 @@
 static int32_t f_set_streams(t_x502_hnd hnd, uint32_t streams) {
     int32_t err = 0;
     if (hnd->mode == X502_MODE_FPGA)  {
-        err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOARITH_IN_STREAM_ENABLE,
+        err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOARITH_IN_STREAM_ENABLE,
                                         (streams & X502_STREAM_ADC ? 0x01 : 0) |
                                         (streams & X502_STREAM_DIN ? 0x02 : 0));
     }
@@ -51,8 +51,8 @@ static int32_t f_stream_in_cfg(t_x502 *hnd) {
        L502_DMA_IN_BUF_FOR_SEC секунд постоянного сбора, но не меньше минимального
        размера */
     total_size = (uint32_t)(X502_DMA_IN_BUF_FOR_SEC*din_freq);
-    if (total_size < hnd->iface->in_stream_buf_min)
-        total_size = hnd->iface->in_stream_buf_min;
+    if (total_size < hnd->iface_hnd->in_stream_buf_min)
+        total_size = hnd->iface_hnd->in_stream_buf_min;
 
 
 
@@ -73,7 +73,7 @@ static int32_t f_stream_in_cfg(t_x502 *hnd) {
     params.buf_size = hnd->stream_pars[X502_STREAM_CH_IN].buf_size ?
                 hnd->stream_pars[X502_STREAM_CH_IN].buf_size : total_size;
 
-    err = hnd->iface->stream_cfg(hnd, X502_STREAM_CH_IN, &params);
+    err = hnd->iface_hnd->stream_cfg(hnd, X502_STREAM_CH_IN, &params);
 
     if (!err && (hnd->mode == X502_MODE_DSP)) {
         /* для BlackFin нужно так же установить еще шаг прерываний для
@@ -107,14 +107,14 @@ static int32_t f_stream_out_cfg(t_x502 *hnd) {
                 hnd->stream_pars[X502_STREAM_CH_OUT].step :
                 X502_DMA_OUT_IRQ_STEP;
 
-    return hnd->iface->stream_cfg(hnd, X502_STREAM_CH_OUT, &params);
+    return hnd->iface_hnd->stream_cfg(hnd, X502_STREAM_CH_OUT, &params);
 }
 
 
 static int32_t f_out_stream_preload(t_x502 *hnd) {
     int32_t err = f_stream_out_cfg(hnd);
     if (!err)
-        err = hnd->iface->stream_start(hnd, X502_STREAM_CH_OUT, 0);
+        err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_OUT, 0);
 
     if (!err && (hnd->mode == X502_MODE_DSP)) {
         err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_PRELOAD, 0, NULL, 0,
@@ -132,7 +132,7 @@ static int32_t f_out_stream_preload(t_x502 *hnd) {
 
 
 X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
@@ -152,7 +152,7 @@ X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
                         (streams & X502_STREAM_ALL_IN)) {
                     err = f_stream_in_cfg(hnd);
                     if (!err)
-                        err = hnd->iface->stream_start(hnd, X502_STREAM_CH_IN, 0);
+                        err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_IN, 0);
                 } else if (!err && ((old_streams & X502_STREAM_ALL_IN) !=
                                   (streams & X502_STREAM_ALL_IN))) {
                     err =f_stream_in_cfg(hnd);
@@ -165,7 +165,7 @@ X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
 }
 
 X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
 
@@ -185,12 +185,12 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
                    останавливаем их */
                 if (!err&& (old_streams & X502_STREAM_ALL_IN) &&
                         !(hnd->streams & X502_STREAM_ALL_IN)) {
-                    err = hnd->iface->stream_stop(hnd, X502_STREAM_CH_IN);
+                    err = hnd->iface_hnd->stream_stop(hnd, X502_STREAM_CH_IN);
                 }
 
                 if (!err&& (old_streams & X502_STREAM_ALL_OUT) &&
                         !(hnd->streams & X502_STREAM_ALL_OUT)) {
-                    err = hnd->iface->stream_stop(hnd, X502_STREAM_CH_OUT);
+                    err = hnd->iface_hnd->stream_stop(hnd, X502_STREAM_CH_OUT);
                     if (!err) {
                         hnd->flags &= ~_FLAGS_PRELOAD_DONE;
                     }
@@ -206,13 +206,13 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
 
 
 X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
-    int err = X502_CHECK_HND_OPEND(hnd);
+    int err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err && (hnd->mode==X502_MODE_FPGA)) {
         uint32_t reg;
-        err = hnd->iface->fpga_reg_read(hnd, X502_REGS_IOHARD_IO_MODE, &reg);
+        err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_IOHARD_IO_MODE, &reg);
         if (!err && !(reg & X502_REGBIT_ADC_SLV_CLK_LOCK_Msk))
             err = X502_ERR_REF_FREQ_NOT_LOCKED;
     }
@@ -233,7 +233,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
              * предзагружены в буфер платы */
             if ((hnd->streams & X502_STREAM_ALL_OUT) &&
                     (hnd->flags & (_FLAGS_PRELOAD_DONE | _FLGAS_CYCLE_MODE))) {
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 1);
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 1);
                 //if (!err)
                 //    err = _fpga_reg_write(hnd, L502_REGS_IOHARD_DAC_DIGOUT_SWAP, 1);
                 //if (!err)
@@ -244,7 +244,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
             /* предзагрузку АЦП должны делать всегда, так как по этой функции
              * выполняется часть инициализации параметров синхронного сбора! */
             if (!err) {
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_PRELOAD_ADC, 1);
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_PRELOAD_ADC, 1);
             }
 
             SLEEP_MS(20);
@@ -255,7 +255,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
         if (!err && (hnd->streams & X502_STREAM_ALL_IN)) {
             err = f_stream_in_cfg(hnd);
             if (!err)
-                err = hnd->iface->stream_start(hnd, X502_STREAM_CH_IN, 0);
+                err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_IN, 0);
             if (!err)
                 in_started = 1;
         }
@@ -263,7 +263,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
         if (!err) {
             if (hnd->mode == X502_MODE_FPGA) {
                 /* взводим сигнал GO, указывающий что запущен синхронных ввод-вывод */
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 1);
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 1);
             } else if (hnd->mode == X502_MODE_DSP) {
                 err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_START, 0,
                                   NULL, 0, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL);
@@ -273,7 +273,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
         }
 
         if (err && in_started) {
-            err = hnd->iface->stream_free(hnd, X502_STREAM_CH_IN);
+            err = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN);
         }
 
 
@@ -289,21 +289,21 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
 
 
 X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
-    int err = X502_CHECK_HND_OPEND(hnd);
+    int err = X502_CHECK_HND_OPENED(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
          int32_t stop_err1, stop_err2;
 
         if (hnd->mode==X502_MODE_FPGA) {
-            err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
+            err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
         } else if (hnd->mode == X502_MODE_DSP) {           
             err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_STREAM_STOP, 0,
                               NULL, 0, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL);
         }
 
-        stop_err1 = hnd->iface->stream_free(hnd, X502_STREAM_CH_IN);
-        stop_err2 = hnd->iface->stream_free(hnd, X502_STREAM_CH_OUT);
+        stop_err1 = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN);
+        stop_err2 = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_OUT);
         if (!err)
             err = stop_err1;
         if (!err)
@@ -317,7 +317,7 @@ X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
 }
 
 X502_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
-    int err = X502_CHECK_HND_OPEND(hnd);
+    int err = X502_CHECK_HND_OPENED(hnd);
     uint32_t bf_mode=0;
     if (!err && (hnd->mode==X502_MODE_DSP)) {
         err = x502_bf_get_par(hnd, L502_BF_PARAM_STREAM_MODE, &bf_mode, 1);
@@ -343,17 +343,17 @@ X502_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
 }
 
 X502_EXPORT(int32_t) X502_Recv(t_x502_hnd hnd, uint32_t* buf, uint32_t size, uint32_t tout) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (buf==NULL))
         err = X502_ERR_INVALID_POINTER;
     if (!err) {
-        err = hnd->iface->stream_read(hnd, buf, size, tout);
+        err = hnd->iface_hnd->stream_read(hnd, buf, size, tout);
     }
     return err;
 }
 
 X502_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t size, uint32_t tout) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (buf==NULL))
         err = X502_ERR_INVALID_POINTER;
 
@@ -372,13 +372,13 @@ X502_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t siz
     }
 
     if (!err) {
-        err = hnd->iface->stream_write(hnd, buf, size, tout);
+        err = hnd->iface_hnd->stream_write(hnd, buf, size, tout);
     }
     return err;
 }
 
 X502_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
-    int err = X502_CHECK_HND_OPEND(hnd);
+    int err = X502_CHECK_HND_OPENED(hnd);
     if (!err)
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
@@ -389,20 +389,20 @@ X502_EXPORT(int32_t)X502_PreloadStart(t_x502_hnd hnd) {
 }
 
 X502_EXPORT(int32_t) X502_GetRecvReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (rdy_cnt==NULL))
         err = X502_ERR_INVALID_POINTER;
     if (!err)
-        err = hnd->iface->stream_get_rdy_cnt(hnd, X502_STREAM_CH_IN, rdy_cnt);
+        err = hnd->iface_hnd->stream_get_rdy_cnt(hnd, X502_STREAM_CH_IN, rdy_cnt);
     return err;
 }
 
 X502_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (rdy_cnt==NULL))
         err = X502_ERR_INVALID_POINTER;
     if (!err)
-        err = hnd->iface->stream_get_rdy_cnt(hnd, X502_STREAM_CH_OUT, rdy_cnt);
+        err = hnd->iface_hnd->stream_get_rdy_cnt(hnd, X502_STREAM_CH_OUT, rdy_cnt);
     return err;
 }
 
@@ -426,7 +426,7 @@ static int32_t f_check_stream_ch_par_en(t_x502_hnd hnd, uint32_t stream_ch) {
 }
 
 X502_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t size) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err)
         err = f_check_stream_ch_par_en(hnd, ch);
     if (!err)
@@ -435,7 +435,7 @@ X502_EXPORT(int32_t) X502_SetStreamBufSize(t_x502_hnd hnd, uint32_t ch, uint32_t
 }
 
 X502_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t ch, uint32_t step) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err)
         err = f_check_stream_ch_par_en(hnd, ch);
     if (!err)

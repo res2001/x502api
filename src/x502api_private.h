@@ -27,7 +27,7 @@ struct st_x502_devrec_inptr {
 #define X502_CHECK_HND(hnd) ((hnd!=NULL) ? (hnd)->sign == X502_SIGN ? X502_ERR_OK \
     : X502_ERR_INVALID_HANDLE : X502_ERR_INVALID_HANDLE)
 
-#define X502_CHECK_HND_OPEND(hnd) ((hnd!=NULL) ? (hnd)->sign == X502_SIGN ? \
+#define X502_CHECK_HND_OPENED(hnd) ((hnd!=NULL) ? (hnd)->sign == X502_SIGN ? \
             (((hnd)->flags & PRIV_FLAGS_OPENED) ? X502_ERR_OK : X502_ERR_DEVICE_NOT_OPENED) \
         : X502_ERR_INVALID_HANDLE : X502_ERR_INVALID_HANDLE)
 
@@ -180,7 +180,8 @@ typedef struct {
 
 typedef struct st_x502 {
     uint32_t sign; /* признак описателя L502/E502 */
-    const t_x502_dev_iface *iface;
+    t_x502_iface iface;
+    const t_x502_dev_iface *iface_hnd;
     void *iface_data;
     t_x502_state_flags  flags; /* флаги состояния платы */
     t_l502_streams streams; /* какие синхронные потоки разрешены */

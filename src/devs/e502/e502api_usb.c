@@ -612,7 +612,7 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
     int ioctl_err;
     int32_t running;
 
-    ioctl_err = hnd->iface->stream_running(hnd, ch, &running);
+    ioctl_err = hnd->iface_hnd->stream_running(hnd, ch, &running);
     if (!ioctl_err && running)
         ioctl_err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
                             NULL, 0, NULL, 0, NULL, 0);
@@ -632,7 +632,7 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
 static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
     int32_t err;
 
-    err = hnd->iface->stream_stop(hnd, ch);
+    err = hnd->iface_hnd->stream_stop(hnd, ch);
 
     if (!err) {
         t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;

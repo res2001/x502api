@@ -29,7 +29,7 @@ static const uint16_t f_regadd_offs[X502_ADC_RANGE_CNT] = {X502_REGS_IOARITH_B10
 
 X502_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t phy_ch,
                                        uint32_t mode, uint32_t range, uint32_t avg) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -57,7 +57,7 @@ X502_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t phy
 }
 
 X502_EXPORT(int32_t) X502_SetLChannelCount(t_x502_hnd hnd, uint32_t lch_cnt) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -72,7 +72,7 @@ X502_EXPORT(int32_t) X502_SetLChannelCount(t_x502_hnd hnd, uint32_t lch_cnt) {
 }
 
 X502_EXPORT(int32_t) X502_GetLChannelCount(t_x502_hnd hnd, uint32_t* lch_cnt) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (lch_cnt==NULL))
         err = X502_ERR_INVALID_POINTER;
 
@@ -83,7 +83,7 @@ X502_EXPORT(int32_t) X502_GetLChannelCount(t_x502_hnd hnd, uint32_t* lch_cnt) {
 }
 
 X502_EXPORT(int32_t) X502_SetAdcFreqDivider(t_x502_hnd hnd, uint32_t adc_freq_div) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -98,7 +98,7 @@ X502_EXPORT(int32_t) X502_SetAdcFreqDivider(t_x502_hnd hnd, uint32_t adc_freq_di
 }
 
 X502_EXPORT(int32_t) X502_SetAdcInterframeDelay(t_x502_hnd hnd, uint32_t delay) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -112,7 +112,7 @@ X502_EXPORT(int32_t) X502_SetAdcInterframeDelay(t_x502_hnd hnd, uint32_t delay) 
 }
 
 X502_EXPORT(int32_t) X502_SetDinFreqDivider(t_x502_hnd hnd, uint32_t din_freq_div) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -127,7 +127,7 @@ X502_EXPORT(int32_t) X502_SetDinFreqDivider(t_x502_hnd hnd, uint32_t din_freq_di
 }
 
 X502_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_div) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -149,7 +149,7 @@ X502_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_di
 
 
 X502_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -160,7 +160,7 @@ X502_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode) {
 
     if (!err) {
         uint32_t val;
-        err = hnd->iface->fpga_reg_read(hnd, X502_REGS_BF_CTL, &val);
+        err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_BF_CTL, &val);
         if (!err) {
             val &= ~(X502_REGBIT_BF_CTL_CLK_DIV_Msk | X502_REGBIT_BF_CTL_DBG_MODE_Msk | X502_REGBIT_BF_CTL_DSP_MODE_Msk);
             if (mode==X502_MODE_DSP) {
@@ -173,11 +173,11 @@ X502_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode) {
         }
 
         if (!err)
-            err = hnd->iface->fpga_reg_write(hnd, X502_REGS_BF_CTL, val);
+            err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_BF_CTL, val);
 
         /* при переходе в режим DSP сбрасываем автомат HDMA */
         if (!err && (mode==X502_MODE_DSP))
-            err = hnd->iface->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
+            err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
 
         if (!err)
             hnd->mode = mode;
@@ -186,7 +186,7 @@ X502_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode) {
 }
 
 X502_EXPORT(int32_t) X502_GetMode(t_x502_hnd hnd, uint32_t* mode) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (mode==NULL))
         err = X502_ERR_INVALID_POINTER;
 
@@ -198,7 +198,7 @@ X502_EXPORT(int32_t) X502_GetMode(t_x502_hnd hnd, uint32_t* mode) {
 
 
 X502_EXPORT(int32_t) X502_SetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_frame) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -239,7 +239,7 @@ X502_EXPORT(int32_t) X502_SetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_fr
 }
 
 X502_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_frame) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (f_acq == NULL) && (f_frame==NULL))
         err = X502_ERR_INVALID_POINTER;
 
@@ -260,7 +260,7 @@ X502_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_fr
 
 
 X502_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
     if (!err && (f_din==NULL))
@@ -283,7 +283,7 @@ X502_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din) {
 }
 
 X502_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
     if (!err && (f_dout==NULL))
@@ -309,7 +309,7 @@ X502_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout) {
 
 
 X502_EXPORT(int32_t) X502_SetRefFreq(t_x502_hnd hnd, uint32_t freq) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -319,7 +319,7 @@ X502_EXPORT(int32_t) X502_SetRefFreq(t_x502_hnd hnd, uint32_t freq) {
 }
 
 X502_EXPORT(int32_t) X502_SetSyncMode(t_x502_hnd hnd, uint32_t sync_mode) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -333,7 +333,7 @@ X502_EXPORT(int32_t) X502_SetSyncMode(t_x502_hnd hnd, uint32_t sync_mode) {
 }
 
 X502_EXPORT(int32_t) X502_SetSyncStartMode(t_x502_hnd hnd, uint32_t sync_start_mode) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -349,7 +349,7 @@ X502_EXPORT(int32_t) X502_SetSyncStartMode(t_x502_hnd hnd, uint32_t sync_start_m
 
 
 X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
@@ -386,32 +386,32 @@ X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
                     wrd |= ((avg-1) & 0x7F) << 9;
                 }
 
-                err = hnd->iface->fpga_reg_write(hnd, (X502_REGS_IOHARD_LTABLE +
+                err = hnd->iface_hnd->fpga_reg_write(hnd, (X502_REGS_IOHARD_LTABLE +
                                                       hnd->set.lch_cnt - 1 - ch) & 0xFFFF, wrd);
             }
             if (!err) {
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_LCH_CNT,
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_LCH_CNT,
                                                  hnd->set.lch_cnt-1);
             }
 
             if (!err) {
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_ADC_FREQ_DIV,
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_ADC_FREQ_DIV,
                                                  hnd->set.adc_freq_div-1);
             }
 
             if (!err) {
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOARITH_ADC_FREQ_DIV,
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOARITH_ADC_FREQ_DIV,
                                                  hnd->set.adc_freq_div-1);
             }
 
 
             if (!err) {
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_ADC_FRAME_DELAY,
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_ADC_FRAME_DELAY,
                                                  hnd->set.adc_frame_delay);
             }
 
             if (!err) {
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_IO_MODE,
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_IO_MODE,
                                                  (hnd->set.sync_mode & 0x7)
                                               | ((hnd->set.sync_start_mode&0x7)<<3)
                                               | ((hnd->set.ref_freq==X502_REF_FREQ_2000KHZ ?
@@ -420,7 +420,7 @@ X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
             }
 
             if (!err) {
-                err = hnd->iface->fpga_reg_write(hnd, X502_REGS_IOHARD_DIGIN_FREQ_DIV,
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_DIGIN_FREQ_DIV,
                                                  hnd->set.din_freq_div-1);
             }
         } else if (hnd->mode == X502_MODE_DSP) {
@@ -482,7 +482,7 @@ X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
 
 
 X502_EXPORT(int32_t) X502_SetAdcCoef(t_x502_hnd hnd, uint32_t range, double k, double offs) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
 
     if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
@@ -498,9 +498,9 @@ X502_EXPORT(int32_t) X502_SetAdcCoef(t_x502_hnd hnd, uint32_t range, double k, d
         uint32_t offs_val = (uint32_t)(-offs);
 
         if (hnd->mode == X502_MODE_FPGA) {
-            err = hnd->iface->fpga_reg_write(hnd, f_regadd_k[range], kval);
+            err = hnd->iface_hnd->fpga_reg_write(hnd, f_regadd_k[range], kval);
             if (!err)
-                err = hnd->iface->fpga_reg_write(hnd, f_regadd_offs[range], offs_val);
+                err = hnd->iface_hnd->fpga_reg_write(hnd, f_regadd_offs[range], offs_val);
         } else if (hnd->mode == X502_MODE_DSP) {
             uint32_t wrds[3] = {range, kval, offs_val};
             err = x502_bf_set_par(hnd, L502_BF_PARAM_ADC_COEF, wrds, 3);
@@ -519,7 +519,7 @@ X502_EXPORT(int32_t) X502_SetAdcCoef(t_x502_hnd hnd, uint32_t range, double k, d
 
 
 X502_EXPORT(int32_t) X502_GetAdcCoef(t_x502_hnd hnd, uint32_t range, double* k, double* offs) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err) {
         if (range >= X502_ADC_RANGE_CNT) {
             err = X502_ERR_INVALID_LCH_RANGE;
@@ -536,7 +536,7 @@ X502_EXPORT(int32_t) X502_GetAdcCoef(t_x502_hnd hnd, uint32_t range, double* k, 
 
 
 X502_EXPORT(int32_t) X502_SetDacCoef(t_x502_hnd hnd, uint32_t ch, double k, double offs) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
 
     if (!err && (ch!=X502_DAC_CH1) && (ch!=X502_DAC_CH2)) {
         err = X502_ERR_INVALID_DAC_CHANNEL;
@@ -550,7 +550,7 @@ X502_EXPORT(int32_t) X502_SetDacCoef(t_x502_hnd hnd, uint32_t ch, double k, doub
 }
 
 X502_EXPORT(int32_t) X502_GetDacCoef(t_x502_hnd hnd, uint32_t ch, double* k, double* offs) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (ch!=X502_DAC_CH1) && (ch!=X502_DAC_CH2)) {
         err = X502_ERR_INVALID_DAC_CHANNEL;
     }

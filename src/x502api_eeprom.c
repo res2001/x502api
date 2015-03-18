@@ -10,7 +10,7 @@
 
 X502_EXPORT(int32_t) X502_FlashRead(t_x502_hnd hnd, uint32_t addr, uint8_t* data,
                                     uint32_t size) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err==X502_ERR_OK) {
         err = X502_CHECK_ADDR(addr, size);
     }
@@ -18,10 +18,10 @@ X502_EXPORT(int32_t) X502_FlashRead(t_x502_hnd hnd, uint32_t addr, uint8_t* data
 
         for ( ; (size!=0) && (err==X502_ERR_OK); ) {
             uint32_t rd_size = size;
-            if (rd_size > hnd->iface->flash_rd_size)
-                rd_size = hnd->iface->flash_rd_size;
+            if (rd_size > hnd->iface_hnd->flash_rd_size)
+                rd_size = hnd->iface_hnd->flash_rd_size;
 
-            err = hnd->iface->flash_rd(hnd, addr, data, rd_size);
+            err = hnd->iface_hnd->flash_rd(hnd, addr, data, rd_size);
             if (err==X502_ERR_OK) {
                 data+=rd_size;
                 addr+=rd_size;
@@ -34,16 +34,16 @@ X502_EXPORT(int32_t) X502_FlashRead(t_x502_hnd hnd, uint32_t addr, uint8_t* data
 
 X502_EXPORT(int32_t) X502_FlashWrite(t_x502_hnd hnd, uint32_t addr,
                                      const uint8_t* data, uint32_t size) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err==X502_ERR_OK) {
         err = X502_CHECK_ADDR(addr, size);
     }
     if (err==X502_ERR_OK) {
         uint32_t wr_size = size;
-        if (wr_size > hnd->iface->flash_wr_size)
-            wr_size = hnd->iface->flash_wr_size;
+        if (wr_size > hnd->iface_hnd->flash_wr_size)
+            wr_size = hnd->iface_hnd->flash_wr_size;
 
-        err = hnd->iface->flash_wr(hnd, addr, data, wr_size);
+        err = hnd->iface_hnd->flash_wr(hnd, addr, data, wr_size);
         if (err==X502_ERR_OK) {
             data+=wr_size;
             addr+=wr_size;
@@ -54,37 +54,37 @@ X502_EXPORT(int32_t) X502_FlashWrite(t_x502_hnd hnd, uint32_t addr,
 }
 
 X502_EXPORT(int32_t) X502_FlashErase(t_x502_hnd hnd, uint32_t addr, uint32_t size) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err==X502_ERR_OK) {
         err = X502_CHECK_ADDR(addr, size);
     }
     if (err==X502_ERR_OK) {
-        err = hnd->iface->flash_erase(hnd, addr, size);
+        err = hnd->iface_hnd->flash_erase(hnd, addr, size);
     }
     return err;
 }
 
 X502_EXPORT(int32_t) X502_FlashWriteEnable(t_x502_hnd hnd) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err==X502_ERR_OK) {
-        err = hnd->iface->flash_set_prot(hnd, X502_EEPROM_PROT_WR_USER, NULL, 0);
+        err = hnd->iface_hnd->flash_set_prot(hnd, X502_EEPROM_PROT_WR_USER, NULL, 0);
     }
     return err;
 }
 
 X502_EXPORT(int32_t) X502_FlashWriteDisable(t_x502_hnd hnd) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err==X502_ERR_OK) {
-        err = hnd->iface->flash_set_prot(hnd, X502_EEPROM_PROT_ALL, NULL, 0);
+        err = hnd->iface_hnd->flash_set_prot(hnd, X502_EEPROM_PROT_ALL, NULL, 0);
     }
     return err;
 }
 
 
 X502_EXPORT(int32_t) X502_FlashSetProtection(t_x502_hnd hnd, uint32_t prot, uint8_t *prot_data, uint32_t prot_data_size) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err==X502_ERR_OK) {
-        err = hnd->iface->flash_set_prot(hnd, prot, prot_data, prot_data_size);
+        err = hnd->iface_hnd->flash_set_prot(hnd, prot, prot_data, prot_data_size);
     }
     return err;
 }
@@ -164,9 +164,9 @@ int x502_check_eeprom(t_x502_hnd hnd) {
 
 
 X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd) {
-    int32_t err = X502_CHECK_HND_OPEND(hnd);
-    if ((err==X502_ERR_OK) && (hnd->iface->reload_dev_info!=NULL))
-        err = hnd->iface->reload_dev_info(hnd);
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if ((err==X502_ERR_OK) && (hnd->iface_hnd->reload_dev_info!=NULL))
+        err = hnd->iface_hnd->reload_dev_info(hnd);
     if (err==X502_ERR_OK)
         err = x502_check_eeprom(hnd);
     return err;

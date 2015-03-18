@@ -45,6 +45,7 @@ static const t_err_table f_err_tbl[] = {
     { X502_ERR_INVALID_DEVICE_RECORD,   "Недействительная запись о устройстве"},
     { X502_ERR_INVALID_CONFIG_HANDLE,   "Неверный хендл конфигурации модуля"},
     { X502_ERR_DEVICE_NOT_OPENED,       "Связь с устройством закрыта или не была установлена"},
+    { X502_ERR_INVALID_OP_FOR_IFACE,    "Данная операция не доступна для текущего интерфейса связи с устройством"},
     { X502_ERR_INVALID_LTABLE_SIZE,     "Задан неверный размер логической таблицы"},
     { X502_ERR_INVALID_LCH_NUMBER,      "Задан неверный номер логического канала"},
     { X502_ERR_INVALID_LCH_RANGE,       "Неверно задано значение диапазона АЦП"},

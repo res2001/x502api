@@ -65,12 +65,12 @@ X502_EXPORT(int32_t) E502_EthConfigFree(t_e502_eth_config_hnd cfg) {
 X502_EXPORT(int32_t) E502_EthConfigRead(t_x502_hnd hnd, t_e502_eth_config_hnd cfg) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK) {
-        err = X502_CHECK_HND_OPEND(hnd);
+        err = X502_CHECK_HND_OPENED(hnd);
     }
     if (err == X502_ERR_OK) {
         uint32_t recvd_size;
 
-        err = hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_ETH_CFG_GET, 0,
+        err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_ETH_CFG_GET, 0,
                                     NULL, 0, &cfg->params.cfg, sizeof(t_e502_eth_config), &recvd_size, 0);
         if (err == X502_ERR_OK) {
             cfg->flags = 0;
@@ -83,12 +83,12 @@ X502_EXPORT(int32_t) E502_EthConfigRead(t_x502_hnd hnd, t_e502_eth_config_hnd cf
 X502_EXPORT(int32_t) E502_EthConfigWrite(t_x502_hnd hnd, t_e502_eth_config_hnd cfg, const char *passwd) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK) {
-        err = X502_CHECK_HND_OPEND(hnd);
+        err = X502_CHECK_HND_OPENED(hnd);
     }
     if (err == X502_ERR_OK) {
         strncpy(cfg->params.passwd, passwd, E502_ETHCONFIG_PASSWD_SIZE);
         cfg->params.passwd[E502_ETHCONFIG_PASSWD_SIZE-1] = '\0';
-        err = hnd->iface->gen_ioctl(hnd, E502_CM4_CMD_ETH_CFG_SET, cfg->flags,
+        err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_ETH_CFG_SET, cfg->flags,
                                     &cfg->params, sizeof(cfg->params),
                                     NULL, 0, NULL, 0);
         memset(cfg->params.passwd, 0, E502_ETHCONFIG_PASSWD_SIZE);
