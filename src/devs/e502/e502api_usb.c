@@ -96,7 +96,7 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
                    const void* snd_data, uint32_t snd_size,
                    void* rcv_data, uint32_t recv_size, uint32_t* recvd_size, uint32_t tout);
 
-static int32_t f_iface_free_devinfo_data(void *devinfo_data);
+static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr);
 static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
@@ -119,7 +119,7 @@ static const t_x502_dev_iface f_usb_iface = {
     USB_CTL_REQ_MAX_SIZE/4,
     USB_CTL_REQ_MAX_SIZE, //flash rd size
     USB_CTL_REQ_MAX_SIZE, //flash wr size
-    f_iface_free_devinfo_data,
+    f_iface_free_devinfo_ptr,
     f_iface_open,
     f_iface_close,
     e502_iface_fpga_read,
@@ -223,10 +223,11 @@ static int32_t f_iface_close(t_x502_hnd hnd) {
 }
 
 
-static int32_t f_iface_free_devinfo_data(void *devinfo_data) {
-    libusb_device *dev = (libusb_device*)devinfo_data;
+static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr) {
+    libusb_device *dev = (libusb_device*)devinfo_ptr->iface_data;
     libusb_unref_device(dev);
-    return 0;
+    free(devinfo_ptr);
+    return X502_ERR_OK;
 }
 
 
@@ -872,27 +873,27 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
                    rcv_data, recv_size, recvd_size, tout);
 }
 
-static int f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec* info) {
-    int32_t err = 0;
+static int f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec *info) {
+    int32_t err = X502_ERR_OK;
     t_x502_devrec_inptr *devinfo_ptr = calloc(1, sizeof(t_x502_devrec_inptr));
     if (devinfo_ptr==NULL)  {
         err = X502_ERR_MEMORY_ALLOC;
     }
 
-    if (!err) {
-        t_lboot_devinfo lboot_info;        
+    if (err == X502_ERR_OK) {
+        t_lboot_devinfo lboot_info;
         uint32_t id;
 
         //получаем информацию о устройстве
         err = f_ioreq(hnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
                       sizeof(lboot_info), NULL, 0);
 
-        if (!err) {
+        if (err == X502_ERR_OK) {
             err = f_ioreq(hnd, E502_CM4_CMD_FPGA_REG_READ, E502_REGS_ARM_HARD_ID,
                           NULL, 0, &id, sizeof(id), NULL, 0);
         }
 
-        if (!err) {
+        if (err == X502_ERR_OK) {
             strcpy(info->devname, lboot_info.devname);
             strcpy(info->serial, lboot_info.serial);
 
@@ -903,7 +904,7 @@ static int f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec* info) {
         }
     }
 
-    if (err) {
+    if (err != X502_ERR_OK) {
         free(devinfo_ptr);
     }
     return err;
@@ -912,10 +913,10 @@ static int f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec* info) {
 
 
 
-X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t size,
-                                             uint32_t flags, uint32_t* devcnt) {
+X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec *list, uint32_t size,
+                                             uint32_t flags, uint32_t *devcnt) {
     uint32_t curcnt=0;
-    int32_t err =0;
+    int32_t err = X502_ERR_OK;
     libusb_device **usb_devlist;
     ssize_t usb_devlist_size, i;
 
@@ -937,7 +938,7 @@ X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t siz
             if ((devdescr.idVendor == E502_USB_VID)
                     && (devdescr.idProduct == E502_USB_PID)) {
                 int32_t cur_err = libusb_open(usb_devlist[i], &usbhnd);
-                if (!cur_err) {
+                if (cur_err == X502_ERR_OK) {
                     t_x502_devrec info;
                     int info_used = 0;
                     X502_DevRecordInit(&info);
@@ -962,8 +963,6 @@ X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec* list, uint32_t siz
                        X502_FreeDevRecordList(&info,1);
 
                    libusb_close(usbhnd);
-
-
                 }
             }
         }

@@ -102,9 +102,6 @@ if(WIN32)
                    ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc @ONLY)
 
     SET(SOURCES ${SOURCES} x502api.def ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc)
-
-    #подключение библиотеки для работы с сокетами
-    set(LIBS ${LIBS} Ws2_32)
 endif(WIN32)
 
 

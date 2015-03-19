@@ -67,7 +67,7 @@ typedef struct {
 
 
 
-typedef int32_t (*t_x502_iface_free_devinfo_data)(void* devinfo_data);
+typedef int32_t (*t_x502_iface_free_devinfo_ptr)(t_x502_devrec_inptr *devinfo_ptr);
 
 typedef int32_t (*t_x502_iface_open)(t_x502_hnd hnd, const t_x502_devrec *devinfo);
 typedef int32_t (*t_x502_iface_close)(t_x502_hnd hnd);
@@ -111,7 +111,7 @@ typedef struct {
     uint16_t bf_mem_block_size;
     uint16_t flash_rd_size;  /**< Максимальный размер чтения из flash-памяти за один запрос */
     uint16_t flash_wr_size;  /**< Максимальный размер записи во flash-память за один запрос */
-    t_x502_iface_free_devinfo_data  free_devinfo_data;
+    t_x502_iface_free_devinfo_ptr  free_devinfo_ptr;
     t_x502_iface_open               open;
     t_x502_iface_close              close;
     t_x502_iface_fpga_reg_read      fpga_reg_read;

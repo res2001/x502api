@@ -85,7 +85,7 @@ typedef struct {
     uint8_t  send_part_size;  /**< кол-во неотправленных байт в последнем переданном не полностью слове */
 } t_tcp_iface_data;
 
-
+static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr);
 static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
@@ -108,7 +108,7 @@ static const t_x502_dev_iface f_tcp_iface = {
     TCP_CTL_REQ_MAX_SIZE/4,
     TCP_CTL_REQ_MAX_SIZE, //flash rd size
     TCP_CTL_REQ_MAX_SIZE, //flash wr size
-    NULL,
+    f_iface_free_devinfo_ptr,
     f_iface_open,
     f_iface_close,
     e502_iface_fpga_read,
@@ -386,7 +386,11 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
     return err;
 }
 
-
+static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr) {
+    free(devinfo_ptr->iface_data);
+    free(devinfo_ptr);
+    return X502_ERR_OK;
+}
 
 static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
     int32_t err = X502_ERR_OK;

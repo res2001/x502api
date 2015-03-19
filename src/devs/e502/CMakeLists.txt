@@ -38,6 +38,19 @@ set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
 
 include_directories(${X502API_LIB_DIR}/osspec)
 
+if(WIN32)
+    #конфигурируем файл ресурсов для Windows
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/e502api.rc.in
+                   ${CMAKE_CURRENT_BINARY_DIR}/e502api.rc @ONLY)
+
+    SET(SOURCES ${SOURCES} e502api.def ${CMAKE_CURRENT_BINARY_DIR}/e502api.rc)
+
+    #подключение библиотеки для работы с сокетами
+    set(LIBS ${LIBS} Ws2_32)
+endif(WIN32)
+
+
+
 
 add_library(${PROJECT} SHARED ${HEADERS} ${SOURCES})
 

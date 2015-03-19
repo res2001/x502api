@@ -20,10 +20,10 @@
             BLOCK "04090000"
             BEGIN
                 VALUE "CompanyName",      "L Card"
-                VALUE "FileDescription",  "Library with shared function for L502 and E502"
+                VALUE "FileDescription",  "Library for E502"
                 VALUE "FileVersion",      "@X502API_VERSION@"
-                VALUE "OriginalFilename", "x502api.dll"
-                VALUE "ProductName",      "x502api"
+                VALUE "OriginalFilename", "e502api.dll"
+                VALUE "ProductName",      "e502api"
                 VALUE "ProductVersion",   "@X502API_VERSION@"
                 VALUE "LegalCopyright",    "© 2015 L Card Ltd."
             END
@@ -31,10 +31,10 @@
             BLOCK "04190000"
             BEGIN
                 VALUE "CompanyName",      "Л Кард"
-                VALUE "FileDescription",  "Библиотека с функциями, общими для L502 и E502"
+                VALUE "FileDescription",  "Библиотека для работы с модулем/E502"
                 VALUE "FileVersion",      "@X502API_VERSION@"
-                VALUE "OriginalFilename", "x502api.dll"
-                VALUE "ProductName",      "x502api"
+                VALUE "OriginalFilename", "e502api.dll"
+                VALUE "ProductName",      "e502api"
                 VALUE "ProductVersion",   "@X502API_VERSION@"
                 VALUE "LegalCopyright",   "© 2015 ООО 'Л Кард'"
             END

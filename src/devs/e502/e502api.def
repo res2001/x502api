@@ -1,0 +1,33 @@
+LIBRARY     e502api.dll
+
+EXPORTS
+    E502_UsbGetDevRecordsList
+    E502_UsbGetSerialList
+    E502_OpenUsb
+    E502_OpenByIpAddr
+    E502_MakeDevRecordByIpAddr
+    E502_EthConfigCreate
+    E502_EthConfigFree
+    E502_GetIpAddr
+    E502_EthConfigRead
+    E502_EthConfigWrite
+    E502_EthConfigGetEnabled
+    E502_EthConfigSetEnabled
+    E502_EthConfigGetAutoIPEnabled
+    E502_EthConfigSetAutoIPEnabled
+    E502_EthConfigGetUserMACEnabled
+    E502_EthConfigSetUserMACEnabled
+    E502_EthConfigGetIPv4Addr
+    E502_EthConfigSetIPv4Addr
+    E502_EthConfigGetIPv4Mask
+    E502_EthConfigSetIPv4Mask
+    E502_EthConfigGetIPv4Gate
+    E502_EthConfigSetIPv4Gate
+    E502_EthConfigGetUserMac
+    E502_EthConfigSetUserMac
+    E502_EthConfigGetFactoryMac
+    E502_EthConfigGetInstanceName
+    E502_EthConfigSetInstanceName
+    E502_EthConfigSetNewPassword
+    E502_SwitchToBootloader
+

@@ -288,12 +288,12 @@ X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size) 
             if (list[i].sign!=X502_DEVREC_SIGN) {
                 err = X502_ERR_INVALID_DEVICE_RECORD;
             } else {
-                t_x502_devrec_inptr* devinfo_ptr = (t_x502_devrec_inptr*)list[i].internal;
-                if (devinfo_ptr!=NULL) {
+                t_x502_devrec_inptr *devinfo_ptr = (t_x502_devrec_inptr*)list[i].internal;
+                if (devinfo_ptr != NULL) {
                     const t_x502_dev_iface *iface = (const t_x502_dev_iface *)devinfo_ptr->iface;
-                    if ((iface!=NULL) && (iface->free_devinfo_data!=NULL))
-                        iface->free_devinfo_data(devinfo_ptr->iface_data);
-                    free(devinfo_ptr);
+                    if (iface!=NULL)
+                        iface->free_devinfo_ptr(devinfo_ptr);
+
                 }
                 list[i].internal = NULL;
             }
@@ -540,7 +540,7 @@ X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *rec) {
         memset(rec, 0, sizeof(t_x502_devrec));
         rec->sign = X502_DEVREC_SIGN;
     }
-    return 0;
+    return X502_ERR_OK;
 }
 
 X502_EXPORT(int32_t) X502_LedBlink(t_x502_hnd hnd) {
@@ -588,24 +588,13 @@ X502_EXPORT(int32_t) X502_SetDigInPullup(t_x502_hnd hnd, uint32_t pullups) {
     return err;
 }
 
-#ifdef WIN32
-#include <winsock2.h>
-BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-    WSADATA wsaData;
-    WORD wVersionRequested;
-
-    switch (fdwReason) {
+#ifdef _WIN32
+BOOL WINAPI DllMain(HINSTANCE hmod, DWORD reason, LPVOID resvd) {
+    switch (reason) {
     case DLL_PROCESS_ATTACH:
-        wVersionRequested = MAKEWORD(2, 2);
-        if (WSAStartup(wVersionRequested, &wsaData))
-            return FALSE;
-        if (wsaData.wVersion != wVersionRequested) {
-            WSACleanup();
-            return FALSE;
-        }
-        break;
+    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
-        WSACleanup();
         break;
     }
     return TRUE;
