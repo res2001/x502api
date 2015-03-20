@@ -104,7 +104,7 @@ X502_EXPORT(int32_t) X502_AsyncInDig(t_x502_hnd hnd, uint32_t* din) {
          err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
     if (!err) {
         if (hnd->mode == X502_MODE_FPGA) {
-            if (hnd->flags & _FLAGS_STREAM_RUN) {
+            if (hnd->flags & PRIV_FLAGS_STREAM_RUN) {
                 err = f_read_digin(hnd, din);
             } else {
                 /* запрещаем прием данных */

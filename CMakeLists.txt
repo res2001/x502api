@@ -125,7 +125,7 @@ if(UNIX)
 endif(UNIX)
 
 
-add_subdirectory(src/devs)
+add_subdirectory(devs)
 
 #цели для сборки пакетов
 if(UNIX AND CMAKE_PACKAGES)

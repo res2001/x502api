@@ -30,7 +30,7 @@ static const uint16_t f_regadd_offs[X502_ADC_RANGE_CNT] = {X502_REGS_IOARITH_B10
 X502_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t phy_ch,
                                        uint32_t mode, uint32_t range, uint32_t avg) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err) {
@@ -58,7 +58,7 @@ X502_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t phy
 
 X502_EXPORT(int32_t) X502_SetLChannelCount(t_x502_hnd hnd, uint32_t lch_cnt) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err) {
@@ -84,7 +84,7 @@ X502_EXPORT(int32_t) X502_GetLChannelCount(t_x502_hnd hnd, uint32_t* lch_cnt) {
 
 X502_EXPORT(int32_t) X502_SetAdcFreqDivider(t_x502_hnd hnd, uint32_t adc_freq_div) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err)  {
@@ -99,7 +99,7 @@ X502_EXPORT(int32_t) X502_SetAdcFreqDivider(t_x502_hnd hnd, uint32_t adc_freq_di
 
 X502_EXPORT(int32_t) X502_SetAdcInterframeDelay(t_x502_hnd hnd, uint32_t delay) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err && (delay > X502_ADC_INTERFRAME_DELAY_MAX))
@@ -113,7 +113,7 @@ X502_EXPORT(int32_t) X502_SetAdcInterframeDelay(t_x502_hnd hnd, uint32_t delay) 
 
 X502_EXPORT(int32_t) X502_SetDinFreqDivider(t_x502_hnd hnd, uint32_t din_freq_div) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err) {
@@ -128,7 +128,7 @@ X502_EXPORT(int32_t) X502_SetDinFreqDivider(t_x502_hnd hnd, uint32_t din_freq_di
 
 X502_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_div) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err) {
@@ -150,7 +150,7 @@ X502_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_di
 
 X502_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err && (mode==X502_MODE_DSP) &&
@@ -199,7 +199,7 @@ X502_EXPORT(int32_t) X502_GetMode(t_x502_hnd hnd, uint32_t* mode) {
 
 X502_EXPORT(int32_t) X502_SetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_frame) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err && (f_acq==NULL))
@@ -261,7 +261,7 @@ X502_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_fr
 
 X502_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
     if (!err && (f_din==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -284,7 +284,7 @@ X502_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din) {
 
 X502_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
     if (!err && (f_dout==NULL))
         err = X502_ERR_INVALID_POINTER;
@@ -310,7 +310,7 @@ X502_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout) {
 
 X502_EXPORT(int32_t) X502_SetRefFreq(t_x502_hnd hnd, uint32_t freq) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err)
@@ -320,7 +320,7 @@ X502_EXPORT(int32_t) X502_SetRefFreq(t_x502_hnd hnd, uint32_t freq) {
 
 X502_EXPORT(int32_t) X502_SetSyncMode(t_x502_hnd hnd, uint32_t sync_mode) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err)
@@ -334,7 +334,7 @@ X502_EXPORT(int32_t) X502_SetSyncMode(t_x502_hnd hnd, uint32_t sync_mode) {
 
 X502_EXPORT(int32_t) X502_SetSyncStartMode(t_x502_hnd hnd, uint32_t sync_start_mode) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err)
@@ -350,7 +350,7 @@ X502_EXPORT(int32_t) X502_SetSyncStartMode(t_x502_hnd hnd, uint32_t sync_start_m
 
 X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err) {
@@ -484,7 +484,7 @@ X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
 X502_EXPORT(int32_t) X502_SetAdcCoef(t_x502_hnd hnd, uint32_t range, double k, double offs) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
 
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err) {

@@ -7,8 +7,8 @@
 
 #define E502_DEVICE_NAME "E502"
 
-int32_t e502_iface_fpga_read(t_x502_hnd hnd, uint16_t addr, uint32_t *val);
-int32_t e502_iface_fpga_write(t_x502_hnd hnd, uint16_t addr, uint32_t val);
+int32_t e502_iface_fpga_read(t_x502_hnd hnd, uint32_t addr, uint32_t *val);
+int32_t e502_iface_fpga_write(t_x502_hnd hnd, uint32_t addr, uint32_t val);
 int32_t e502_iface_stream_running(t_x502_hnd hnd, uint32_t ch, int32_t* running);
 int32_t e502_iface_bf_mem_block_rd(t_x502_hnd hnd, uint32_t addr, uint32_t *block, uint32_t size);
 int32_t e502_iface_bf_mem_block_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t *block, uint32_t size);
@@ -21,5 +21,11 @@ int32_t e502_iface_flash_wr(t_x502_hnd hnd, uint32_t addr, const uint8_t* data, 
 int32_t e502_iface_flash_erase(t_x502_hnd hnd, uint32_t addr, uint32_t size);
 int32_t e502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* prot_data, uint32_t size);
 int32_t e502_iface_reload_dev_info(t_x502_hnd hnd);
+
+int32_t e502_iface_cycle_load_start(t_x502_hnd hnd, uint32_t size);
+int32_t e502_iface_cycle_setup(t_x502_hnd hnd, uint32_t flags);
+int32_t e502_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags);
+
+
 
 #endif // E502API_PRIVATE_H

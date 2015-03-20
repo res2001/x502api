@@ -122,7 +122,7 @@ static int32_t f_out_stream_preload(t_x502 *hnd) {
     }
 
     if (!err) {
-        hnd->flags |= _FLAGS_PRELOAD_DONE;
+        hnd->flags |= PRIV_FLAGS_PRELOAD_DONE;
     }
     return err;
 }
@@ -145,7 +145,7 @@ X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
             uint32_t old_streams = hnd->streams;
             err = f_set_streams(hnd, hnd->streams | streams);
 
-            if (hnd->flags & _FLAGS_STREAM_RUN) {
+            if (hnd->flags & PRIV_FLAGS_STREAM_RUN) {
                 /* если не было разрешено потока на ввод до этого,
                    а при вызове стал разрешен => инициализируем его */
                 if (!err && !(old_streams & X502_STREAM_ALL_IN) &&
@@ -180,7 +180,7 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
             uint32_t old_streams = hnd->streams;
             err = f_set_streams(hnd, hnd->streams & ~streams);
 
-            if (hnd->flags & _FLAGS_STREAM_RUN) {
+            if (hnd->flags & PRIV_FLAGS_STREAM_RUN) {
                 /* если все потоки на ввод были запрещены, то
                    останавливаем их */
                 if (!err&& (old_streams & X502_STREAM_ALL_IN) &&
@@ -192,7 +192,7 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
                         !(hnd->streams & X502_STREAM_ALL_OUT)) {
                     err = hnd->iface_hnd->stream_stop(hnd, X502_STREAM_CH_OUT);
                     if (!err) {
-                        hnd->flags &= ~_FLAGS_PRELOAD_DONE;
+                        hnd->flags &= ~PRIV_FLAGS_PRELOAD_DONE;
                     }
                 }
             }
@@ -207,7 +207,7 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
 
 X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
     int err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (hnd->flags & _FLAGS_STREAM_RUN))
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err && (hnd->mode==X502_MODE_FPGA)) {
@@ -232,7 +232,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
             /* предзагрузку значения на вывод делаем только если реально данные уже были
              * предзагружены в буфер платы */
             if ((hnd->streams & X502_STREAM_ALL_OUT) &&
-                    (hnd->flags & (_FLAGS_PRELOAD_DONE | _FLGAS_CYCLE_MODE))) {
+                    (hnd->flags & (PRIV_FLAGS_PRELOAD_DONE | PRIV_FLGAS_CYCLE_MODE))) {
                 err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 1);
                 //if (!err)
                 //    err = _fpga_reg_write(hnd, L502_REGS_IOHARD_DAC_DIGOUT_SWAP, 1);
@@ -278,7 +278,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
 
 
         if (!err) {
-            hnd->flags |= _FLAGS_STREAM_RUN;
+            hnd->flags |= PRIV_FLAGS_STREAM_RUN;
             hnd->proc_adc_ch = 0;
         }
 
@@ -309,7 +309,7 @@ X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
         if (!err)
             err = stop_err2;
 
-        hnd->flags &= ~(_FLAGS_STREAM_RUN | _FLAGS_PRELOAD_DONE);
+        hnd->flags &= ~(PRIV_FLAGS_STREAM_RUN | PRIV_FLAGS_PRELOAD_DONE);
 
         osspec_mutex_release(hnd->mutex_cfg);
     }
@@ -328,13 +328,13 @@ X502_EXPORT(int32_t) X502_IsRunning(t_x502_hnd hnd) {
     if (!err) {
         if (hnd->mode==X502_MODE_DSP) {
             if (bf_mode==L502_BF_MODE_IDLE) {
-                hnd->flags &= ~_FLAGS_STREAM_RUN;
+                hnd->flags &= ~PRIV_FLAGS_STREAM_RUN;
             } else {
-                hnd->flags |= _FLAGS_STREAM_RUN;
+                hnd->flags |= PRIV_FLAGS_STREAM_RUN;
             }
         }
 
-        if (!(hnd->flags & _FLAGS_STREAM_RUN))
+        if (!(hnd->flags & PRIV_FLAGS_STREAM_RUN))
             err = X502_ERR_STREAM_IS_NOT_RUNNING;
 
         osspec_mutex_release(hnd->mutex_cfg);
@@ -364,7 +364,7 @@ X502_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t siz
         if (!err)
             err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
         if (!err) {
-            if (!(hnd->flags & (_FLAGS_PRELOAD_DONE | _FLGAS_CYCLE_MODE))) {
+            if (!(hnd->flags & (PRIV_FLAGS_PRELOAD_DONE | PRIV_FLGAS_CYCLE_MODE))) {
                 err = f_out_stream_preload(hnd);
             }
             osspec_mutex_release(hnd->mutex_cfg);
@@ -410,12 +410,12 @@ X502_EXPORT(int32_t) X502_GetSendReadyCount(t_x502_hnd hnd, uint32_t *rdy_cnt) {
 static int32_t f_check_stream_ch_par_en(t_x502_hnd hnd, uint32_t stream_ch) {
     int32_t err = 0;
     if (stream_ch == X502_STREAM_CH_IN) {
-        if ((hnd->flags & _FLAGS_STREAM_RUN)
+        if ((hnd->flags & PRIV_FLAGS_STREAM_RUN)
                 && (hnd->streams & X502_STREAM_ALL_IN)) {
             err = X502_ERR_STREAM_IS_RUNNING;
         }
     } else if (stream_ch == X502_STREAM_CH_OUT) {
-        if ((hnd->flags & (_FLAGS_PRELOAD_DONE | _FLAGS_STREAM_RUN))
+        if ((hnd->flags & (PRIV_FLAGS_PRELOAD_DONE | PRIV_FLAGS_STREAM_RUN))
                 && (hnd->streams & X502_STREAM_ALL_OUT)) {
             err = X502_ERR_STREAM_IS_RUNNING;
         }
@@ -443,3 +443,137 @@ X502_EXPORT(int32_t) X502_SetStreamStep(t_x502_hnd hnd, uint32_t ch, uint32_t st
     return err;
 }
 
+
+X502_EXPORT(int32_t) X502_OutCycleLoadStart(t_x502_hnd hnd, uint32_t size) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK) {
+        err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
+        if (err == X502_ERR_OK) {
+            /** @todo проверить правильность момента вызова */
+            err = hnd->iface_hnd->cycle_load_start(hnd, size);
+            if (err == X502_ERR_OK)
+                hnd->flags |= PRIV_FLGAS_CYCLE_MODE;
+            osspec_mutex_release(hnd->mutex_cfg);
+        }
+    }
+    return err;
+}
+
+
+
+
+
+X502_EXPORT(int32_t) X502_OutCycleSetup(t_x502_hnd hnd, uint32_t flags) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK)
+        err = hnd->iface_hnd->cycle_setup(hnd, flags);
+    return err;
+}
+
+
+
+X502_EXPORT(int32_t) X502_OutCycleStop(t_x502_hnd hnd, uint32_t flags) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK)
+        err = hnd->iface_hnd->cycle_stop(hnd, flags);
+    return err;
+}
+
+
+X502_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
+                                            uint32_t tout, double* data) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if ((err == X502_ERR_OK) && (data==NULL))
+        err = X502_ERR_INVALID_POINTER;
+    if (err == X502_ERR_OK)
+        err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
+    if (err == X502_ERR_OK) {
+        if (hnd->mode == X502_MODE_FPGA) {
+            /* если запущен хоть один поток на ввод синхронно, то ввод кадра
+             * не возможне */
+            if ((hnd->flags & PRIV_FLAGS_STREAM_RUN) && (hnd->streams & X502_STREAM_ALL_IN)) {
+                err = X502_ERR_STREAM_IS_RUNNING;
+            }
+
+            if (err == X502_ERR_OK) {
+                int need_stop = 0;
+                int old_streams = hnd->streams;
+                uint32_t *wrds = NULL;
+                int32_t rcv_size = hnd->set.lch_cnt;
+
+                /* разрешаем поток для АЦП */
+                err = f_set_streams(hnd, (hnd->streams & ~X502_STREAM_ALL_IN)
+                                    | X502_STREAM_ADC);
+
+                hnd->proc_adc_ch = 0;
+
+                if (err == X502_ERR_OK) {
+                     /* инициализируем буфер для приема - достаточно всего на один кадр */
+                    t_x502_stream_ch_params par = hnd->stream_pars[X502_STREAM_CH_IN];
+                    hnd->stream_pars[X502_STREAM_CH_IN].buf_size = hnd->iface_hnd->in_stream_buf_min;
+                    hnd->stream_pars[X502_STREAM_CH_IN].step = hnd->set.lch_cnt;
+                    err = f_stream_in_cfg(hnd);
+
+                    /* восстанавливаем параметры в структуре, что были заданы
+                      до этой функции */
+                    hnd->stream_pars[X502_STREAM_CH_IN] = par;
+                }
+
+                if (err == X502_ERR_OK) {
+                    /* выделяем массив для необработанных отсчетов */
+                    wrds = malloc(sizeof(wrds[0])*rcv_size);
+                    if (wrds==NULL)
+                        err = X502_ERR_MEMORY_ALLOC;
+                }
+
+                /* предзагрузка логической таблицы для АЦП */
+                if (err == X502_ERR_OK)
+                    err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_PRELOAD_ADC, 1);
+
+                /* запуск канала DMA на прием данных */
+                if (err == X502_ERR_OK)
+                    err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_IN, 1);
+
+                /* если общий синхронный ввод не был запущен  - разрешаем его */
+                if (err == X502_ERR_OK) {
+                    if (!(hnd->flags & PRIV_FLAGS_STREAM_RUN)) {
+                        err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 1);
+                        if (!err)
+                            need_stop = 1;
+                    }
+                }
+
+                if (err == X502_ERR_OK) {
+                    /* принимаем отсчеты от одного кадра */
+                    int32_t rcv = X502_Recv(hnd, wrds, rcv_size, tout);
+                    if (rcv < 0) {
+                        err = rcv;
+                    } else if (rcv!=rcv_size) {
+                        err = X502_ERR_RECV_INSUFFICIENT_WORDS;
+                    } else {
+                        err = X502_ProcessAdcData(hnd, wrds, data, (uint32_t*)&rcv_size, flags);
+                    }
+                }
+
+                /* если в этой функции запустили синхронный сбор, то останвливаем его */
+                if (need_stop)
+                    hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
+
+                hnd->proc_adc_ch = 0;
+                hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN);
+                /* восстанавливаем те потоки, которые были разрешены */
+                f_set_streams(hnd, old_streams);
+                free(wrds);
+            }
+        } else if (hnd->mode == X502_MODE_DSP) {
+            err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_ADC_GET_FRAME,
+                                 0, NULL, 0, (uint32_t*)data, 2*hnd->set.lch_cnt,
+                                 X502_BF_CMD_DEFAULT_TOUT, NULL);
+        } else {
+            err = X502_ERR_INVALID_MODE;
+        }
+        osspec_mutex_release(hnd->mutex_cfg);
+    }
+
+    return err;
+}

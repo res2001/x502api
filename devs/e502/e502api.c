@@ -3,12 +3,12 @@
 
 #define BF_LOAD_TOUT  20000
 
-int32_t e502_iface_fpga_read(t_x502_hnd hnd, uint16_t addr, uint32_t *val) {
+int32_t e502_iface_fpga_read(t_x502_hnd hnd, uint32_t addr, uint32_t *val) {
     return hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_FPGA_REG_READ, addr, NULL, 0,
                                  val, sizeof(*val), NULL, 0);
 }
 
-int32_t e502_iface_fpga_write(t_x502_hnd hnd, uint16_t addr, uint32_t val) {
+int32_t e502_iface_fpga_write(t_x502_hnd hnd, uint32_t addr, uint32_t val) {
     return hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_FPGA_REG_WRITE, addr, &val, sizeof(val),
                                  NULL, 0, NULL,0);
 }
@@ -101,6 +101,20 @@ int32_t e502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* 
 
 int32_t e502_iface_reload_dev_info(t_x502_hnd hnd) {
     return hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_FLASH_RELOAD_INFO, 0, NULL, 0, NULL, 0, NULL, 0);
+}
+
+
+
+int32_t e502_iface_cycle_load_start(t_x502_hnd hnd, uint32_t size) {
+    return X502_ERR_NOT_IMPLEMENTED;
+}
+
+int32_t e502_iface_cycle_setup(t_x502_hnd hnd, uint32_t flags) {
+    return X502_ERR_NOT_IMPLEMENTED;
+}
+
+int32_t e502_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags) {
+    return X502_ERR_NOT_IMPLEMENTED;
 }
 
 

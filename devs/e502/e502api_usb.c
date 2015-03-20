@@ -140,6 +140,9 @@ static const t_x502_dev_iface f_usb_iface = {
     e502_iface_flash_erase,
     e502_iface_flash_set_prot,
     e502_iface_reload_dev_info,
+    e502_iface_cycle_load_start,
+    e502_iface_cycle_setup,
+    e502_iface_cycle_stop,
     f_iface_gen_ioctl
 };
 
@@ -150,7 +153,7 @@ static const t_x502_dev_iface f_usb_iface = {
 
 static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
     int32_t err, usberr;
-    libusb_device *dev = (libusb_device *)(((t_x502_devrec_inptr*)devinfo->internal)->iface_data);
+    libusb_device *dev = (libusb_device *)devinfo->internal->iface_data;
     libusb_device_handle *devhnd;
 
 
@@ -877,7 +880,7 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
                    rcv_data, recv_size, recvd_size, tout);
 }
 
-static int f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec *info) {
+static int32_t f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec *info) {
     int32_t err = X502_ERR_OK;
     t_x502_devrec_inptr *devinfo_ptr = calloc(1, sizeof(t_x502_devrec_inptr));
     if (devinfo_ptr==NULL)  {
@@ -948,11 +951,11 @@ X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec *list, uint32_t siz
                     X502_DevRecordInit(&info);
 
 
-                   if (f_fill_devlist(usbhnd, &info)==0) {
+                   if (f_fill_devlist(usbhnd, &info) == X502_ERR_OK) {
                        /* если нужны только не открытые, то уже открытое
                         * устройство пропускаем */
                        if (!(flags & X502_GETDEVS_FLAGS_ONLY_NOT_OPENED) ||
-                               !(info.flags & X502_DEVREC_FLAGS_DEV_OPENED)) {
+                               !(info.flags & X502_DEVFLAGS_DEVREC_OPENED)) {
                            /* если есть место в списке - то сохраняем
                             * полученную информацию */
                            if ((list!=NULL) && (curcnt < size)) {
@@ -974,10 +977,10 @@ X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec *list, uint32_t siz
     libusb_free_device_list(usb_devlist, 1);
 
 
-    if (devcnt)
+    if (devcnt != NULL)
         *devcnt = curcnt;
 
-    return err ? err  : curcnt > (uint32_t)usb_devlist_size ? (int32_t)usb_devlist_size : (int32_t)curcnt ;
+    return err != X502_ERR_OK ? err  : curcnt > (uint32_t)size ? (int32_t)size : (int32_t)curcnt ;
 }
 
 X502_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial) {
@@ -986,41 +989,7 @@ X502_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial) {
 
 X502_EXPORT(int32_t) E502_UsbGetSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
                            uint32_t flags, uint32_t *devcnt) {
-    uint32_t fnd_cnt=0, e502_cnt=0;
-    /* получаем количество устройств, поддерживаемых драйвером lpcie */
-    int32_t res = E502_UsbGetDevRecordsList(NULL, 0, flags, &fnd_cnt);
-    if ((res>=0) && fnd_cnt) {
-        t_x502_devrec *info_list = malloc(sizeof(t_x502_devrec)*fnd_cnt);
-        if (info_list==NULL) {
-            res = X502_ERR_MEMORY_ALLOC;
-        } else {
-            /* получаем информацию по всем устройствам драйвера lpcie */
-            res = E502_UsbGetDevRecordsList(info_list, fnd_cnt, flags, NULL);
-            if (res>0) {
-                int32_t i;
-                for (i=0; i < res; i++) {
-                    /* проверяем, что это устройство - E502 */
-                    if (!strcmp(info_list[i].devname, E502_DEVICE_NAME)) {
-                        /* если есть место в списке, то сохраняем серийный номер
-                           устройства */
-                        if (e502_cnt < size) {
-                            memcpy(serials[e502_cnt], info_list[i].serial,
-                                   X502_SERIAL_SIZE);
-                        }
-                        e502_cnt++;
-                    }
-                }
-            }
-
-            X502_FreeDevRecordList(info_list, fnd_cnt);
-            free(info_list);
-        }
-    }
-
-    if (devcnt!=NULL)
-        *devcnt = e502_cnt;
-
-    return res < 0 ? res : e502_cnt > size ? (int32_t)size : (int32_t)e502_cnt;
+   return X502_GetSerialList(serials, size, flags, devcnt, E502_DEVICE_NAME, E502_UsbGetDevRecordsList);
 }
 
 

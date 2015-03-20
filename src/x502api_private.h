@@ -39,7 +39,7 @@ struct st_x502_devrec_inptr {
 /* максимальное кол-во прерываний в секунду */
 #define X502_DMA_IN_MAX_IRQ_PER_SEC  20
 
-#define X502_DMA_OUT_BUF_SIZE  3*3*1024*1024
+#define X502_DMA_OUT_BUF_SIZE  (3*3*1024*1024)
 #define X502_DMA_OUT_IRQ_STEP  (3*1024*1024/64)
 
 
@@ -71,8 +71,8 @@ typedef int32_t (*t_x502_iface_free_devinfo_ptr)(t_x502_devrec_inptr *devinfo_pt
 
 typedef int32_t (*t_x502_iface_open)(t_x502_hnd hnd, const t_x502_devrec *devinfo);
 typedef int32_t (*t_x502_iface_close)(t_x502_hnd hnd);
-typedef int32_t (*t_x502_iface_fpga_reg_read)(t_x502_hnd hnd, uint16_t addr, uint32_t *val);
-typedef int32_t (*t_x502_iface_fpga_reg_write)(t_x502_hnd hnd, uint16_t addr, uint32_t val);
+typedef int32_t (*t_x502_iface_fpga_reg_read)(t_x502_hnd hnd, uint32_t addr, uint32_t *val);
+typedef int32_t (*t_x502_iface_fpga_reg_write)(t_x502_hnd hnd, uint32_t addr, uint32_t val);
 
 typedef int32_t (*t_x502_iface_stream_cfg)(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *pars);
 typedef int32_t (*t_x502_iface_stream_start)(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
@@ -96,11 +96,15 @@ typedef int32_t (*t_x502_iface_flash_set_prot)(t_x502_hnd hnd, uint32_t flags,
 
 typedef int32_t (*t_x502_iface_reload_devinfo)(t_x502_hnd hnd);
 
+typedef int32_t (*t_x502_iface_cycle_load_start)(t_x502_hnd hnd, uint32_t size);
+typedef int32_t (*t_x502_iface_cycle_setup)(t_x502_hnd hnd, uint32_t flags);
+typedef int32_t (*t_x502_iface_cycle_stop)(t_x502_hnd hnd, uint32_t flags);
+
+
 typedef int32_t (*t_x502_iface_gen_ioctl)(t_x502_hnd hnd, uint32_t cmd_code, uint32_t param,
                                           const void* snd_data, uint32_t snd_size,
                                           void* rcv_data, uint32_t recv_size,
                                           uint32_t* recvd_size, uint32_t tout);
-
 
 
 
@@ -111,7 +115,7 @@ typedef struct {
     uint16_t bf_mem_block_size;
     uint16_t flash_rd_size;  /**< Максимальный размер чтения из flash-памяти за один запрос */
     uint16_t flash_wr_size;  /**< Максимальный размер записи во flash-память за один запрос */
-    t_x502_iface_free_devinfo_ptr  free_devinfo_ptr;
+    t_x502_iface_free_devinfo_ptr   free_devinfo_ptr;
     t_x502_iface_open               open;
     t_x502_iface_close              close;
     t_x502_iface_fpga_reg_read      fpga_reg_read;
@@ -132,6 +136,9 @@ typedef struct {
     t_x502_iface_flash_erase        flash_erase;
     t_x502_iface_flash_set_prot     flash_set_prot;
     t_x502_iface_reload_devinfo     reload_dev_info;
+    t_x502_iface_cycle_load_start   cycle_load_start;
+    t_x502_iface_cycle_setup        cycle_setup;
+    t_x502_iface_cycle_stop         cycle_stop;
     t_x502_iface_gen_ioctl          gen_ioctl;
 } t_x502_dev_iface;
 
@@ -150,9 +157,9 @@ typedef enum {
 
 typedef enum {
     PRIV_FLAGS_OPENED             = 0x0001,
-    _FLAGS_PRELOAD_DONE       = 0x0002,
-    _FLGAS_CYCLE_MODE         = 0x0004,
-    _FLAGS_STREAM_RUN         = 0x0080
+    PRIV_FLAGS_PRELOAD_DONE       = 0x0002,
+    PRIV_FLGAS_CYCLE_MODE         = 0x0004,
+    PRIV_FLAGS_STREAM_RUN         = 0x0080
 } t_x502_state_flags;
 
 
@@ -187,7 +194,7 @@ typedef struct st_x502 {
     t_l502_streams streams; /* какие синхронные потоки разрешены */
     t_l502_mode mode; /* режим работы (через ПЛИС или DSP) */
     t_x502_info info;
-    t_x502_settings     set; /* настройки платы */
+    t_x502_settings set; /* настройки платы */
 
     t_x502_stream_ch_params stream_pars[X502_STREAM_CH_CNT];
 
@@ -214,7 +221,13 @@ int x502_check_eeprom(t_x502_hnd hnd);
 X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size);
 X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
                                 const char *devname, t_x502_get_devinfo_list_cb get_list);
+X502_EXPORT(int32_t) X502_GetSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
+                                        uint32_t flags, uint32_t *devcnt, const char *devname,
+                                        t_x502_get_devinfo_list_cb get_list);
 
+X502_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t val);
+X502_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val);
+X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd);
 
 #define x502_bf_set_par(hnd, par, data, size) X502_BfExecCmd(hnd, L502_BF_CMD_CODE_SET_PARAM, \
                             par, data, size, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL)

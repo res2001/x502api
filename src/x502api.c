@@ -36,7 +36,7 @@ X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND(hnd);
     if (!err && (hnd->flags  & PRIV_FLAGS_OPENED)) {
         int32_t stop_err;
-        if (hnd->flags & _FLAGS_STREAM_RUN) {
+        if (hnd->flags & PRIV_FLAGS_STREAM_RUN) {
             /* остановка потока */
             err = X502_StreamsStop(hnd);
         }
@@ -69,17 +69,17 @@ X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
 
 X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info) {
     int32_t err  = X502_CHECK_HND(hnd);
-    if (!err && ((info==NULL) || (info->sign!=X502_DEVREC_SIGN)))
+    if ((err == X502_ERR_OK) && ((info==NULL) || (info->sign!=X502_DEVREC_SIGN)))
         err = X502_ERR_INVALID_DEVICE_RECORD;
-    if (!err && (hnd->flags & PRIV_FLAGS_OPENED))
+    if ((err == X502_ERR_OK) && (hnd->flags & PRIV_FLAGS_OPENED))
         err = X502_ERR_ALREADY_OPENED;
-    if (!err) {
+    if (err == X502_ERR_OK) {
         hnd->iface_hnd = (const t_x502_dev_iface *)(info->internal->iface);
         memcpy(hnd->info.serial, info->serial, X502_SERIAL_SIZE);
         memcpy(hnd->info.name, info->devname, X502_DEVNAME_SIZE);
         hnd->iface = info->iface;
         err = hnd->iface_hnd->open(hnd, info);
-        if (!err) {
+        if (err == X502_ERR_OK) {
             X502_SetLChannel(hnd, 0, 0, X502_LCH_MODE_COMM, X502_ADC_RANGE_10, 0);
             hnd->set.lch_cnt = 1;
             hnd->set.adc_freq_div = 1;
@@ -98,7 +98,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
 
 
             /* читаем информацию о версии прошивки ПЛИС'ов и наличии опций */
-            if (!err) {
+            if (err == X502_ERR_OK) {
                 uint32_t hard_id=0;
                 err = hnd->iface_hnd->fpga_reg_read(hnd, hnd->iface_hnd->id_reg_addr, &hard_id);
                 if (!err) {
@@ -115,7 +115,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
             }
 
             /* определяем - в каком режиме работаем (BF или FPGA) */
-            if (!err) {
+            if (err == X502_ERR_OK) {
                 uint32_t bf_ctl;
                 err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_BF_CTL, &bf_ctl);
                 if (!err) {
@@ -137,14 +137,14 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
             }
 
             /* если был запущен сбор - то останавливаем его */
-            if (!err && (hnd->mode==X502_MODE_FPGA)) {
+            if ((err == X502_ERR_OK) && (hnd->mode==X502_MODE_FPGA)) {
                 err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
                 hnd->last_dout = 0;
 
-                if (!err)
+                if (err == X502_ERR_OK)
                     err =  hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 0);
 
-                if (!err) {
+                if ((err == X502_ERR_OK) && (hnd->iface_hnd->stream_running != NULL)) {
                     int32_t running;
                     unsigned ch;
                     for (ch=0; (ch < X502_STREAM_CH_CNT) && !err; ch++) {
@@ -157,7 +157,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
             }
 
 
-            if (!err && (hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT)) {
+            if ((err == X502_ERR_OK) && (hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT)) {
                 hnd->mutex_bf = osspec_mutex_create();
                 if (hnd->mutex_bf == OSSPEC_INVALID_MUTEX)
                     err = X502_ERR_MUTEX_CREATE;
@@ -166,7 +166,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
             }
 
 
-            if (!err) {
+            if (err == X502_ERR_OK) {
                 hnd->mutex_cfg = osspec_mutex_create();
                 if (hnd->mutex_cfg == OSSPEC_INVALID_MUTEX)
                     err = X502_ERR_MUTEX_CREATE;
@@ -175,7 +175,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
 
         /* читаем информацию из EEPROM (в первую очередь -
            калибровочные коэффициенты) */
-        if (!err) {
+        if (err == X502_ERR_OK) {
             int i;
 
             for (i=0; i < X502_ADC_RANGE_CNT; i++) {
@@ -193,12 +193,12 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
 
         /* записываем конфигурацию по умолчанию, чтобы быть уверенным,
            что установлена нужная конфигурация */
-        if (!err && (hnd->mode==X502_MODE_FPGA))
+        if ((err == X502_ERR_OK) && (hnd->mode==X502_MODE_FPGA))
             err = X502_Configure(hnd, 0);
         //if (!err)
         //    err = _fpga_reg_write(hnd, L502_REGS_IOHARD_PRELOAD_ADC, 1);
 
-        if (err)
+        if (err != X502_ERR_OK)
             X502_Close(hnd);
     }
 
@@ -279,6 +279,45 @@ X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
     return err;
 }
 
+X502_EXPORT(int32_t) X502_GetSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
+                                        uint32_t flags, uint32_t *devcnt, const char *devname,
+                                        t_x502_get_devinfo_list_cb get_list) {
+    uint32_t fnd_cnt=0, put_cnt=0;
+    /* получаем количество устройств, поддерживаемых драйвером lpcie */
+    int32_t res = get_list(NULL, 0, flags, &fnd_cnt);
+    if ((res>=0) && fnd_cnt) {
+        t_x502_devrec *info_list = malloc(sizeof(t_x502_devrec)*fnd_cnt);
+        if (info_list==NULL) {
+            res = X502_ERR_MEMORY_ALLOC;
+        } else {
+            /* получаем информацию по всем устройствам драйвера lpcie */
+            res = get_list(info_list, fnd_cnt, flags, NULL);
+            if (res>0) {
+                int32_t i;
+                for (i=0; i < res; i++) {
+                    /* проверяем, что это устройство - E502 */
+                    if (!strcmp(info_list[i].devname, devname)) {
+                        /* если есть место в списке, то сохраняем серийный номер
+                           устройства */
+                        if (put_cnt < size) {
+                            memcpy(serials[put_cnt], info_list[i].serial,
+                                   X502_SERIAL_SIZE);
+                        }
+                        put_cnt++;
+                    }
+                }
+            }
+
+            X502_FreeDevRecordList(info_list, fnd_cnt);
+            free(info_list);
+        }
+    }
+
+    if (devcnt != NULL)
+        *devcnt = put_cnt;
+
+    return res < 0 ? res : put_cnt > size ? (int32_t)size : (int32_t)put_cnt;
+}
 
 X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size) {
     uint32_t i;

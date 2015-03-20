@@ -2,7 +2,7 @@
 #include "x502api.h"
 #include "l502_bf_cmd_defs.h"
 
-#include "devs/e502/e502_cm4_defs.h"
+#include "../devs/e502/e502_cm4_defs.h"
 
 static const char* f_unknow_err = "Неизвестная ошибка.";
 

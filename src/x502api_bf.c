@@ -146,9 +146,9 @@ static int32_t f_check_bf_firm(t_x502_hnd hnd) {
             err = osspec_mutex_lock(hnd->mutex_cfg, BF_MUTEX_LOCK_TOUT);
             if (!err) {
                 if (mode==L502_BF_MODE_IDLE) {
-                    hnd->flags &= ~_FLAGS_STREAM_RUN;
+                    hnd->flags &= ~PRIV_FLAGS_STREAM_RUN;
                 } else {
-                    hnd->flags |= _FLAGS_STREAM_RUN;
+                    hnd->flags |= PRIV_FLAGS_STREAM_RUN;
                 }
                 hnd->streams = streams;
                 osspec_mutex_release(hnd->mutex_cfg);
@@ -158,7 +158,7 @@ static int32_t f_check_bf_firm(t_x502_hnd hnd) {
 
 
     /* передаем информацию о модуле */
-    if (!err && !(hnd->flags & _FLAGS_STREAM_RUN)) {
+    if (!err && !(hnd->flags & PRIV_FLAGS_STREAM_RUN)) {
         uint32_t put_wrds[3];
         uint32_t ch;
         put_wrds[0] = hnd->info.devflags;

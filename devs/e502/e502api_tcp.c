@@ -129,6 +129,9 @@ static const t_x502_dev_iface f_tcp_iface = {
     e502_iface_flash_erase,
     e502_iface_flash_set_prot,
     e502_iface_reload_dev_info,
+    e502_iface_cycle_load_start,
+    e502_iface_cycle_setup,
+    e502_iface_cycle_stop,
     f_iface_gen_ioctl
 };
 
