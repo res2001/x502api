@@ -273,7 +273,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
         }
 
         if (err && in_started) {
-            err = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN);
+            hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN);
         }
 
 

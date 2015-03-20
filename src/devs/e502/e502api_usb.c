@@ -663,65 +663,67 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_IN];
     t_ltimer tmr;
-    int err = 0;
+    int32_t err = info->data == NULL ? X502_ERR_STREAM_IS_NOT_RUNNING : X502_ERR_OK;
 
-    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
+    if (err == X502_ERR_OK) {
+        ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
 
-    do {
-        int check_next = 1;
-        err = info->err;
+        do {
+            int check_next = 1;
+            err = info->err;
 
-        while (!err && check_next) {
-            t_rx_cpl_part *cpl = &info->rx.cpls[info->rx.cpl_get_pos];
-            int cur_state = cpl->state;
-            check_next = 0;
+            while (!err && check_next) {
+                t_rx_cpl_part *cpl = &info->rx.cpls[info->rx.cpl_get_pos];
+                int cur_state = cpl->state;
+                check_next = 0;
 
-            if (cur_state == RX_STATE_ERR) {
-                err = X502_ERR_RECV;
-            } else if (cur_state == RX_STATE_RDY){
-                osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
+                if (cur_state == RX_STATE_ERR) {
+                    err = X502_ERR_RECV;
+                } else if (cur_state == RX_STATE_RDY){
+                    osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
 
-                if (cpl->size) {
-                    uint32_t cpy_size = cpl->size;
-                    if (cpy_size > size)
-                        cpy_size = size;
-                    if (cpy_size) {
-                        memcpy(&buf[recvd], cpl->addr, cpy_size*sizeof(buf[0]));
-                        recvd+=cpy_size;
-                        size-=cpy_size;
-                        cpl->size -= cpy_size;
-                        cpl->addr += cpy_size;
-                        info->rx.buf_get_rdy += cpy_size;
+                    if (cpl->size) {
+                        uint32_t cpy_size = cpl->size;
+                        if (cpy_size > size)
+                            cpy_size = size;
+                        if (cpy_size) {
+                            memcpy(&buf[recvd], cpl->addr, cpy_size*sizeof(buf[0]));
+                            recvd+=cpy_size;
+                            size-=cpy_size;
+                            cpl->size -= cpy_size;
+                            cpl->addr += cpy_size;
+                            info->rx.buf_get_rdy += cpy_size;
+                        }
                     }
+
+                    if (cpl->size==0) {
+                        cpl->state = RX_STATE_IDLE;
+                        osspec_event_set(info->usb_wake_evt);
+                        check_next = 1;
+                    }
+                    osspec_mutex_release(info->mutex);
                 }
 
-                if (cpl->size==0) {                    
-                    cpl->state = RX_STATE_IDLE;
-                    osspec_event_set(info->usb_wake_evt);
-                    check_next = 1;
+                if (check_next) {
+                    if (++info->rx.cpl_get_pos==info->rx.cpl_cnt)
+                        info->rx.cpl_get_pos = 0;
+                }
+            }
+
+
+
+            if (!err && (size!=0)) {
+                osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
+                if ((info->rx.cpls[info->rx.cpl_get_pos].state == RX_STATE_IDLE)
+                        || ((info->rx.cpls[info->rx.cpl_get_pos].state == RX_STATE_BUSY))) {
+                    osspec_event_clear(info->user_wake_evt);
                 }
                 osspec_mutex_release(info->mutex);
+
+                osspec_event_wait(info->user_wake_evt, LTIMER_CLOCK_TICKS_TO_MS(ltimer_expiration(&tmr)));
             }
-
-            if (check_next) {
-                if (++info->rx.cpl_get_pos==info->rx.cpl_cnt)
-                    info->rx.cpl_get_pos = 0;
-            }
-        }
-
-
-
-        if (!err && (size!=0)) {
-            osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
-            if ((info->rx.cpls[info->rx.cpl_get_pos].state == RX_STATE_IDLE)
-                    || ((info->rx.cpls[info->rx.cpl_get_pos].state == RX_STATE_BUSY))) {
-                osspec_event_clear(info->user_wake_evt);
-            }
-            osspec_mutex_release(info->mutex);
-
-            osspec_event_wait(info->user_wake_evt, LTIMER_CLOCK_TICKS_TO_MS(ltimer_expiration(&tmr)));
-        }
-    } while (!err && (size!=0) && !ltimer_expired(&tmr));
+        } while (!err && (size!=0) && !ltimer_expired(&tmr));
+    }
 
     return err == X502_ERR_OK ? recvd : err;
 }
@@ -733,54 +735,56 @@ static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_OUT];
     t_ltimer tmr;
     int32_t sent = 0;
-    int err = 0;
+    int32_t err = info->data == NULL ? X502_ERR_STREAM_IS_NOT_RUNNING : X502_ERR_OK;
 
-    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
+    if (err == X502_ERR_OK) {
+        ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
 
-    do {
-        uint32_t rdy_size, snd_size;
-        snd_size = rdy_size = info->tx.buf_put_rdy;
-        err = info->err;
+        do {
+            uint32_t rdy_size, snd_size;
+            snd_size = rdy_size = info->tx.buf_put_rdy;
+            err = info->err;
 
-        if (!err) {
-            if (rdy_size == 0) {
-                osspec_event_wait(info->user_wake_evt,
-                                  LTIMER_CLOCK_TICKS_TO_MS(ltimer_expiration(&tmr)));
-            } else {
-                uint32_t end_size;
-                uint32_t put_pos;
-                if (snd_size > size)
-                    snd_size = size;
-                end_size = info->buf_size - info->tx.buf_pos_put;
-                if (snd_size >= end_size) {
-                    memcpy(&info->data[info->tx.buf_pos_put], &buf[sent], end_size*sizeof(buf[0]));
-                    if (snd_size!=end_size) {
-                        memcpy(&info->data[0], &buf[sent+end_size], (snd_size-end_size)*sizeof(buf[0]));
-                    }
-                    put_pos = snd_size-end_size;
+            if (!err) {
+                if (rdy_size == 0) {
+                    osspec_event_wait(info->user_wake_evt,
+                                      LTIMER_CLOCK_TICKS_TO_MS(ltimer_expiration(&tmr)));
                 } else {
-                    memcpy(&info->data[info->tx.buf_pos_put], &buf[sent], snd_size*sizeof(buf[0]));
-                    put_pos = info->tx.buf_pos_put + snd_size;
+                    uint32_t end_size;
+                    uint32_t put_pos;
+                    if (snd_size > size)
+                        snd_size = size;
+                    end_size = info->buf_size - info->tx.buf_pos_put;
+                    if (snd_size >= end_size) {
+                        memcpy(&info->data[info->tx.buf_pos_put], &buf[sent], end_size*sizeof(buf[0]));
+                        if (snd_size!=end_size) {
+                            memcpy(&info->data[0], &buf[sent+end_size], (snd_size-end_size)*sizeof(buf[0]));
+                        }
+                        put_pos = snd_size-end_size;
+                    } else {
+                        memcpy(&info->data[info->tx.buf_pos_put], &buf[sent], snd_size*sizeof(buf[0]));
+                        put_pos = info->tx.buf_pos_put + snd_size;
+                    }
+
+                    osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
+                    info->tx.buf_pos_put  = put_pos;
+                    info->tx.buf_put_rdy -= snd_size;
+
+                    if (info->tx.buf_put_rdy==0) {
+                        osspec_event_clear(info->user_wake_evt);
+                    }
+
+                    osspec_event_set(info->usb_wake_evt);
+
+                    osspec_mutex_release(info->mutex);
+
+
+                    sent+=snd_size;
+                    size-=snd_size;
                 }
-
-                osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
-                info->tx.buf_pos_put  = put_pos;
-                info->tx.buf_put_rdy -= snd_size;
-
-                if (info->tx.buf_put_rdy==0) {
-                    osspec_event_clear(info->user_wake_evt);
-                }
-
-                osspec_event_set(info->usb_wake_evt);
-
-                osspec_mutex_release(info->mutex);
-
-
-                sent+=snd_size;
-                size-=snd_size;
             }
-        }
-    } while (!err && (size!=0) && !ltimer_expired(&tmr));
+        } while (!err && (size!=0) && !ltimer_expired(&tmr));
+    }
     return err == X502_ERR_OK ? sent : err;
 }
 
