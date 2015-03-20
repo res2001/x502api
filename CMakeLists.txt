@@ -21,6 +21,10 @@ endif(UNIX)
 set(X502API_LIB_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(LTIMER_DIR       ${X502API_LIB_DIR}/ltimer)
 set(LCSPEC_DIR       ${X502API_LIB_DIR}/lcspec)
+set(X502_LIBS_CMAKE_FILE  ${CMAKE_CURRENT_SOURCE_DIR}/x502libs.cmake)
+
+set(X502_INSTALL_LIB        lib)
+set(X502_INSTALL_INCLUDE    include)
 
 #для GCC устанавливаем повышенный уроень предупреждения компилятора
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -79,13 +83,17 @@ set(SOURCES
     lib/crc/fast_crc.c
     ${LTIMER_SOURCES})
 
-set(HEADERS
+
+set(SETUP_HEADERS
     src/pstdint.h
     src/lstdtypes.h
+    src/x502api.h
+    )
+
+set(HEADERS    
     src/l502_bf_cmd_defs.h
     src/lboot_req.h
     src/x502_fpga_regs.h
-    src/x502api.h
     src/x502api_private.h    
     src/x502_eeprom.h
     src/osspec_cfg.h
@@ -93,36 +101,12 @@ set(HEADERS
     src/fast_crc_cfg.h
     ${LTIMER_HEADERS})
 
+
+
 include_directories(src lib/crc ${X502API_LIB_DIR}/osspec)
 
 
-if(WIN32)
-    #конфигурируем файл ресурсов для Windows
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/x502api.rc.in
-                   ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc @ONLY)
-
-    SET(SOURCES ${SOURCES} x502api.def ${CMAKE_CURRENT_BINARY_DIR}/x502api.rc)
-endif(WIN32)
-
-
-add_library(${PROJECT} SHARED ${HEADERS} ${SOURCES})
-
-#устанавливаем версию библиотеки для SO-файла
-set_target_properties(${PROJECT} PROPERTIES VERSION ${X502API_VERSION})
-set_target_properties(${PROJECT} PROPERTIES SOVERSION 1)
-
-
-if(UNIX)
-    set_target_properties(${PROJECT} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
-endif(UNIX)
-
-target_link_libraries(${PROJECT} ${LIBS})
-
-
-if(UNIX)
-    install(TARGETS ${PROJECT} DESTINATION lib)
-    install(FILES src/${PROJECT}.h src/lstdtypes.h src/pstdint.h DESTINATION include)
-endif(UNIX)
+include(${X502_LIBS_CMAKE_FILE})
 
 
 add_subdirectory(devs)
@@ -137,7 +121,43 @@ endif(UNIX AND CMAKE_PACKAGES)
 
 
 
+if(WIN32 AND LCARD_SDK_MAKE_INSTALLER)
+    include(win_install/winpaths.cmake)
 
+    set(X502API_CONVERTED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x64)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x86)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
+
+    string(REGEX REPLACE "/" "\\\\" ICONV ${ICONV})
+    string(REGEX REPLACE "/" "\\\\" X502API_CONVERTED_SOURCE_DIR ${X502API_CONVERTED_SOURCE_DIR})
+    set(X502API_ORIG_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    string(REGEX REPLACE "/" "\\\\" X502API_ORIG_SOURCE_DIR ${X502API_ORIG_SOURCE_DIR})
+
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/win_install/conv_src_cp1251.bat.in
+                   ${CMAKE_CURRENT_BINARY_DIR}/conv_src_cp1251.bat @ONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/win_install/make64.bat.in
+               ${CMAKE_CURRENT_BINARY_DIR}/x64/make.bat @ONLY)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/win_install/make32.bat.in
+               ${CMAKE_CURRENT_BINARY_DIR}/x86/make.bat @ONLY)
+    add_custom_target(convert_src
+        COMMAND cmd /c conv_src_cp1251.bat
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+    add_custom_target(api64
+        COMMAND cmd /c make.bat
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x64
+        DEPENDS convert_src)
+
+    #x86 версию собираем 2008 студией (Express) для совместимости с Win2000
+    #set(VS2008_SETENV "${VS2008_DIR}/vcvarsall.bat")
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x86)
+    add_custom_target(api32
+        COMMAND cmd /c make.bat
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x86
+        DEPENDS convert_src
+        )
+endif()
 
 
 

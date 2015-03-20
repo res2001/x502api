@@ -25,18 +25,18 @@
                 VALUE "OriginalFilename", "e502api.dll"
                 VALUE "ProductName",      "e502api"
                 VALUE "ProductVersion",   "@X502API_VERSION@"
-                VALUE "LegalCopyright",    "© 2015 L Card Ltd."
+                VALUE "LegalCopyright",    "В© 2015 L Card Ltd."
             END
 
             BLOCK "04190000"
             BEGIN
-                VALUE "CompanyName",      "Л Кард"
-                VALUE "FileDescription",  "Библиотека для работы с модулем/E502"
+                VALUE "CompanyName",      "Р› РљР°СЂРґ"
+                VALUE "FileDescription",  "Р‘РёР±Р»РёРѕС‚РµРєР° РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РјРѕРґСѓР»РµРј E502"
                 VALUE "FileVersion",      "@X502API_VERSION@"
                 VALUE "OriginalFilename", "e502api.dll"
                 VALUE "ProductName",      "e502api"
                 VALUE "ProductVersion",   "@X502API_VERSION@"
-                VALUE "LegalCopyright",   "© 2015 ООО 'Л Кард'"
+                VALUE "LegalCopyright",   "В© 2015 РћРћРћ 'Р› РљР°СЂРґ'"
             END
         END
         BLOCK "VarFileInfo"

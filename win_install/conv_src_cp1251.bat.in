@@ -1,0 +1,10 @@
+@echo off
+
+xcopy /E /Y @X502API_ORIG_SOURCE_DIR@ @X502API_CONVERTED_SOURCE_DIR@
+
+FOR /R @X502API_CONVERTED_SOURCE_DIR@ %%f IN (*.c *.h *.in *.txt *.cmake) DO ( 
+    echo "Convert file %%f"
+    @ICONV@ -f utf-8 -t CP1251 %%f > %%f_tmp
+    copy /Y %%f_tmp %%f
+    del %%f_tmp
+)

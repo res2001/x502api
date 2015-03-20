@@ -12,6 +12,13 @@ if (NOT LIBUSB_FOUND)
     find_package(PkgConfig QUIET)
     pkg_check_modules(LIBUSB_PKG QUIET libusb-1.0)
 
+    if( CMAKE_SIZEOF_VOID_P EQUAL 4 )
+        set(LIBUSB_SEARCH_PATH lib lib/i386-linux-gnu /usr/local/lib "c:/Program Files (x86)/libusb/MS32/static")
+    else()
+        set(LIBUSB_SEARCH_PATH lib64 lib/x86_64-linux-gnu /usr/local/lib64 "c:/Program Files (x86)/libusb/MS64/static")
+    endif()
+
+
     find_path(LIBUSB_INCLUDE_DIR NAMES libusb-1.0/libusb.h
        PATHS
        ${LIBUSB_PKG_INCLUDE_DIRS}
@@ -25,7 +32,7 @@ if (NOT LIBUSB_FOUND)
        ${LIBUSB_PKG_LIBRARY_DIRS}
        /usr/lib
        /usr/local/lib
-       "c:/Program Files (x86)/libusb/MS32/static"
+       ${LIBUSB_SEARCH_PATH}
     )
 
     if(LIBUSB_INCLUDE_DIR AND LIBUSB_LIBRARIES)

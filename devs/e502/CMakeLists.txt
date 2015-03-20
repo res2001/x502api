@@ -14,13 +14,14 @@ set(SOURCES
     ${LTIMER_SOURCES}
     ${X502API_LIB_DIR}/osspec/osspec.c
     )
+
+set(SETUP_HEADERS e502api.h)
     
 set(HEADERS
     ${LTIMER_HEADERS}
     e502_fpga_regs.h
     e502_cm4_defs.h
-    e502_eth_config.h
-    e502api.h
+    e502_eth_config.h    
     e502api_private.h
     e502_tcp_protocol.h)
 
@@ -39,38 +40,18 @@ set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
 include_directories(${X502API_LIB_DIR}/osspec)
 
 if(WIN32)
-    #конфигурируем файл ресурсов для Windows
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/e502api.rc.in
-                   ${CMAKE_CURRENT_BINARY_DIR}/e502api.rc @ONLY)
-
-    SET(SOURCES ${SOURCES} e502api.def ${CMAKE_CURRENT_BINARY_DIR}/e502api.rc)
-
     #подключение библиотеки для работы с сокетами
     set(LIBS ${LIBS} Ws2_32)
 endif(WIN32)
 
+include(${X502_LIBS_CMAKE_FILE})
 
-
-
-add_library(${PROJECT} SHARED ${HEADERS} ${SOURCES})
-
-#устанавливаем версию библиотеки для SO-файла
-set_target_properties(${PROJECT} PROPERTIES VERSION ${X502API_VERSION})
-set_target_properties(${PROJECT} PROPERTIES SOVERSION 1)
-
-if(UNIX)
-    set_target_properties(${PROJECT} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
-endif(UNIX)
-
-target_link_libraries(${PROJECT} ${LIBS})
 
 if(UNIX)
     if(NOT UDEV_RULES_DIR)
         set(UDEV_RULES_DIR lib/udev/rules.d)
     endif(NOT UDEV_RULES_DIR)
 
-    install(TARGETS ${PROJECT} DESTINATION lib)
-    install(FILES e502api.h DESTINATION include)
     install(FILES e502.rules DESTINATION ${UDEV_RULES_DIR})
 endif(UNIX)
 
