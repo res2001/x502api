@@ -361,9 +361,9 @@ static int f_fill_devlist(SP_DEVICE_INTERFACE_DETAIL_DATA *detail,
     return err;
 }
 
-int32_t l502_port_free_iface_data(void* intptr) {
+int32_t l502_port_free_iface_data(void *intptr) {
     free(intptr);
-    return 0;
+    return X502_ERR_OK;
 }
 
 
@@ -397,7 +397,7 @@ int32_t l502_port_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
 
 int32_t l502_port_close(t_x502_hnd hnd) {
     CloseHandle(L502_PCI_IFACE_FILE(hnd));
-    return 0;
+    return X502_ERR_OK;
 }
 
 

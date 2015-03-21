@@ -301,7 +301,7 @@ typedef enum {
     L502_STREAM_OUT_WORD_TYPE_DOUT   = X502_STREAM_OUT_WORD_TYPE_DOUT, /**< Цифровой вывод */
     L502_STREAM_OUT_WORD_TYPE_DAC1   = X502_STREAM_OUT_WORD_TYPE_DAC1, /**< Код для 1-го канала ЦАП */
     L502_STREAM_OUT_WORD_TYPE_DAC2   = X502_STREAM_OUT_WORD_TYPE_DAC2  /**< Код для 2-го канала ЦАП */
-} t_stream_out_wrd_type;
+} t_l502_stream_out_wrd_type;
 
 /** Режим работы модуля L502 */
 typedef enum {

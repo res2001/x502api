@@ -191,8 +191,8 @@ typedef struct st_x502 {
     const t_x502_dev_iface *iface_hnd;
     void *iface_data;
     t_x502_state_flags  flags; /* флаги состояния платы */
-    t_l502_streams streams; /* какие синхронные потоки разрешены */
-    t_l502_mode mode; /* режим работы (через ПЛИС или DSP) */
+    t_x502_streams streams; /* какие синхронные потоки разрешены */
+    t_x502_mode mode; /* режим работы (через ПЛИС или DSP) */
     t_x502_info info;
     t_x502_settings set; /* настройки платы */
 

@@ -3,6 +3,7 @@
 #include "l502_bf_cmd_defs.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 
 /* разрешение/запрещение потоков ввода вывода в соответствии с полем hnd->streams */

@@ -372,14 +372,14 @@ typedef enum {
     X502_STREAM_ALL_IN = X502_STREAM_ADC | X502_STREAM_DIN,
     /** Объединение всех флагов, обозначающих потоки данных на вывод */
     X502_STREAM_ALL_OUT = X502_STREAM_DAC1 | X502_STREAM_DAC2 | X502_STREAM_DOUT
-} t_l502_streams;
+} t_x502_streams;
 
 /** Константы, определяющие тип передаваемого отсчета из ПК в модуль */
 typedef enum {
     X502_STREAM_OUT_WORD_TYPE_DOUT   = 0x0, /**< Цифровой вывод */
     X502_STREAM_OUT_WORD_TYPE_DAC1   = 0x40000000, /**< Код для 1-го канала ЦАП */
     X502_STREAM_OUT_WORD_TYPE_DAC2   = 0x80000000  /**< Код для 2-го канала ЦАП */
-} t_stream_out_wrd_type;
+} t_x502_stream_out_wrd_type;
 
 /** Режим работы модуля L502 */
 typedef enum {
@@ -389,7 +389,7 @@ typedef enum {
                               процессор, который должен быть загружен
                               прошивкой для обработки этих потоков */
     X502_MODE_DEBUG = 2  /**< Отладочный режим */
-} t_l502_mode;
+} t_x502_mode;
 
 /** @brief Номера каналов ЦАП.
 
@@ -397,7 +397,7 @@ typedef enum {
 typedef enum {
     X502_DAC_CH1 = 0, /**< Первый канал ЦАП */
     X502_DAC_CH2 = 1  /**< Второй канал ЦАП */
-} t_l502_dac_ch;
+} t_x502_dac_ch;
 
 /** @brief Флаги, используемые при выводе данных на ЦАП.
 

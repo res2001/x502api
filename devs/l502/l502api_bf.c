@@ -1,6 +1,7 @@
 #include "l502api_private.h"
 #include "ltimer.h"
 #include "l502_fpga_regs.h"
+#include <stdlib.h>
 
 #define BF_LDR_HDR_SIZE  (16)
 #define BF_LDR_HDRSGN    (0xAD)
