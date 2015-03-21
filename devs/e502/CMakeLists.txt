@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 set(PROJECT e502api)
 project(${PROJECT} C)
 
+option(E502API_LIBUSB_DEBUG "Print debug messages from libusb" OFF)
 
 include(${LTIMER_DIR}/ltimer.cmake)
 
@@ -28,6 +29,10 @@ set(HEADERS
 set(LIBS
     x502api
     ${LTIMER_LIBS})
+
+if(E502API_LIBUSB_DEBUG)
+    add_definitions(-DLIBUSB_DEBUG)
+endif(E502API_LIBUSB_DEBUG)
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")

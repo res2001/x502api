@@ -929,6 +929,9 @@ X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec *list, uint32_t siz
 
     if (!f_lusb_init_done) {
         libusb_init(NULL);
+#ifdef LIBUSB_DEBUG
+        libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
+#endif
         f_lusb_init_done = 1;
     }
 
