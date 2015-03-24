@@ -22,7 +22,7 @@ set(HEADERS
     ${LTIMER_HEADERS}
     e502_fpga_regs.h
     e502_cm4_defs.h
-    e502_eth_config.h    
+    e502_eth_config.h
     e502api_private.h
     e502_tcp_protocol.h)
 
