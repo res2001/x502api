@@ -49,7 +49,6 @@ typedef enum {
 
 typedef struct {
     uint32_t *addr;
-    struct st_transf_info *info;
     uint32_t size;
     uint32_t transf_pos;
     volatile enum {
@@ -88,8 +87,6 @@ typedef struct st_transf_info {
             uint32_t buf_pos_put;
             uint32_t buf_put_rdy;
             uint32_t busy_size;
-            int transf_err;
-            volatile uint32_t transf_busy;
         } tx;
     };
 } t_transf_info;
@@ -244,26 +241,7 @@ static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr) {
 
 
 
-static void LIBUSB_CALL f_usb_transf_tx_cb(struct libusb_transfer *transfer) {
-    t_transf_info *info = (t_transf_info*)transfer->user_data;
-    if ((transfer->status != LIBUSB_TRANSFER_COMPLETED)
-            && (transfer->status != LIBUSB_TRANSFER_CANCELLED)) {
-        info->tx.transf_err = X502_ERR_SEND;
-    }
-
-
-    osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
-    info->tx.transf_busy--;
-    info->tx.buf_put_rdy += transfer->length/sizeof(info->data[0]);
-    info->tx.busy_size -= transfer->length/sizeof(info->data[0]);
-    info->usb_rdy = 1;
-    osspec_event_set(info->user_wake_evt);
-    osspec_mutex_release(info->mutex);
-}
-
-
-
-static void LIBUSB_CALL f_usb_transf_rx_cb(struct libusb_transfer *transfer) {
+static void LIBUSB_CALL f_usb_transf_cb(struct libusb_transfer *transfer) {
     *((int*)transfer->user_data) = TRANSF_CPL_COMPLETED;
 }
 
@@ -290,7 +268,8 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void 
         }
     }
 
-    while (!err && !info->stop_req) {        
+    while (!err && !info->stop_req) {
+        /* обрабатываем завершенные передачи в порядке добавления */
         while (transf_completed[transf_check_pos] == TRANSF_CPL_COMPLETED) {
             t_rx_cpl_part *cpl = &info->rx.cpls[cpl_check_pos];
             struct libusb_transfer *transfer = transfers[transf_check_pos];
@@ -300,7 +279,7 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void 
                     || (transfer->status == LIBUSB_TRANSFER_TIMED_OUT)
                     || (transfer->status == LIBUSB_TRANSFER_CANCELLED)) {
                 cpl->size = transfer->actual_length/sizeof(uint32_t);
-                cpl->info->rx.buf_get_rdy += cpl->size;
+                info->rx.buf_get_rdy += cpl->size;
                 cpl->state = RX_STATE_RDY;
             } else {
                 cpl->state = RX_STATE_ERR;
@@ -325,7 +304,7 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void 
             libusb_fill_bulk_transfer(transfers[transf_pos], usb_data->devhnd, info->addr,
                                      (unsigned char*)info->rx.cpls[cpl_pos].addr,
                                      info->rx.transf_size*sizeof(info->data[0]),
-                                     f_usb_transf_rx_cb, (void*)&transf_completed[transf_pos],
+                                     f_usb_transf_cb, (void*)&transf_completed[transf_pos],
                                      USB_BULK_RX_TRANSFER_TOUT);
             info->rx.cpls[cpl_pos].state = RX_STATE_BUSY;
             transf_completed[transf_pos] = TRANSF_CPL_BUSY;
@@ -369,16 +348,19 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void 
                 osspec_event_wait(info->usb_wake_evt, OSSPEC_TIMEOUT_INFINITY);
             }
         }
-   }
+    }
 
-   for (idx = 0; idx < USB_BULK_RX_MAX_TRANSF_CNT; idx++) {
+    /* отменяем все поставленные запросы */
+    for (idx = 0; idx < USB_BULK_RX_MAX_TRANSF_CNT; idx++) {
        unsigned pos = (transf_check_pos + idx) % USB_BULK_RX_MAX_TRANSF_CNT;
        if (transf_completed[pos] == TRANSF_CPL_BUSY) {
-           libusb_cancel_transfer(transfers[pos]);
+           if (libusb_cancel_transfer(transfers[pos]) !=LIBUSB_SUCCESS)
+               transf_completed[pos] = TRANSF_CPL_COMPLETED;
        }
-   }
+    }
 
-   while (transf_completed[transf_check_pos] != TRANSF_CPL_IDLE) {
+    /* ждем завершения всех запросов */
+    while (transf_completed[transf_check_pos] != TRANSF_CPL_IDLE) {
         if (transf_completed[transf_check_pos] == TRANSF_CPL_BUSY) {
             struct timeval ztv = {0,0};
             libusb_handle_events_timeout(NULL, &ztv);
@@ -387,17 +369,18 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void 
             if (++transf_check_pos == USB_BULK_RX_MAX_TRANSF_CNT)
                 transf_check_pos = 0;
         }
-   }
+    }
 
-
+    /* очищаем ресурсы */
     for (idx = 0; idx < USB_BULK_RX_MAX_TRANSF_CNT; idx++) {
         if (transfers[idx] != NULL) {
             libusb_free_transfer(transfers[idx]);
         }
     }
 
-    if (!info->err)
+    if (info->err == X502_ERR_OK)
        info->err = err;
+
     return 0;
 }
 
@@ -407,20 +390,20 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
     t_usb_iface_data *usb_data = (t_usb_iface_data*)arg;
     struct libusb_transfer *transfers[USB_BULK_TX_MAX_TRANSF_CNT]; /* запросы usb */
     t_transf_info *info = &usb_data->streams[X502_STREAM_CH_OUT];
+    volatile int transf_completed[USB_BULK_RX_MAX_TRANSF_CNT];
     unsigned transf_pos=0;
+    unsigned transf_check_pos=0;
     unsigned idx;
     int err = 0;
     unsigned snd_pos = 0;
 
 
     info->err = 0;
-    info->tx.transf_busy = 0;
     info->tx.busy_size = 0;
-    info->tx.transf_err = 0;
-
 
     for (idx = 0; (idx < USB_BULK_TX_MAX_TRANSF_CNT) && (err == X502_ERR_OK); idx++) {
         transfers[idx] = libusb_alloc_transfer(0);
+        transf_completed[idx] = TRANSF_CPL_IDLE;
         if (transfers[idx]==NULL) {
             err = X502_ERR_MEMORY_ALLOC;
         }
@@ -435,11 +418,30 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
             osspec_event_clear(info->usb_wake_evt);
         osspec_mutex_release(info->mutex);
 
+        /* обрабатываем завершенные передачи */
+        while (transf_completed[transf_check_pos] == TRANSF_CPL_COMPLETED) {
+            struct libusb_transfer *transfer = transfers[transf_check_pos];
+            if ((transfer->status != LIBUSB_TRANSFER_COMPLETED)
+                    && (transfer->status != LIBUSB_TRANSFER_CANCELLED)) {
+                err = X502_ERR_SEND;
+            }
 
 
+            osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
+            info->tx.buf_put_rdy += transfer->length/sizeof(info->data[0]);
+            info->tx.busy_size -= transfer->length/sizeof(info->data[0]);
+            osspec_event_set(info->user_wake_evt);
+            osspec_mutex_release(info->mutex);
 
-        while ((info->tx.transf_busy != USB_BULK_TX_MAX_TRANSF_CNT) &&
-               (snd_rdy_size != 0) && !err) {
+            transf_completed[transf_check_pos] = TRANSF_CPL_IDLE;
+
+            if (++transf_check_pos == USB_BULK_RX_MAX_TRANSF_CNT)
+                transf_check_pos = 0;
+        }
+
+
+        while ((snd_rdy_size != 0) && (transf_completed[transf_pos] != TRANSF_CPL_BUSY)
+                && (err == X502_ERR_OK)) {
             uint32_t snd_size = snd_rdy_size;
             if (snd_size > USB_BULK_TX_MAX_TRANSF_SIZE)
                 snd_size = USB_BULK_TX_MAX_TRANSF_SIZE;
@@ -447,13 +449,15 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
                 snd_size = info->buf_size - snd_pos;
 
             libusb_fill_bulk_transfer(transfers[transf_pos], usb_data->devhnd, info->addr,
-                                     (unsigned char*)&info->data[snd_pos],
-                                     snd_size*sizeof(info->data[0]),
-                                     f_usb_transf_tx_cb, info, USB_BULK_TX_TRANSFER_TOUT);
+                                        (unsigned char*)&info->data[snd_pos],
+                                        snd_size*sizeof(info->data[0]),
+                                        f_usb_transf_cb,
+                                        (void*)&transf_completed[transf_pos],
+                                        USB_BULK_TX_TRANSFER_TOUT);
 
+            transf_completed[transf_pos] = TRANSF_CPL_BUSY;
             if (libusb_submit_transfer(transfers[transf_pos])==0) {
-                osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
-                info->tx.transf_busy++;
+                osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);                
                 info->tx.busy_size+=snd_size;
                 osspec_mutex_release(info->mutex);
                 if (++transf_pos == USB_BULK_TX_MAX_TRANSF_CNT)
@@ -463,28 +467,20 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
                     snd_pos = 0;
                 snd_rdy_size-=snd_size;
             } else {
+                transf_completed[transf_pos] = TRANSF_CPL_IDLE;
                 err = X502_ERR_SEND;
             }
         }
 
-        if (!err && info->tx.transf_err)
-            err = info->tx.transf_err;
 
-
-        if (!err) {
-            osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
-            info->usb_rdy = info->tx.transf_busy != USB_BULK_TX_MAX_TRANSF_CNT;
-            osspec_mutex_release(info->mutex);
-
-
-
-
-            if (!info->usb_rdy && (info->tx.transf_busy!=0)) {
+        if (err == X502_ERR_OK) {
+            if (transf_completed[transf_check_pos] == TRANSF_CPL_BUSY) {
                 /* иначе ждем событий от USB */
                 struct timeval tv;
                 tv.tv_sec =0;
                 tv.tv_usec = 200 * 1000;
-                libusb_handle_events_timeout_completed(NULL, &tv, &info->usb_rdy);
+                libusb_handle_events_timeout_completed(NULL, &tv,
+                                                       (int*)&transf_completed[transf_check_pos]);
             } else if (snd_rdy_size==0) {
                 /* если буфер занят - ждем события от потока чтения */
                 osspec_event_wait(info->usb_wake_evt, OSSPEC_TIMEOUT_INFINITY);
@@ -492,40 +488,36 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
         }
     }
 
-    if (!err && info->tx.transf_err)
-        err = info->tx.transf_err;
+    /* отменяем все поставленные запросы */
+    for (idx = 0; idx < USB_BULK_RX_MAX_TRANSF_CNT; idx++) {
+       unsigned pos = (transf_check_pos + idx) % USB_BULK_RX_MAX_TRANSF_CNT;
+       if (transf_completed[pos] == TRANSF_CPL_BUSY) {
+           if (libusb_cancel_transfer(transfers[pos]) !=LIBUSB_SUCCESS)
+               transf_completed[pos] = TRANSF_CPL_COMPLETED;
+       }
+    }
 
-    if (osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT)==0) {
-        unsigned busy_cnt = info->tx.transf_busy;
-        if (busy_cnt==0) {
-            osspec_mutex_release(info->mutex);
+    /* ждем завершения всех запросов */
+    while (transf_completed[transf_check_pos] != TRANSF_CPL_IDLE) {
+        if (transf_completed[transf_check_pos] == TRANSF_CPL_BUSY) {
+            struct timeval ztv = {0,0};
+            libusb_handle_events_timeout(NULL, &ztv);
         } else {
-            unsigned pos = transf_pos >= busy_cnt ? transf_pos - busy_cnt :
-                                                   USB_BULK_TX_MAX_TRANSF_CNT - busy_cnt + transf_pos;
-
-            osspec_mutex_release(info->mutex);
-            for (idx = 0; idx < busy_cnt; idx++) {
-                libusb_cancel_transfer(transfers[pos]);
-                if (++pos == USB_BULK_TX_MAX_TRANSF_CNT)
-                    pos = 0;
-            }
+            transf_completed[transf_check_pos] = TRANSF_CPL_IDLE;
+            if (++transf_check_pos == USB_BULK_RX_MAX_TRANSF_CNT)
+                transf_check_pos = 0;
         }
+    }
 
+    /* очищаем ресурсы */
+    for (idx = 0; idx < USB_BULK_RX_MAX_TRANSF_CNT; idx++) {
+        if (transfers[idx] != NULL) {
+            libusb_free_transfer(transfers[idx]);
+        }
+    }
 
-         while (info->tx.transf_busy!=0) {
-             struct timeval ztv = {0,0};
-             libusb_handle_events_timeout(NULL, &ztv);
-         }
-
-         for (idx = 0; idx < USB_BULK_TX_MAX_TRANSF_CNT; idx++) {
-             if (transfers[idx]) {
-                 libusb_free_transfer(transfers[idx]);
-             }
-         }
-     }
-
-    if (!info->err)
-        info->err = err;
+    if (info->err == X502_ERR_OK)
+       info->err = err;
 
 
     return 0;
@@ -567,7 +559,6 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
                 unsigned i;
                 for (i=0; i < info->rx.cpl_cnt; i++) {
                     info->rx.cpls[i].state = RX_STATE_IDLE;
-                    info->rx.cpls[i].info = info;
                 }
             }
         } else {
@@ -959,7 +950,8 @@ X502_EXPORT(int32_t) E502_UsbGetDevRecordsList(t_x502_devrec *list, uint32_t siz
             //сравниваем VID, PID с индентификаторами загрузочного устройства
             if ((devdescr.idVendor == E502_USB_VID)
                     && (devdescr.idProduct == E502_USB_PID)) {
-                int32_t cur_err = libusb_open(usb_devlist[i], &usbhnd);
+                int32_t cur_err;
+                cur_err = libusb_open(usb_devlist[i], &usbhnd);
                 if (cur_err == X502_ERR_OK) {
                     t_x502_devrec info;
                     int info_used = 0;
