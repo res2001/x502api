@@ -652,26 +652,21 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
 
 static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
     int32_t err;
+    t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
+    t_transf_info *info = &usb_data->streams[ch];
 
     err = hnd->iface_hnd->stream_stop(hnd, ch);
 
-    if (!err) {
-        t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
-        t_transf_info *info = &usb_data->streams[ch];
+    free(info->data);
+    info->data = NULL;
 
-
-        free(info->data);
-        info->data = NULL;
-
-        if (ch==X502_STREAM_CH_IN) {
-            free(info->rx.cpls);
-            info->rx.cpls = NULL;
-            info->rx.cpl_cnt = 0;
-            info->rx.transf_size = 0;
-        }
-
-
+    if (ch==X502_STREAM_CH_IN) {
+        free(info->rx.cpls);
+        info->rx.cpls = NULL;
+        info->rx.cpl_cnt = 0;
+        info->rx.transf_size = 0;
     }
+
     return err;
 }
 
