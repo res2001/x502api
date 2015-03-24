@@ -4,6 +4,9 @@ set(PROJECT e502api)
 project(${PROJECT} C)
 
 option(E502API_LIBUSB_DEBUG "Print debug messages from libusb" OFF)
+if(WIN32)
+    option(LIBUSB_INTERNAL "use internal libusb realisation" ON)
+endif(WIN32)
 
 include(${LTIMER_DIR}/ltimer.cmake)
 
@@ -15,6 +18,8 @@ set(SOURCES
     ${LTIMER_SOURCES}
     ${X502API_LIB_DIR}/osspec/osspec.c
     )
+
+
 
 set(SETUP_HEADERS e502api.h)
     
@@ -35,11 +40,45 @@ if(E502API_LIBUSB_DEBUG)
 endif(E502API_LIBUSB_DEBUG)
 
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
-#ищем libusb-1.0
-find_package(LibUSB REQUIRED)
-include_directories(${LIBUSB_INCLUDE_DIR})
-set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
+if(LIBUSB_INTERNAL) 
+    # использование внутренней реализации libusb, а не внешеней библиотеки
+    # используется под windows, так как стандартная версия c WinUSB драйвером
+    # имеет проблемны при отмене трансферов
+    include_directories(libusb-1.0 libusb-1.0/msvc)
+    set(SOURCES ${SOURCES}
+        libusb-1.0/core.c
+        libusb-1.0/descriptor.c
+        libusb-1.0/hotplug.c
+        libusb-1.0/io.c
+        libusb-1.0/strerror.c
+        libusb-1.0/sync.c
+        libusb-1.0/os/poll_windows.c
+        libusb-1.0/os/threads_windows.c
+        libusb-1.0/os/windows_usb.c
+        )
+
+    set(HEADERS ${HEADERS}
+        libusb-1.0/libusb.h
+        libusb-1.0/libusbi.h
+        libusb-1.0/hotplug.h
+        libusb-1.0/version.h
+        libusb-1.0/version_nano.h
+        libusb-1.0/os/poll_windows.h
+        libusb-1.0/os/threads_windows.h
+        libusb-1.0/os/windows_common.h
+        libusb-1.0/msvc/config.h
+        libusb-1.0/msvc/errno.h
+        libusb-1.0/msvc/inttypes.h
+        libusb-1.0/msvc/missing.h
+        libusb-1.0/msvc/stdint.h
+        )
+else()
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
+    #ищем libusb-1.0
+    find_package(LibUSB REQUIRED)
+    include_directories(${LIBUSB_INCLUDE_DIR})
+    set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
+endif()
 
 
 include_directories(${X502API_LIB_DIR}/osspec)

@@ -3,3 +3,4 @@ lib/ltimer=https://bitbucket.org/lcard/ltimer
 lib/crc=https://bitbucket.org/lcard/CRClib
 lib/osspec=https://bitbucket.org/lcard/osspec
 packages=https://bitbucket.org/lcard/cmake_obs_packages
+devs/e502/libusb-1.0=https://bitbucket.org/lcard/libusb
