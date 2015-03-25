@@ -1,15 +1,21 @@
 cmake_minimum_required(VERSION 2.6)
 
 set(PROJECT x502api)
-set(X502API_VER_MAJOR 0)
+set(X502API_VER_MAJOR 1)
 set(X502API_VER_MINOR 0)
-set(X502API_VER_PATCH 2)
+set(X502API_VER_PATCH 99)
 set(X502API_VERSION ${X502API_VER_MAJOR}.${X502API_VER_MINOR}.${X502API_VER_PATCH})
 
 add_definitions(-DX502API_VER_MAJOR=${X502API_VER_MAJOR} -DX502API_VER_MINOR=${X502API_VER_MINOR} -DX502API_VER_PATCH=${X502API_VER_PATCH})
 
-project(${PROJECT} C)
 
+if(WIN32)
+    option(LTRAPI_BUILD_BORLAND_LIBS "Make .lib files for Borland C++/C++ Builder compiler" OFF)
+    option(LTRAPI_BUILD_MINGW_LIBS "Make .a files for mingw compiler" OFF)
+endif(WIN32)
+
+
+project(${PROJECT} C)
 
 if(UNIX)
     set(CMAKE_PACKAGES ${CMAKE_CURRENT_SOURCE_DIR}/packages/packages.cmake)
@@ -85,8 +91,7 @@ set(SOURCES
 
 
 set(SETUP_HEADERS
-    src/pstdint.h
-    src/lstdtypes.h
+    src/lcard_pstdint.h
     src/x502api.h
     )
 
@@ -94,7 +99,7 @@ set(HEADERS
     src/l502_bf_cmd_defs.h
     src/lboot_req.h
     src/x502_fpga_regs.h
-    src/x502api_private.h    
+    src/x502api_private.h
     src/x502_eeprom.h
     src/osspec_cfg.h
     lib/osspec/osspec.h
@@ -111,6 +116,15 @@ include(${X502_LIBS_CMAKE_FILE})
 
 add_subdirectory(devs)
 
+
+if(LPCIE_DOCGEN_DIR)
+    include(${LPCIE_DOCGEN_DIR}/LDoxyToPdf.cmake)
+    set(PDF_IMG_FILES  doc/images/adc_frame.jpeg)
+    set(DOC_DOXYGEN_PRJ_FILE doc/Doxyfile.in)
+    set(DOXYGEN_INPUT_FILES src/x502api.h devs/e502/e502api.h devs/l502/l502api.h doc/mainpage.md doc/about.md doc/setup.md doc/gen_descr.md)
+    ADD_DOXY_TO_PDF_TARGET(x502api)
+endif(LPCIE_DOCGEN_DIR)
+
 #цели для сборки пакетов
 if(UNIX AND CMAKE_PACKAGES)
     set(PACKAGE_NAME     ${PROJECT})
@@ -124,10 +138,10 @@ endif(UNIX AND CMAKE_PACKAGES)
 if(WIN32 AND LCARD_SDK_MAKE_INSTALLER)
     include(win_install/winpaths.cmake)
 
-    set(X502API_CONVERTED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+    set(X502API_CONVERTED_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/conv_src)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x64)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x86)
-    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
+    file(MAKE_DIRECTORY ${X502API_CONVERTED_SOURCE_DIR})
 
     string(REGEX REPLACE "/" "\\\\" ICONV ${ICONV})
     string(REGEX REPLACE "/" "\\\\" X502API_CONVERTED_SOURCE_DIR ${X502API_CONVERTED_SOURCE_DIR})
@@ -144,7 +158,7 @@ if(WIN32 AND LCARD_SDK_MAKE_INSTALLER)
         COMMAND cmd /c conv_src_cp1251.bat
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-    add_custom_target(api64
+    add_custom_target(x502api_64
         COMMAND cmd /c make.bat
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x64
         DEPENDS convert_src)
@@ -152,7 +166,7 @@ if(WIN32 AND LCARD_SDK_MAKE_INSTALLER)
     #x86 версию собираем 2008 студией (Express) для совместимости с Win2000
     #set(VS2008_SETENV "${VS2008_DIR}/vcvarsall.bat")
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x86)
-    add_custom_target(api32
+    add_custom_target(x502api_32
         COMMAND cmd /c make.bat
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/x86
         DEPENDS convert_src

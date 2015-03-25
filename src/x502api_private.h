@@ -218,7 +218,7 @@ typedef int32_t (APIENTRY *t_x502_get_devinfo_list_cb)(t_x502_devrec* list, uint
 
 int x502_check_eeprom(t_x502_hnd hnd);
 
-X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size);
+X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *info);
 X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
                                 const char *devname, t_x502_get_devinfo_list_cb get_list);
 X502_EXPORT(int32_t) X502_GetSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,

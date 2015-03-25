@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<doxyXmlToLatexConfig>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/constants.tex"            sect_lvl="1" type="xml"> @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__const__list.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/types.tex"                sect_lvl="1" type="xml"> @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__type__list.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/struct_x502_cbr_coef.tex" sect_lvl="2" type="xml"> @CMAKE_CURRENT_BINARY_DIR@/doc/xml/structt__x502__cbr__coef.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/struct_x502_cbr.tex"      sect_lvl="2" type="xml"> @CMAKE_CURRENT_BINARY_DIR@/doc/xml/structt__x502__cbr.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/struct_x502_info.tex"     sect_lvl="2" type="xml"> @CMAKE_CURRENT_BINARY_DIR@/doc/xml/structt__x502__info.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_open.tex"           sect_lvl="2" type="xml"> @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__open.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_hnd.tex"            sect_lvl="2" type="xml"> @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__hnd.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_config.tex"         sect_lvl="2" type="xml"> @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__config.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_async.tex"          sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__async.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_streams.tex"        sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__streams.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_dsp.tex"            sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__dsp.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_flash.tex"          sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__flash.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_misc.tex"           sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__misc.xml </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/sect_gen_descr.tex"       type="tex"> @CMAKE_CURRENT_BINARY_DIR@/doc/latex/sect_gen_descr.tex </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/sect_setup.tex"  	       type="tex"> @CMAKE_CURRENT_BINARY_DIR@/doc/latex/sect_setup.tex </file>
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/sect_about.tex"           type="tex"> @CMAKE_CURRENT_BINARY_DIR@/doc/latex/sect_about.tex </file>
+</doxyXmlToLatexConfig>

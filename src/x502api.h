@@ -5,14 +5,27 @@
 extern "C" {
 #endif
 
-#include "lstdtypes.h"
+#include "lcard_pstdint.h"
 
 
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include "Windows.h"
+
+    #define X502_EXPORT(type) type APIENTRY
+#else
+    #ifndef APIENTRY
+        #define APIENTRY
+    #endif
+
+    #define X502_EXPORT(type) __attribute__ ((visibility("default"))) type
+#endif
 
 
 /** @todo
         X502_AsyncGetAdcFrame
-        X502_GetDriverVersion (?)
         X502_OutCycleLoadStart
         X502_OutCycleSetup
         X502_OutCycleStop
@@ -24,8 +37,6 @@ extern "C" {
   @{
   *****************************************************************************/
 
-
-#define X502_DEVREC_SIGN       0x4C524543
 
 /** Максимальное количество логических каналов в таблице*/
 #define X502_LTABLE_MAX_CH_CNT      256
@@ -98,6 +109,12 @@ extern "C" {
 /** слово, использующееся в потоке по TCP как признак окончания передачи */
 #define X502_STREAM_IN_MSG_END       0x01010001
 
+
+
+/** Значение поля сигнатуры в записи о устройстве #t_x502_devrec. Признак,
+    что запись действительна (устанавливается функциями по получению записей
+    о устройствах) */
+#define X502_DEVREC_SIGN       0x4C524543
 
 
 /** Коды ошибок библиотеки */
@@ -498,9 +515,11 @@ typedef enum {
 typedef struct st_x502_devrec_inptr t_x502_devrec_inptr;
 
 /** Структура, описывающая не открытое устройство, по которой с ним можно
-    установить связь */
+    установить соединение */
 typedef struct {
-    uint32_t sign;  /**< Признак действительной структуры. Должен равнять X502_DEVREC_SIGN */
+    uint32_t sign;  /**< Признак действительной структуры.
+                         Если запись действительна (соответствует какому-либо устройству),
+                         то должен быть равен #X502_DEVREC_SIGN) */
     char devname[X502_DEVNAME_SIZE]; /**< название устройства */
     char serial[X502_SERIAL_SIZE]; /**< серийный номер */
     char location[X502_LOCATION_STR_SIZE]; /**< описание подключения (если есть) */
@@ -612,7 +631,6 @@ X502_EXPORT(int32_t) X502_Free(t_x502_hnd hnd);
     @{
 *******************************************************************************/
 
-X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *info);
 
 X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size);
 

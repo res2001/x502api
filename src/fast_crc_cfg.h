@@ -5,7 +5,7 @@
 #ifndef FAST_CRC_CFG_H_
 #define FAST_CRC_CFG_H_
 
-#include "lstdtypes.h"
+#include "lcard_pstdint.h"
 
 /*================================================================================================*/
 /* Типы */
