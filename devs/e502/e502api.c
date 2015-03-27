@@ -117,7 +117,22 @@ int32_t e502_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags) {
     return X502_ERR_NOT_IMPLEMENTED;
 }
 
+void e502_devinfo_init(t_x502_info *info, const t_lboot_devinfo *lboot_info) {
+    int ver[4];
+    int ver_comp_valid;
 
+    strcpy(info->serial, lboot_info->serial);
+    info->mcu_firmware_ver = 0;
+    ver_comp_valid = sscanf(lboot_info->soft_ver, "%d.%d.%d.%d", &ver[0], &ver[1], &ver[2], &ver[3]);
+    if (ver_comp_valid >= 1)
+        info->mcu_firmware_ver |= (ver[0]&0xFF) << 24;
+    if (ver_comp_valid >= 2)
+        info->mcu_firmware_ver |= (ver[1]&0xFF) << 16;
+    if (ver_comp_valid >= 3)
+        info->mcu_firmware_ver |= (ver[2]&0xFF) << 8;
+    if (ver_comp_valid >= 4)
+        info->mcu_firmware_ver |= ver[3]&0xFF;
+}
 
 X502_EXPORT(int32_t) E502_SwitchToBootloader(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND(hnd);

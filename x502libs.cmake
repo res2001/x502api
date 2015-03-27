@@ -86,3 +86,15 @@ if(X502API_BUILD_MINGW_LIBS)
             DESTINATION ${X502_INSTALL_LIB}/mingw
             RENAME ${PROJECT_NAME}.a)
 endif(X502API_BUILD_MINGW_LIBS)
+
+
+if(X502API_PREPARE_HEADERS)
+    foreach(PREP_FILE ${SETUP_HEADERS})
+        get_filename_component(PREP_FILENAME ${PREP_FILE} NAME)
+        add_custom_command(TARGET ${PROJECT_NAME}
+                           POST_BUILD
+                           COMMAND cmake -E copy "${PREP_FILE}" "${X502API_INCLUDE_DIR}/${PREP_FILENAME}"
+                           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                          )
+    endforeach()
+endif(X502API_PREPARE_HEADERS)

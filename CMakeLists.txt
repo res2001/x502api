@@ -24,6 +24,9 @@ if(UNIX)
     endif(NOT OSC_PROJECT)
 endif(UNIX)
 
+
+
+set(X502API_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(X502API_LIB_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(LTIMER_DIR       ${X502API_LIB_DIR}/ltimer)
 set(LCSPEC_DIR       ${X502API_LIB_DIR}/lcspec)
@@ -31,6 +34,10 @@ set(X502_LIBS_CMAKE_FILE  ${CMAKE_CURRENT_SOURCE_DIR}/x502libs.cmake)
 
 set(X502_INSTALL_LIB        lib)
 set(X502_INSTALL_INCLUDE    include)
+
+
+file(MAKE_DIRECTORY ${X502API_INCLUDE_DIR})
+set(X502API_PREPARE_HEADERS ON)
 
 #для GCC устанавливаем повышенный уроень предупреждения компилятора
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -115,6 +122,10 @@ include(${X502_LIBS_CMAKE_FILE})
 
 
 add_subdirectory(devs)
+
+if(BUILD_EXAMPLES OR BUILD_ALL)
+    add_subdirectory(examples/c)
+endif(BUILD_EXAMPLES OR BUILD_ALL)
 
 
 if(LPCIE_DOCGEN_DIR)

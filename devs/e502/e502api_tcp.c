@@ -1,7 +1,6 @@
 #include "e502api_private.h"
 #include "e502_tcp_protocol.h"
 #include "ltimer.h"
-#include "lboot_req.h"
 #include "e502_fpga_regs.h"
 
 #include <stdlib.h>
@@ -426,7 +425,7 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
                 if (strcmp(lboot_info.devname, devinfo->devname)) {
                     err = X502_ERR_INVALID_DEVICE;
                 } else {
-                    strcpy(hnd->info.serial, lboot_info.serial);
+                    e502_devinfo_init(&hnd->info, &lboot_info);
                 }
             }
         }
@@ -649,6 +648,8 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
                     (ip_addr>>16) & 0xFF,
                     (ip_addr>>8) & 0xFF,
                     (ip_addr>>0) & 0xFF);
+
+            devrec->flags = X502_DEVFLAGS_IFACE_SUPPORT_USB | X502_DEVFLAGS_IFACE_SUPPORT_ETH;
         }
 
         if (err != X502_ERR_OK) {

@@ -174,6 +174,19 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
           usberr == LIBUSB_ERROR_NO_DEVICE ? X502_ERR_DEVICE_DISCONNECTED :
                      X502_ERR_DEVICE_OPEN;
 
+    if (err == X502_ERR_OK) {
+        t_lboot_devinfo lboot_info;
+
+        err = f_ioreq(devhnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
+                              sizeof(lboot_info), NULL, 0);
+        if (err == X502_ERR_OK) {
+            if (strcmp(lboot_info.devname, devinfo->devname)) {
+                err = X502_ERR_INVALID_DEVICE;
+            } else {
+                e502_devinfo_init(&hnd->info, &lboot_info);
+            }
+        }
+    }
 
     if (err == X502_ERR_OK) {
         t_usb_iface_data *usb_data = calloc(1, sizeof(t_usb_iface_data));
@@ -892,18 +905,16 @@ static int32_t f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec *info) {
 
     if (err == X502_ERR_OK) {
         t_lboot_devinfo lboot_info;
-        uint32_t id;
+
 
         //получаем информацию о устройстве
         err = f_ioreq(hnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
                       sizeof(lboot_info), NULL, 0);
 
         if (err == X502_ERR_OK) {
-            err = f_ioreq(hnd, E502_CM4_CMD_FPGA_REG_READ, E502_REGS_ARM_HARD_ID,
-                          NULL, 0, &id, sizeof(id), NULL, 0);
-        }
+            uint32_t id;
 
-        if (err == X502_ERR_OK) {
+
             strcpy(info->devname, lboot_info.devname);
             strcpy(info->serial, lboot_info.serial);
 
@@ -911,6 +922,12 @@ static int32_t f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec *info) {
             devinfo_ptr->iface_data = libusb_ref_device(libusb_get_device(hnd));
             info->internal = devinfo_ptr;
             info->iface = X502_IFACE_USB;
+            info->flags = X502_DEVFLAGS_IFACE_SUPPORT_USB;
+
+            if (f_ioreq(hnd, E502_CM4_CMD_FPGA_REG_READ, E502_REGS_ARM_HARD_ID,
+                        NULL, 0, &id, sizeof(id), NULL, 0) == X502_ERR_OK) {
+                FILL_HARD_ID_FLAGS(info->flags, id);
+            }
         }
     }
 

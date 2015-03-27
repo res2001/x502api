@@ -236,4 +236,37 @@ X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd);
                             par, NULL, 0, data, size, X502_BF_CMD_DEFAULT_TOUT, NULL)
 
 
+
+
+#define FILL_HARD_ID_FLAGS(devflags, hard_id) do { \
+    if (hard_id & 0x01) { \
+        devflags |= X502_DEVFLAGS_DAC_PRESENT; \
+    } else { \
+        devflags &= ~X502_DEVFLAGS_DAC_PRESENT; \
+    } \
+    if (hard_id & 0x02) { \
+        devflags |= X502_DEVFLAGS_GAL_PRESENT; \
+    } else { \
+        devflags &= ~X502_DEVFLAGS_GAL_PRESENT; \
+    } \
+    if (hard_id & 0x04) {\
+        devflags |= X502_DEVFLAGS_BF_PRESENT; \
+    } else { \
+        devflags &= ~X502_DEVFLAGS_BF_PRESENT; \
+    } \
+    if (hard_id & 0x08) { \
+        devflags |= X502_DEVFLAGS_IFACE_SUPPORT_ETH ; \
+    } else { \
+        devflags &= ~X502_DEVFLAGS_IFACE_SUPPORT_ETH; \
+    } \
+    if (hard_id & 0x80000000) { \
+        devflags |= X502_DEVFLAGS_INDUSTRIAL; \
+    } else { \
+        devflags &= ~X502_DEVFLAGS_INDUSTRIAL; \
+    } \
+} while(0)
+
+
+
+
 #endif // X502API_PRIVATE_H

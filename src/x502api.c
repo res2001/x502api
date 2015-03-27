@@ -102,15 +102,10 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info
                 uint32_t hard_id=0;
                 err = hnd->iface_hnd->fpga_reg_read(hnd, hnd->iface_hnd->id_reg_addr, &hard_id);
                 if (!err) {
-                    hnd->info.fpga_ver = (hard_id >> 16) & 0xFFFF;
+                    hnd->info.fpga_ver = (hard_id >> 16) & 0x7FFF;
                     hnd->info.plda_ver = (hard_id >> 4) & 0xF;
-                    hnd->info.board_rev  = (hard_id >> 8) & 0xF;
-                    if (hard_id & 0x01)
-                        hnd->info.devflags |= X502_DEVFLAGS_DAC_PRESENT;
-                    if (hard_id & 0x02)
-                        hnd->info.devflags |= X502_DEVFLAGS_GAL_PRESENT;
-                    if (hard_id & 0x04)
-                        hnd->info.devflags |= X502_DEVFLAGS_BF_PRESENT;
+                    hnd->info.board_rev  = (hard_id >> 8) & 0xF;                    
+                    FILL_HARD_ID_FLAGS(hnd->info.devflags, hard_id);
                 }
             }
 

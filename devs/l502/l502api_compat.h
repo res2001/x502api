@@ -10,8 +10,8 @@
     @author Borisov Alexey <borisov@lcard.ru>
  ******************************************************************************/
 
-#ifndef L502_API_H
-#define L502_API_H
+#ifndef L502API_COMPAT_H
+#define L502API_COMPAT_H
 
 #ifdef __cplusplus
 extern "C" {
