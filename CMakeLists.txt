@@ -121,7 +121,7 @@ if(LPCIE_DOCGEN_DIR)
     include(${LPCIE_DOCGEN_DIR}/LDoxyToPdf.cmake)
     set(PDF_IMG_FILES  doc/images/adc_frame.jpeg)
     set(DOC_DOXYGEN_PRJ_FILE doc/Doxyfile.in)
-    set(DOXYGEN_INPUT_FILES src/x502api.h devs/e502/e502api.h devs/l502/l502api.h doc/mainpage.md doc/about.md doc/setup.md doc/gen_descr.md)
+    set(DOXYGEN_INPUT_FILES devs/l502/l502api.h devs/e502/e502api.h src/x502api.h  doc/mainpage.md doc/about.md doc/setup.md doc/gen_descr.md)
     ADD_DOXY_TO_PDF_TARGET(x502api)
 endif(LPCIE_DOCGEN_DIR)
 
