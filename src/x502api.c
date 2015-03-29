@@ -67,18 +67,19 @@ X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
 
 
 
-X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec* info) {
+X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devrec) {
     int32_t err  = X502_CHECK_HND(hnd);
-    if ((err == X502_ERR_OK) && ((info==NULL) || (info->sign!=X502_DEVREC_SIGN)))
+    if ((err == X502_ERR_OK) && ((devrec==NULL) || (devrec->sign!=X502_DEVREC_SIGN)))
         err = X502_ERR_INVALID_DEVICE_RECORD;
     if ((err == X502_ERR_OK) && (hnd->flags & PRIV_FLAGS_OPENED))
         err = X502_ERR_ALREADY_OPENED;
     if (err == X502_ERR_OK) {
-        hnd->iface_hnd = (const t_x502_dev_iface *)(info->internal->iface);
-        memcpy(hnd->info.serial, info->serial, X502_SERIAL_SIZE);
-        memcpy(hnd->info.name, info->devname, X502_DEVNAME_SIZE);
-        hnd->iface = info->iface;
-        err = hnd->iface_hnd->open(hnd, info);
+        hnd->iface_hnd = (const t_x502_dev_iface *)(devrec->internal->iface);
+        memcpy(hnd->info.serial, devrec->serial, X502_SERIAL_SIZE);
+        memcpy(hnd->info.name, devrec->devname, X502_DEVNAME_SIZE);
+        hnd->iface = devrec->iface;
+        hnd->info.devflags = devrec->flags;
+        err = hnd->iface_hnd->open(hnd, devrec);
         if (err == X502_ERR_OK) {
             X502_SetLChannel(hnd, 0, 0, X502_LCH_MODE_COMM, X502_ADC_RANGE_10, 0);
             hnd->set.lch_cnt = 1;

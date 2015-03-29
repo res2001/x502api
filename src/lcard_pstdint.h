@@ -194,8 +194,8 @@
  *  do nothing else.  On the Mac OS X version of gcc this is _STDINT_H_.
  */
 
-#if ((defined(__STDC__) && __STDC__ && __STDC_VERSION__ >= 199901L) \
-    || (defined (__WATCOMC__) && (defined (_STDINT_H_INCLUDED) || __WATCOMC__ >= 1250)) \
+#if ((defined(__STDC__) && __STDC__ && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) \
+    || (defined (__WATCOMC__) && (defined (_STDINT_H_INCLUDED) || (__WATCOMC__ >= 1250))) \
     || (defined(__GNUC__) && (defined(_STDINT_H) || defined(_STDINT_H_) || defined (__UINT_FAST64_TYPE__)) ) \
     || (defined (_MSC_VER) && (_MSC_VER >= 1600)) \
     || (defined (__BORLANDC__) && (__BORLANDC__ >= 0x560))) && !defined (_PSTDINT_H_INCLUDED)

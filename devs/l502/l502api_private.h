@@ -19,7 +19,7 @@ typedef struct {
 
 int32_t l502_port_fpga_reg_write(t_x502_hnd hnd, uint32_t reg, uint32_t val);
 int32_t l502_port_fpga_reg_read(t_x502_hnd hnd, uint32_t reg, uint32_t *val);
-int32_t l502_port_open(t_x502_hnd hnd, const t_x502_devrec *devinfo);
+int32_t l502_port_open(t_x502_hnd hnd, const t_x502_devrec *devrec);
 int32_t l502_port_free_iface_data(void *intptr);
 int32_t l502_port_close(t_x502_hnd hnd);
 int32_t l502_port_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t single);

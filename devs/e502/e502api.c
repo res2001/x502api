@@ -1,5 +1,6 @@
 #include "e502api_private.h"
 #include <stdlib.h>
+#include <string.h>
 
 #define BF_LOAD_TOUT  20000
 

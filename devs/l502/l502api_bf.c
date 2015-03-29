@@ -43,8 +43,8 @@ typedef struct st_bf_ldr_pkt {
 
 /* Разбираем заголовок блока LDR-формата из буфера размером BF_LDR_HDR_SIZE
    и сохраняем параметры в структуре pkt */
-int f_parse_ldr_hdr(const uint8_t *hdr, t_bf_ldr_pkt *pkt) {
-    int err = 0;
+int32_t f_parse_ldr_hdr(const uint8_t *hdr, t_bf_ldr_pkt *pkt) {
+    int32_t err = X502_ERR_OK;
     uint32_t* pdw_buff = (uint32_t*)hdr;
     uint8_t xor_ch = 0;
     int i;
@@ -74,14 +74,14 @@ int f_parse_ldr_hdr(const uint8_t *hdr, t_bf_ldr_pkt *pkt) {
 }
 
 static int32_t f_bf_wait_cmd_done(t_x502_hnd hnd) {
-    int32_t err = 0;
+    int32_t err = X502_ERR_OK;
     t_ltimer tmr;
     uint32_t status;
     ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(X502_BF_REQ_TOUT));
     do {
         err = l502_port_fpga_reg_read(hnd, L502_REGS_BF_STATUS, &status);
     } while ((status &  L502_REGBIT_BF_STATUS_BUSY_Msk) &&
-             !err && !ltimer_expired(&tmr));
+             (err == X502_ERR_OK) && !ltimer_expired(&tmr));
 
     if (!err && (status & L502_REGBIT_BF_STATUS_BUSY_Msk))
         err = X502_ERR_BF_REQ_TIMEOUT;
@@ -116,7 +116,7 @@ int32_t l502_iface_bf_mem_block_rd(t_x502_hnd hnd, uint32_t addr, uint32_t *bloc
 int32_t l502_iface_bf_mem_block_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t *block, uint32_t size) {
     uint32_t i;
     int32_t err = f_bf_wait_cmd_done(hnd);
-    if (err = X502_ERR_OK) {
+    if (err == X502_ERR_OK) {
         /* записываем блок данных в буфер ПЛИС */
         for (i=0; (i < size) && (err == X502_ERR_OK); i++) {
             err = l502_port_fpga_reg_write(hnd, L502_REGS_BF_REQ_DATA+i, block[i]);
@@ -140,10 +140,10 @@ int32_t l502_iface_bf_mem_block_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t
 
 
 static int32_t f_bf_mem_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t* regs, uint32_t size) {
-    int32_t err = 0;
+    int32_t err = X502_ERR_OK;
 
     /* данные записываем блоками по L502_BF_REQ_DATA_SIZE */
-    while (!err && size) {
+    while ((err == X502_ERR_OK) && size) {
         int put_size = (size < hnd->iface_hnd->bf_mem_block_size) ? size :
                                          hnd->iface_hnd->bf_mem_block_size;
         err = hnd->iface_hnd->bf_mem_block_wr(hnd, addr, regs, put_size);

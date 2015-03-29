@@ -264,6 +264,12 @@ typedef enum {
     X502_ERR_NO_DATA_CONNECTION           = -151,
     /** Не удалось дождаться сообщения о завершении потока */
     X502_ERR_NO_STREAM_END_MSG            = -152,
+    /** Соединение было сброшено другой стороной */
+    X502_ERR_CONNECTION_RESET             = -153,
+    /** Не удалось найти хост с указанным адресом */
+    X502_ERR_HOST_UNREACHABLE             = -154,
+    /** Ошибка установления TCP-соединения */
+    X502_ERR_TCP_CONNECTION_ERROR         = -155,
 
 
 
@@ -303,7 +309,7 @@ typedef enum {
 typedef enum {
     X502_IFACE_UNKNOWN = 0, /**< Неизвестный интерфейс */    
     X502_IFACE_USB     = 1, /**< Устройство подключено по USB */
-    X502_IFACE_TCP     = 2, /**< Устройство подключено по Ethernet через TCP/IP */
+    X502_IFACE_ETH     = 2, /**< Устройство подключено по Ethernet через TCP/IP */
     X502_IFACE_PCI     = 3  /**< Устройство подключено по PCI/PCIe */
 } t_x502_iface;
 

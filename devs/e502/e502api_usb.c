@@ -103,7 +103,7 @@ static int32_t f_ioreq(libusb_device_handle *handle, uint32_t cmd_code, uint32_t
                    void* rcv_data, uint32_t recv_size, uint32_t* recvd_size, uint32_t tout);
 
 static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr);
-static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo);
+static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
@@ -157,9 +157,9 @@ static const t_x502_dev_iface f_usb_iface = {
 
 
 
-static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
+static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
     int32_t err, usberr;
-    libusb_device *dev = (libusb_device *)devinfo->internal->iface_data;
+    libusb_device *dev = (libusb_device *)devrec->internal->iface_data;
     libusb_device_handle *devhnd;
 
 
@@ -180,7 +180,7 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
         err = f_ioreq(devhnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
                               sizeof(lboot_info), NULL, 0);
         if (err == X502_ERR_OK) {
-            if (strcmp(lboot_info.devname, devinfo->devname)) {
+            if (strcmp(lboot_info.devname, devrec->devname)) {
                 err = X502_ERR_INVALID_DEVICE;
             } else {
                 e502_devinfo_init(&hnd->info, &lboot_info);

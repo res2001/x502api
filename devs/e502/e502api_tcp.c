@@ -85,7 +85,7 @@ typedef struct {
 } t_tcp_iface_data;
 
 static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr);
-static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo);
+static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
@@ -207,7 +207,18 @@ static int32_t f_con_sock(t_socket *psock, uint32_t ip_addr, uint16_t port, uint
                                                (char*)&sockerr, &optlen)) {
                     err = X502_ERR_SOCKET_OPEN;
                 } else if (sockerr) {
-                    err = X502_ERR_SOCKET_OPEN;
+#ifdef EHOSTUNREACH
+                    if (sockerr == EHOSTUNREACH) {
+                        err = X502_ERR_HOST_UNREACHABLE;
+                    }
+#endif
+#ifdef ECONNRESET
+                    if (sockerr == ECONNRESET) {
+                        err = X502_ERR_CONNECTION_RESET;
+                    }
+#endif
+                    if (err == X502_ERR_OK)
+                        err = X502_ERR_TCP_CONNECTION_ERROR;
                 }
             }
 
@@ -394,9 +405,9 @@ static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr) {
     return X502_ERR_OK;
 }
 
-static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
+static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
     int32_t err = X502_ERR_OK;
-    t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data*)devinfo->internal->iface_data;
+    t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data*)devrec->internal->iface_data;
     t_socket s;
     err = f_con_sock(&s, devinfo_data->ip_addr, devinfo_data->cmd_port, devinfo_data->open_tout);
     if (err == X502_ERR_OK) {
@@ -422,7 +433,7 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
                                         sizeof(lboot_info), NULL, 0);
 
             if (err == X502_ERR_OK) {
-                if (strcmp(lboot_info.devname, devinfo->devname)) {
+                if (strcmp(lboot_info.devname, devrec->devname)) {
                     err = X502_ERR_INVALID_DEVICE;
                 } else {
                     e502_devinfo_init(&hnd->info, &lboot_info);
@@ -617,10 +628,9 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
 
 X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t ip_addr,
                                                uint32_t flags, uint32_t tout) {
-    int32_t err = (devrec == NULL) || (devrec->sign!=X502_DEVREC_SIGN) ?
-                X502_ERR_INVALID_DEVICE_RECORD : X502_ERR_OK;
+    int32_t err = (devrec == NULL) ? X502_ERR_INVALID_DEVICE_RECORD : X502_ERR_OK;
 
-    X502_FreeDevRecordList(devrec, 1);
+    X502_DevRecordInit(devrec);
 
     if (err==X502_ERR_OK) {
         t_tcp_devinfo_data *devinfo_data = malloc(sizeof(t_tcp_devinfo_data));
@@ -642,7 +652,7 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
 
 
             devrec->internal = devinfo_ptr;
-            devrec->iface = X502_IFACE_TCP;
+            devrec->iface = X502_IFACE_ETH;
             sprintf(devrec->location, "%d.%d.%d.%d",
                     (ip_addr>>24) & 0xFF,
                     (ip_addr>>16) & 0xFF,
@@ -665,7 +675,6 @@ X502_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_
     int32_t err = X502_CHECK_HND(hnd);
     if (err == X502_ERR_OK) {
         t_x502_devrec devinfo;
-        X502_DevRecordInit(&devinfo);
         err = E502_MakeDevRecordByIpAddr(&devinfo, ip_addr, flags, tout);
         if (err == X502_ERR_OK) {
             err = X502_OpenByDevRecord(hnd, &devinfo);
@@ -680,7 +689,7 @@ X502_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_
 X502_EXPORT(int32_t) E502_GetIpAddr(t_x502_hnd hnd, uint32_t *ip_addr) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err == X502_ERR_OK) {
-        if (hnd->iface != X502_IFACE_TCP) {
+        if (hnd->iface != X502_IFACE_ETH) {
             err = X502_ERR_INVALID_OP_FOR_IFACE;
         } else {
             t_tcp_iface_data *tcp_data = (t_tcp_iface_data *)hnd->iface_data;

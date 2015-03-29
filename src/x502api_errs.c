@@ -84,6 +84,9 @@ static const t_err_table f_err_tbl[] = {
     { X502_ERR_SOCKET_SET_BUF_SIZE,     "Не удалось установить заданный размер буфера сокета"},
     { X502_ERR_NO_DATA_CONNECTION,      "Соединение для передачи данных не установлено"},
     { X502_ERR_NO_STREAM_END_MSG,       "Не удалось дождаться сообщения о завершении потока"},
+    { X502_ERR_CONNECTION_RESET,        "Соединение было сброшено другой стороной"},
+    { X502_ERR_HOST_UNREACHABLE,        "Не удалось найти хост с указанным адресом"},
+    { X502_ERR_TCP_CONNECTION_ERROR,    "Ошибка установления TCP-соединения"},
 
     { X502_ERR_LDR_FILE_OPEN,           "Не удалось открыть файл прошивки BlackFin"},
     { X502_ERR_LDR_FILE_READ,           "Ошибка чтения из фала прошивки BlackFin"},
