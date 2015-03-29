@@ -14,8 +14,9 @@ EXPORTS
     X502_Configure
     X502_StreamsEnable
     X502_StreamsDisable
+    X502_StreamsEnable
     X502_StreamsStart
-    X502_StreamsStop
+    X502_StreamsStop    
     X502_IsRunning
     X502_Recv
     X502_Send
