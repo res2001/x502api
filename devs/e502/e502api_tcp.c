@@ -408,7 +408,7 @@ static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr) {
 static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
     int32_t err = X502_ERR_OK;
     t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data*)devrec->internal->iface_data;
-    t_socket s;
+    t_socket s = INVALID_SOCKET;
     err = f_con_sock(&s, devinfo_data->ip_addr, devinfo_data->cmd_port, devinfo_data->open_tout);
     if (err == X502_ERR_OK) {
         int flag = 1;
@@ -438,23 +438,34 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
                 } else {
                     e502_devinfo_init(&hnd->info, &lboot_info);
                 }
+            } else {
+                hnd->iface_data = NULL;
+                free(iface_data);
+
             }
         }
     }
+
+    if ((err != X502_ERR_OK) && (s != INVALID_SOCKET)) {
+        closesocket(s);
+    }
+
     return err;
 }
 
 static int32_t f_iface_close(t_x502_hnd hnd) {
     int32_t err = X502_ERR_OK;
     t_tcp_iface_data *tcp_data = (t_tcp_iface_data*)hnd->iface_data;
-    if (tcp_data->data_sock!=INVALID_SOCKET) {
-        closesocket(tcp_data->data_sock);
-        tcp_data->data_sock = INVALID_SOCKET;
-    }
+    if (tcp_data != NULL) {
+        if (tcp_data->data_sock!=INVALID_SOCKET) {
+            closesocket(tcp_data->data_sock);
+            tcp_data->data_sock = INVALID_SOCKET;
+        }
 
-    if (tcp_data->cmd_sock!=INVALID_SOCKET) {
-        closesocket(tcp_data->cmd_sock);
-        tcp_data->cmd_sock = INVALID_SOCKET;
+        if (tcp_data->cmd_sock!=INVALID_SOCKET) {
+            closesocket(tcp_data->cmd_sock);
+            tcp_data->cmd_sock = INVALID_SOCKET;
+        }
     }
     return err;
 }

@@ -396,7 +396,8 @@ int32_t l502_port_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
 }
 
 int32_t l502_port_close(t_x502_hnd hnd) {
-    CloseHandle(L502_PCI_IFACE_FILE(hnd));
+    if (hnd->iface_data !=NULL)
+        CloseHandle(L502_PCI_IFACE_FILE(hnd));
     return X502_ERR_OK;
 }
 

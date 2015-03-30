@@ -160,7 +160,7 @@ static const t_x502_dev_iface f_usb_iface = {
 static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
     int32_t err, usberr;
     libusb_device *dev = (libusb_device *)devrec->internal->iface_data;
-    libusb_device_handle *devhnd;
+    libusb_device_handle *devhnd = NULL;
 
 
     usberr = libusb_open(dev, &devhnd);
@@ -198,7 +198,7 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
         usb_data->streams[X502_STREAM_CH_IN].addr  = 0x81;
         usb_data->streams[X502_STREAM_CH_OUT].addr = 0x01;
 
-        hnd->iface_data = usb_data;
+
 
 
         for (stream=0; stream < X502_STREAM_CH_CNT; stream++) {
@@ -214,6 +214,27 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
                 err = X502_ERR_MUTEX_CREATE;
             }
         }
+
+        if (err == X502_ERR_OK) {
+            hnd->iface_data = usb_data;
+        } else {
+            for (stream=0; stream < X502_STREAM_CH_CNT; stream++) {
+                if (usb_data->streams[stream].mutex != OSSPEC_INVALID_MUTEX)
+                    osspec_mutex_destroy(usb_data->streams[stream].mutex);
+                if (usb_data->streams[stream].user_wake_evt != OSSPEC_INVALID_EVENT)
+                    osspec_event_destroy(usb_data->streams[stream].user_wake_evt);
+                if (usb_data->streams[stream].usb_wake_evt != OSSPEC_INVALID_EVENT)
+                    osspec_event_destroy(usb_data->streams[stream].usb_wake_evt);
+            }
+            free(usb_data);
+        }
+    }
+
+    if (err != X502_ERR_OK) {
+        if (devhnd != NULL) {
+            libusb_release_interface(devhnd, 0);
+            libusb_close(devhnd);
+        }
     }
 
     return err;
@@ -222,25 +243,27 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
 static int32_t f_iface_close(t_x502_hnd hnd) {
     t_usb_iface_data *usb_data = (t_usb_iface_data*)hnd->iface_data;
     int32_t err = 0;
-    unsigned ch;
+    if (usb_data != NULL) {
+        unsigned ch;
 
-    for (ch=0; ch < sizeof(usb_data->streams)/sizeof(usb_data->streams[0]); ch++) {
-        if (usb_data->streams[ch].mutex != OSSPEC_INVALID_MUTEX) {
-            osspec_mutex_destroy(usb_data->streams[ch].mutex);
-            usb_data->streams[ch].mutex = OSSPEC_INVALID_MUTEX;
+        for (ch=0; ch < sizeof(usb_data->streams)/sizeof(usb_data->streams[0]); ch++) {
+            if (usb_data->streams[ch].mutex != OSSPEC_INVALID_MUTEX) {
+                osspec_mutex_destroy(usb_data->streams[ch].mutex);
+                usb_data->streams[ch].mutex = OSSPEC_INVALID_MUTEX;
+            }
+            if (usb_data->streams[ch].user_wake_evt != OSSPEC_INVALID_EVENT) {
+                osspec_event_destroy(usb_data->streams[ch].user_wake_evt);
+                usb_data->streams[ch].user_wake_evt = OSSPEC_INVALID_EVENT;
+            }
+            if (usb_data->streams[ch].usb_wake_evt != OSSPEC_INVALID_EVENT) {
+                osspec_event_destroy(usb_data->streams[ch].usb_wake_evt);
+                usb_data->streams[ch].usb_wake_evt = OSSPEC_INVALID_EVENT;
+            }
         }
-        if (usb_data->streams[ch].user_wake_evt != OSSPEC_INVALID_EVENT) {
-            osspec_event_destroy(usb_data->streams[ch].user_wake_evt);
-            usb_data->streams[ch].user_wake_evt = OSSPEC_INVALID_EVENT;
-        }
-        if (usb_data->streams[ch].usb_wake_evt != OSSPEC_INVALID_EVENT) {
-            osspec_event_destroy(usb_data->streams[ch].usb_wake_evt);
-            usb_data->streams[ch].usb_wake_evt = OSSPEC_INVALID_EVENT;
-        }
+
+        libusb_release_interface(usb_data->devhnd, 0);
+        libusb_close(usb_data->devhnd);
     }
-
-    libusb_release_interface(usb_data->devhnd, 0);
-    libusb_close(usb_data->devhnd);
     return err;
 }
 
