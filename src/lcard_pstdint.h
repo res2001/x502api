@@ -196,7 +196,7 @@
 
 #if ((defined(__STDC__) && __STDC__ && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) \
     || (defined (__WATCOMC__) && (defined (_STDINT_H_INCLUDED) || (__WATCOMC__ >= 1250))) \
-    || (defined(__GNUC__)  \
+    || (defined(__GNUC__))  \
     || (defined (_MSC_VER) && (_MSC_VER >= 1600)) \
     || (defined (__BORLANDC__) && (__BORLANDC__ >= 0x560))) && !defined (_PSTDINT_H_INCLUDED)
 #include <stdint.h>

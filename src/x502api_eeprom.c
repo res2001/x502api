@@ -39,15 +39,17 @@ X502_EXPORT(int32_t) X502_FlashWrite(t_x502_hnd hnd, uint32_t addr,
         err = X502_CHECK_ADDR(addr, size);
     }
     if (err==X502_ERR_OK) {
-        uint32_t wr_size = size;
-        if (wr_size > hnd->iface_hnd->flash_wr_size)
-            wr_size = hnd->iface_hnd->flash_wr_size;
+        for ( ; (size!=0) && (err==X502_ERR_OK); ) {
+            uint32_t wr_size = size;
+            if (wr_size > hnd->iface_hnd->flash_wr_size)
+                wr_size = hnd->iface_hnd->flash_wr_size;
 
-        err = hnd->iface_hnd->flash_wr(hnd, addr, data, wr_size);
-        if (err==X502_ERR_OK) {
-            data+=wr_size;
-            addr+=wr_size;
-            size-=wr_size;
+            err = hnd->iface_hnd->flash_wr(hnd, addr, data, wr_size);
+            if (err==X502_ERR_OK) {
+                data+=wr_size;
+                addr+=wr_size;
+                size-=wr_size;
+            }
         }
     }
     return err;

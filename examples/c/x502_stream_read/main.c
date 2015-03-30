@@ -421,7 +421,7 @@ int main(int argc, char** argv) {
                 }
 #ifdef _WIN32
                 /* проверка нажатия клавиши для выхода */
-                if (err==LTR_OK) {
+                if (err == X502_ERR_OK) {
                     if (_kbhit())
                         f_out = 1;
                 }
