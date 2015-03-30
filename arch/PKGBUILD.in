@@ -16,7 +16,7 @@ backup=()
 options=()
 install=@PACKAGE_ARCH_INSTALL_FILE@
 source=(@PACKAGE_SRC_TAR_NAME@)
-
+replaces=('l502api')
 
 
 build() {

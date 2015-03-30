@@ -5,15 +5,17 @@ Build-Depends: debhelper (>= 8.0.0), cmake, libusb-1.0-0-dev
 Standards-Version: 3.9.3
 Section: libs
 Homepage: "http://www.lcard.ru"
+Replaces: l502api
 
 Package: libx502api1-dev
 Section: libdevel
 Architecture: any
 Depends: libx502api1 (= ${binary:Version}), 
          libe502api1 (= ${binary:Version}),
-         ${misc:Depends},
-Description:Library for control L Card L502/E502 devices
- Library that allow you control L Card L502 and E502 data acquisition devices.
+         ${misc:Depends}
+Replaces: libl502api1-dev
+Description:Library for control L-Card L502/E502 devices
+ Library that allow you control L-Card L502 and E502 data acquisition devices.
  .
  This package contains the development files.
  .
@@ -24,17 +26,27 @@ Package: libx502api1
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description:Library with general function for L Card L502/E502 devices
- Library that allow you control L Card L502 and E502 data acquisition devices.
+Description:Library with general function for L-Card L502/E502 devices
+ Library that allow you control L-Card L502 and E502 data acquisition devices.
  .
  This package contains the shared object files.
-
+ 
 Package: libe502api1
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, udev
-Description:Library for control L Card E502 device
- Library that allow you control L Card E502 data acquisition devices.
+Description:Library for control L-Card E502 device
+ Library that allow you control L-Card E502 data acquisition devices.
  .
  This package contains the shared object files.
+
+Package: libl502api1
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description:Library for control L-Card L502 device
+ Library that allow you control L-Card L502 data acquisition devices.
+ .
+ This package contains the shared object files.
+
 

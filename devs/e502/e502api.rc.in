@@ -19,13 +19,13 @@
         BEGIN
             BLOCK "04090000"
             BEGIN
-                VALUE "CompanyName",      "L Card"
+                VALUE "CompanyName",      "L-Card"
                 VALUE "FileDescription",  "Library for E502"
                 VALUE "FileVersion",      "@X502API_VERSION@"
                 VALUE "OriginalFilename", "e502api.dll"
                 VALUE "ProductName",      "e502api"
                 VALUE "ProductVersion",   "@X502API_VERSION@"
-                VALUE "LegalCopyright",    "© 2015 L Card Ltd."
+                VALUE "LegalCopyright",    "© 2015 L-Card Ltd."
             END
 
             BLOCK "04190000"

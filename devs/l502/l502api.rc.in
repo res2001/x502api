@@ -19,7 +19,7 @@
         BEGIN
             BLOCK "04090000"
             BEGIN
-                VALUE "CompanyName",      "L Card"
+                VALUE "CompanyName",      "L-Card"
                 VALUE "FileDescription",  "Library for L502"
                 VALUE "FileVersion",      "@X502API_VERSION@"
                 VALUE "OriginalFilename", "l502api.dll"

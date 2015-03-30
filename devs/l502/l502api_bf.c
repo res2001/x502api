@@ -2,6 +2,7 @@
 #include "ltimer.h"
 #include "l502_fpga_regs.h"
 #include <stdlib.h>
+#include <string.h>
 
 #define BF_LDR_HDR_SIZE  (16)
 #define BF_LDR_HDRSGN    (0xAD)
@@ -174,6 +175,7 @@ int32_t l502_iface_bf_firm_load(t_x502_hnd hnd, FILE *ldr_file) {
         //uint32_t* pdw = (uint32_t*)ldr_buff;
         t_bf_ldr_pkt pkt, pkt_next;
         uint32_t bf_val = 0;
+        memset(&pkt_next, 0, sizeof(pkt_next));
 
         l502_port_fpga_reg_read(hnd, L502_REGS_BF_CTL, &bf_val);
         l502_port_fpga_reg_write(hnd, L502_REGS_BF_CTL, L502_REGBIT_BF_CTL_DSP_MODE_Msk

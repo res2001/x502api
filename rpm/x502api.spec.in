@@ -3,7 +3,7 @@ Version: @PACKAGE_VERSION@
 Release: 1
 Group:   Development/Libraries/C and C++
 
-Vendor: L Card
+Vendor: L-Card
 URL: http://www.lcard.ru
 License: LGPL-3.0+
 
@@ -13,6 +13,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-root
 
 BuildRequires: cmake >= 2.6, udev
 
+Obsoletes: l502api
 
 # включаем зависимость от libusb-1.0
 %if 0%{?fedora}
@@ -33,7 +34,7 @@ BuildRequires: libusbx-devel
 Summary: Source package for libraries for L502 and E502 devices
 
 %description 
-This package contain libraries for control L Card data acqusition 
+This package contain libraries for control L-Card data acqusition 
 L502 and E502 devices.
 
 %prep
@@ -57,7 +58,7 @@ rm -rf $RPM_BUILD_ROOT
 #---------- x502api  ---------------
 
 %package -n libx502api1
-Summary: Library for control L Card L502 and E502 devices
+Summary: Library for control L-Card L502 and E502 devices
 Group:   System/Libraries
 
 
@@ -79,7 +80,7 @@ This package contain the shared object files with general functions for E502 and
 #---------- e502api  ---------------
 
 %package -n libe502api1
-Summary: Library for control L Card E502 device
+Summary: Library for control L-Card E502 device
 Group:   System/Libraries
 Requires: udev
 
@@ -105,9 +106,28 @@ ldconfig
 /usr/lib/libe502api.so.*
 
 %description -n libe502api1
-This package contain the shared object files for control L Card E502 data acquisition module with USB and Ethernet interface.
+This package contain the shared object files for control L-Card E502 data acquisition module with USB and Ethernet interface.
 
 
+
+#---------- l502api  ---------------
+
+%package -n libl502api1
+Summary: Library for control L-Card L502 device
+Group:   System/Libraries
+
+%post -n libl502api1
+ldconfig
+
+%postun -n libl502api1
+ldconfig
+
+%files -n libl502api1
+%defattr(0644,root,root)
+/usr/lib/libl502api.so.*
+
+%description -n libl502api1
+This package contain the shared object files for control L-Card L502 data acquisition module with USB and Ethernet interface.
 
 
 
@@ -115,14 +135,15 @@ This package contain the shared object files for control L Card E502 data acquis
 
 #---------- package with developers files  ---------------
 %package -n libx502api1-devel
-Summary: Developer files for  L Card L502 board
+Summary: Developer files for  L-Card L502 and E502 devices
 Group:   Development/Libraries/C and C++
 Requires: libx502api1 = @PACKAGE_VERSION@,
 Requires: libe502api1 = @PACKAGE_VERSION@,          
+Obsoletes: libl502api1-devel
 
 %description -n libx502api1-devel
 This package contain developer files such as headers and linker files for libraries
-for control L Card L502 and E502 devices.
+for control L-Card L502 and E502 devices.
 
 You need these files if you writing your own software. Non-developers likely 
 have little use for this package.

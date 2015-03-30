@@ -3,7 +3,7 @@ Upstream-Name: @PACKAGE_NAME@
 Source: <https://bitbucket.org/lcard/ltrapi>
 
 Files: *
-Copyright: @PACKAGE_BUILD_YEAR@ L Card <lcard@lcard.ru> 
+Copyright: @PACKAGE_BUILD_YEAR@ L-Card <lcard@lcard.ru> 
 License: LGPL-3.0+
 
 License: LGPL-3.0+
