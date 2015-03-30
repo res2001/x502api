@@ -30,4 +30,5 @@ EXPORTS
     E502_EthConfigSetInstanceName
     E502_EthConfigSetNewPassword
     E502_SwitchToBootloader
+    E502_ReloadFPGA
 

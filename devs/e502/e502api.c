@@ -143,6 +143,14 @@ X502_EXPORT(int32_t) E502_SwitchToBootloader(t_x502_hnd hnd) {
     return err;
 }
 
+X502_EXPORT(int32_t) E502_ReloadFPGA(t_x502_hnd hnd) {
+    int32_t err = X502_CHECK_HND(hnd);
+    if (err == X502_ERR_OK) {
+        err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_RELOAD_FPGA, 0, NULL, 0, NULL, 0, NULL, 0);
+    }
+    return err;
+}
+
 
 #ifdef WIN32
 #include <winsock2.h>

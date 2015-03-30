@@ -37,7 +37,7 @@ typedef enum {
     /** Неверный адрес памяти BlackFin при записи или чтении по HDMA */
     E502_CM4_ERR_BF_INVALID_ADDR              = -1021,
     /** Неверный размер данных, передаваемых с управляющей командой в BlackFin */
-    E502_CM4_ERR_BF_INVALID_CMD_DATA_SIZE     = -1022,    
+    E502_CM4_ERR_BF_INVALID_CMD_DATA_SIZE     = -1022,
     E502_CM4_ERR_UNKNOWN_CMD                  = -1023, /**< Неподдерживаемый код команды */
     E502_CM4_ERR_INVALID_CMD_PARAMS           = -1024, /**< Неверные параметры переданной команды */
     E502_CM4_ERR_FIRM_BUF_OVERFLOW            = -1025, /**< Переполнение буфера для приема прошивки */
@@ -46,7 +46,8 @@ typedef enum {
     E502_CM4_ERR_FLASH_PROT_CODE              = -1028, /**< Неверный код настройки защиты Flash-памяти */
     E502_CM4_ERR_FLASH_OP                     = -1029, /**< Ошибка выполнения операции с Flash-памятью */
     E502_CM4_ERR_FLASH_DATA_COMPARE           = -1030, /**< Ошибка сравнения записанных данных во Flash-память */
-    E502_CM4_ERR_INVALID_PASSWORD             = -1031  /**< Неверный пароль для изменения сетевых настроек */
+    E502_CM4_ERR_INVALID_PASSWORD             = -1031, /**< Неверный пароль для изменения сетевых настроек */
+    E502_CM4_ERR_FPGA_NOT_LOADED              = -1032, /**< ПЛИС не был успешно загружен */
 } t_e502_cm4_errs;
 
 typedef enum {
@@ -84,6 +85,7 @@ typedef enum {
     E502_CM4_CMD_BF_MEM_READ         = 0x21,
     E502_CM4_CMD_BF_FIRM_LOAD        = 0x22,
     E502_CM4_CMD_DROP_DATA_CON       = 0x23,
+    E502_CM4_CMD_RELOAD_FPGA         = 0x24,
 
 
     E502_CM4_CMD_TEST_START          = 0x40,

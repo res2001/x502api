@@ -141,7 +141,8 @@ static const t_err_table f_err_tbl[] = {
     { E502_CM4_ERR_FLASH_PROT_CODE,     "Ошибка Cortex-M4: Неверный код настройки защиты Flash-памяти"},
     { E502_CM4_ERR_FLASH_OP,            "Ошибка Cortex-M4: Ошибка выполнения операции с Flash-памятью"},
     { E502_CM4_ERR_FLASH_DATA_COMPARE,  "Ошибка Cortex-M4: Ошибка сравнения записанных данных во Flash-память"},
-    { E502_CM4_ERR_INVALID_PASSWORD,    "Ошибка Cortex-M4: Неверный пароль для изменения сетевых настроек"}
+    { E502_CM4_ERR_INVALID_PASSWORD,    "Ошибка Cortex-M4: Неверный пароль для изменения сетевых настроек"},
+    { E502_CM4_ERR_FPGA_NOT_LOADED,     "Ошибка Cortex-M4: ПЛИС не был загружен"}
 };
 
 
