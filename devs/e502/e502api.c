@@ -101,7 +101,11 @@ int32_t e502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* 
 }
 
 int32_t e502_iface_reload_dev_info(t_x502_hnd hnd) {
-    return hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_FLASH_RELOAD_INFO, 0, NULL, 0, NULL, 0, NULL, 0);
+    int32_t err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_FLASH_RELOAD_INFO, 0, NULL, 0, NULL, 0, NULL, 0);
+    if (err == X502_ERR_OK) {
+        err = e502_fill_devflags(hnd);
+    }
+    return err;
 }
 
 
@@ -133,6 +137,18 @@ void e502_devinfo_init(t_x502_info *info, const t_lboot_devinfo *lboot_info) {
         info->mcu_firmware_ver |= (ver[2]&0xFF) << 8;
     if (ver_comp_valid >= 4)
         info->mcu_firmware_ver |= ver[3]&0xFF;
+}
+
+int32_t e502_fill_devflags(t_x502_hnd hnd) {
+    int32_t err;
+    uint32_t devflags;
+
+    err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_GET_DEVFLAGS, 0, NULL, 0, &devflags,
+                                    sizeof(devflags), NULL, 0);
+    if (err == X502_ERR_OK) {
+        hnd->info.devflags = devflags;
+    }
+    return err;
 }
 
 X502_EXPORT(int32_t) E502_SwitchToBootloader(t_x502_hnd hnd) {

@@ -98,61 +98,6 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
             hnd->flags = PRIV_FLAGS_OPENED;
 
 
-            /* читаем информацию о версии прошивки ПЛИС'ов и наличии опций */
-            if (err == X502_ERR_OK) {
-                uint32_t hard_id=0;
-                int32_t id_err = hnd->iface_hnd->fpga_reg_read(hnd, hnd->iface_hnd->id_reg_addr, &hard_id);
-                if (!id_err) {
-                    hnd->info.fpga_ver = (hard_id >> 16) & 0x7FFF;
-                    hnd->info.plda_ver = (hard_id >> 4) & 0xF;
-                    hnd->info.board_rev  = (hard_id >> 8) & 0xF;                    
-                    FILL_HARD_ID_FLAGS(hnd->info.devflags, hard_id);
-                }
-            }
-
-            /* определяем - в каком режиме работаем (BF или FPGA) */
-            if (err == X502_ERR_OK) {
-                uint32_t bf_ctl;
-                err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_BF_CTL, &bf_ctl);
-                if (!err) {
-                    uint32_t mode = bf_ctl;
-                    if (mode & X502_REGBIT_BF_CTL_DBG_MODE_Msk) {
-                        hnd->mode = X502_MODE_DEBUG;
-                    } else if (mode & X502_REGBIT_BF_CTL_DSP_MODE_Msk) {
-                        hnd->mode = X502_MODE_DSP;
-                    } else {
-                        hnd->mode = X502_MODE_FPGA;
-                    }
-                }
-
-                /** @todo Для BlackFin проверить наличие прошивки */
-
-                if (hnd->mode==X502_MODE_DSP) {
-                    err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
-                }
-            }
-
-            /* если был запущен сбор - то останавливаем его */
-            if ((err == X502_ERR_OK) && (hnd->mode==X502_MODE_FPGA)) {
-                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
-                hnd->last_dout = 0;
-
-                if (err == X502_ERR_OK)
-                    err =  hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 0);
-
-                if ((err == X502_ERR_OK) && (hnd->iface_hnd->stream_running != NULL)) {
-                    int32_t running;
-                    unsigned ch;
-                    for (ch=0; (ch < X502_STREAM_CH_CNT) && !err; ch++) {
-                        err = hnd->iface_hnd->stream_running(hnd, ch, &running);
-                        if (!err && running) {
-                            err = hnd->iface_hnd->stream_stop(hnd, ch);
-                        }
-                    }
-                }
-            }
-
-
             if ((err == X502_ERR_OK) && (hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT)) {
                 hnd->mutex_bf = osspec_mutex_create();
                 if (hnd->mutex_bf == OSSPEC_INVALID_MUTEX)
@@ -161,14 +106,71 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
                 hnd->mutex_bf = OSSPEC_INVALID_MUTEX;
             }
 
-
             if (err == X502_ERR_OK) {
                 hnd->mutex_cfg = osspec_mutex_create();
                 if (hnd->mutex_cfg == OSSPEC_INVALID_MUTEX)
                     err = X502_ERR_MUTEX_CREATE;
             }
-        }
 
+
+            if (!(hnd->info.devflags & X502_DEVFLAGS_FPGA_LOADED)) {
+                err = X502_ERR_FPGA_NOT_LOADED;
+            } else {
+                /* читаем информацию о версии прошивки ПЛИС'ов и наличии опций */
+                if (err == X502_ERR_OK) {
+                    uint32_t hard_id=0;
+                    int32_t id_err = hnd->iface_hnd->fpga_reg_read(hnd, hnd->iface_hnd->id_reg_addr, &hard_id);
+                    if (!id_err) {
+                        hnd->info.fpga_ver = (hard_id >> 16) & 0x7FFF;
+                        hnd->info.plda_ver = (hard_id >> 4) & 0xF;
+                        hnd->info.board_rev  = (hard_id >> 8) & 0xF;
+                        FILL_HARD_ID_FLAGS(hnd->info.devflags, hard_id);
+                    }
+                }
+
+                /* определяем - в каком режиме работаем (BF или FPGA) */
+                if (err == X502_ERR_OK) {
+                    uint32_t bf_ctl;
+                    err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_BF_CTL, &bf_ctl);
+                    if (!err) {
+                        uint32_t mode = bf_ctl;
+                        if (mode & X502_REGBIT_BF_CTL_DBG_MODE_Msk) {
+                            hnd->mode = X502_MODE_DEBUG;
+                        } else if (mode & X502_REGBIT_BF_CTL_DSP_MODE_Msk) {
+                            hnd->mode = X502_MODE_DSP;
+                        } else {
+                            hnd->mode = X502_MODE_FPGA;
+                        }
+                    }
+
+                    /** @todo Для BlackFin проверить наличие прошивки */
+
+                    if (hnd->mode==X502_MODE_DSP) {
+                        err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
+                    }
+                }
+
+                /* если был запущен сбор - то останавливаем его */
+                if ((err == X502_ERR_OK) && (hnd->mode==X502_MODE_FPGA)) {
+                    err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
+                    hnd->last_dout = 0;
+
+                    if (err == X502_ERR_OK)
+                        err =  hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 0);
+
+                    if ((err == X502_ERR_OK) && (hnd->iface_hnd->stream_running != NULL)) {
+                        int32_t running;
+                        unsigned ch;
+                        for (ch=0; (ch < X502_STREAM_CH_CNT) && !err; ch++) {
+                            err = hnd->iface_hnd->stream_running(hnd, ch, &running);
+                            if (!err && running) {
+                                err = hnd->iface_hnd->stream_stop(hnd, ch);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         /* читаем информацию из EEPROM (в первую очередь -
            калибровочные коэффициенты) */
         if (err == X502_ERR_OK) {
@@ -194,7 +196,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
         //if (!err)
         //    err = _fpga_reg_write(hnd, L502_REGS_IOHARD_PRELOAD_ADC, 1);
 
-        if (err != X502_ERR_OK)
+        if ((err != X502_ERR_OK) && (err != X502_ERR_FPGA_NOT_LOADED))
             X502_Close(hnd);
     }
 

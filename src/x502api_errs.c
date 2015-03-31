@@ -4,10 +4,9 @@
 
 #include "../devs/e502/e502_cm4_defs.h"
 
-static const char* f_unknow_err = "Неизвестная ошибка.";
+static const char* f_unknow_err = "Неизвестная ошибка";
 
-typedef struct
-{
+typedef struct {
     int32_t err;
     const char* str;
 }t_err_table;
@@ -113,7 +112,7 @@ static const t_err_table f_err_tbl[] = {
 
     { E502_CM4_ERR_FPGA_NSTATUS_TOUT,   "Ошибка Cortex-M4: При загрузке ПЛИС не удалось дождаться сигнала перехода в режим загрузки"},
     { E502_CM4_ERR_FPGA_CONF_DONE_TOUT, "Ошибка Cortex-M4: При загрузке ПЛИС не удалось дождаться сигнала завершения загрузки"},
-    { E502_CM4_ERR_FPGA_WF_NOT_PRESENT, "Ошибка Cortex-M4: Не обнаружена прошивка ПЛИС во flash-памяти модуля"},
+    { E502_CM4_ERR_FPGA_FW_NOT_PRESENT, "Ошибка Cortex-M4: Не обнаружена прошивка ПЛИС во flash-памяти модуля"},
     { E502_CM4_ERR_FPGA_REG_NACK,       "Ошибка Cortex-M4: Обращение к регистру ПЛИС вернуло ответ NACK"},
     { E502_CM4_ERR_FPGA_REG_ERROR,      "Ошибка Cortex-M4: Обращение к регистру ПЛИС вернуло ответ ERROR"},
     { E502_CM4_ERR_FPGA_REG_WT_TOUT,    "Ошибка Cortex-M4: Не удалось дожлаться ответ на обращение к регистру ПЛИС"},
@@ -142,13 +141,15 @@ static const t_err_table f_err_tbl[] = {
     { E502_CM4_ERR_FLASH_OP,            "Ошибка Cortex-M4: Ошибка выполнения операции с Flash-памятью"},
     { E502_CM4_ERR_FLASH_DATA_COMPARE,  "Ошибка Cortex-M4: Ошибка сравнения записанных данных во Flash-память"},
     { E502_CM4_ERR_INVALID_PASSWORD,    "Ошибка Cortex-M4: Неверный пароль для изменения сетевых настроек"},
-    { E502_CM4_ERR_FPGA_NOT_LOADED,     "Ошибка Cortex-M4: ПЛИС не был загружен"}
+    { E502_CM4_ERR_FPGA_NOT_LOADED,     "Ошибка Cortex-M4: ПЛИС не был загружен"},
+    { E502_CM4_ERR_FLASH_SET_PROT_BITS, "Ошибка Cortex-M4: Не удалось изменить занчения битов защиты Flash-памяти"},
+    { E502_CM4_ERR_FPGA_FW_INVALID_TEMP_RANGE, "Ошибка Cortex-M4: Загруженная прошивка ПЛИС предназначена для другого темп. исполнения"}
 };
 
 
 X502_EXPORT(const char*) X502_GetErrorString(int32_t err) {
     size_t i;
-    const char* str = f_unknow_err;
+    const char *str = f_unknow_err;
 
     for (i=0; (i < sizeof(f_err_tbl)/sizeof(f_err_tbl[0])) && (str==f_unknow_err); i++) {
         if (f_err_tbl[i].err == err)

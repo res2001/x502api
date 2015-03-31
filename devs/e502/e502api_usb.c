@@ -935,7 +935,7 @@ static int32_t f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec *info) {
                       sizeof(lboot_info), NULL, 0);
 
         if (err == X502_ERR_OK) {
-            uint32_t id;
+            uint32_t devflags;
 
 
             strcpy(info->devname, lboot_info.devname);
@@ -947,9 +947,9 @@ static int32_t f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec *info) {
             info->iface = X502_IFACE_USB;
             info->flags = X502_DEVFLAGS_IFACE_SUPPORT_USB;
 
-            if (f_ioreq(hnd, E502_CM4_CMD_FPGA_REG_READ, E502_REGS_ARM_HARD_ID,
-                        NULL, 0, &id, sizeof(id), NULL, 0) == X502_ERR_OK) {
-                FILL_HARD_ID_FLAGS(info->flags, id);
+            if (f_ioreq(hnd, E502_CM4_CMD_GET_DEVFLAGS, 0,
+                        NULL, 0, &devflags, sizeof(devflags), NULL, 0) == X502_ERR_OK) {
+                info->flags = devflags;
             }
         }
     }

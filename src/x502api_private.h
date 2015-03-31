@@ -211,7 +211,7 @@ typedef struct st_x502 {
 
 
 typedef int32_t (APIENTRY *t_x502_get_devinfo_list_cb)(t_x502_devrec* list, uint32_t size,
-                                             uint32_t flags, uint32_t* devcnt);\
+                                             uint32_t flags, uint32_t* devcnt);
 
 
 
@@ -253,16 +253,6 @@ X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd);
         devflags |= X502_DEVFLAGS_BF_PRESENT; \
     } else { \
         devflags &= ~X502_DEVFLAGS_BF_PRESENT; \
-    } \
-    if (hard_id & 0x08) { \
-        devflags |= X502_DEVFLAGS_IFACE_SUPPORT_ETH ; \
-    } else { \
-        devflags &= ~X502_DEVFLAGS_IFACE_SUPPORT_ETH; \
-    } \
-    if (hard_id & 0x80000000) { \
-        devflags |= X502_DEVFLAGS_INDUSTRIAL; \
-    } else { \
-        devflags &= ~X502_DEVFLAGS_INDUSTRIAL; \
     } \
 } while(0)
 

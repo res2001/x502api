@@ -78,8 +78,9 @@ int32_t l502_devlist_gen(t_x502_devrec *info, void *iface_data) {
         err = X502_ERR_MEMORY_ALLOC;
     } else {
         devinfo_ptr->iface_data = iface_data;
-        devinfo_ptr->iface = &f_pcie_iface;
+        devinfo_ptr->iface = &f_pcie_iface;        
         info->iface = X502_IFACE_PCI;
+        info->flags = X502_DEVFLAGS_IFACE_SUPPORT_PCI | X502_DEVFLAGS_FPGA_LOADED;
         info->internal = devinfo_ptr;
     }
     return err;

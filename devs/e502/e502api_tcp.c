@@ -437,6 +437,7 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
                     err = X502_ERR_INVALID_DEVICE;
                 } else {
                     e502_devinfo_init(&hnd->info, &lboot_info);
+                    err = e502_fill_devflags(hnd);
                 }
             } else {
                 hnd->iface_data = NULL;

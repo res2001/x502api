@@ -6,7 +6,7 @@ typedef enum {
     E502_CM4_ERR_OK                     = 0,
     E502_CM4_ERR_FPGA_NSTATUS_TOUT      = -1001, /**< При загрузке ПЛИС не удалось дождаться сигнала перехода в режим загрузки */
     E502_CM4_ERR_FPGA_CONF_DONE_TOUT    = -1002, /**< При загрузке ПЛИС не удалось дождаться сигнала завершения загрузки */
-    E502_CM4_ERR_FPGA_WF_NOT_PRESENT    = -1003, /**< Не обнаружена прошивка ПЛИС во flash-памяти модуля */
+    E502_CM4_ERR_FPGA_FW_NOT_PRESENT    = -1003, /**< Не обнаружена прошивка ПЛИС во flash-памяти модуля */
     E502_CM4_ERR_FPGA_REG_NACK          = -1004, /**< Обращение к регистру ПЛИС вернуло ответ NACK */
     E502_CM4_ERR_FPGA_REG_ERROR         = -1005, /**< Обращение к регистру ПЛИС вернуло ответ ERROR */
     E502_CM4_ERR_FPGA_REG_WT_TOUT       = -1006, /**< Не удалось дожлаться ответ на обращение к регистру ПЛИС */
@@ -47,7 +47,9 @@ typedef enum {
     E502_CM4_ERR_FLASH_OP                     = -1029, /**< Ошибка выполнения операции с Flash-памятью */
     E502_CM4_ERR_FLASH_DATA_COMPARE           = -1030, /**< Ошибка сравнения записанных данных во Flash-память */
     E502_CM4_ERR_INVALID_PASSWORD             = -1031, /**< Неверный пароль для изменения сетевых настроек */
-    E502_CM4_ERR_FPGA_NOT_LOADED              = -1032, /**< ПЛИС не был успешно загружен */
+    E502_CM4_ERR_FPGA_NOT_LOADED              = -1032, /**< ПЛИС не был загружен */
+    E502_CM4_ERR_FLASH_SET_PROT_BITS          = -1033, /**< Не удалось изменить занчения битов защиты Flash-памяти */
+    E502_CM4_ERR_FPGA_FW_INVALID_TEMP_RANGE   = -1034, /**< Загруженная прошивка ПЛИС предназначена для другого темп. исполнения */
 } t_e502_cm4_errs;
 
 typedef enum {
@@ -60,6 +62,9 @@ typedef enum {
     E502_IFACE_USB = 0,
     E502_IFACE_TCP = 1
 } t_e502_ifaces;
+
+
+
 
 
 typedef enum {
@@ -86,6 +91,7 @@ typedef enum {
     E502_CM4_CMD_BF_FIRM_LOAD        = 0x22,
     E502_CM4_CMD_DROP_DATA_CON       = 0x23,
     E502_CM4_CMD_RELOAD_FPGA         = 0x24,
+    E502_CM4_CMD_GET_DEVFLAGS        = 0x25,
 
 
     E502_CM4_CMD_TEST_START          = 0x40,
