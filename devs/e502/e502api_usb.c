@@ -372,7 +372,7 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void 
             osspec_mutex_release(info->mutex);
 
 
-            if (transf_completed[transf_check_pos] == TRANSF_CPL_BUSY) {
+            if (transf_completed[transf_check_pos] != TRANSF_CPL_IDLE) {
                 /* иначе ждем событий от USB */
                 struct timeval tv;
                 tv.tv_sec =0;
@@ -510,7 +510,7 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
 
 
         if (err == X502_ERR_OK) {
-            if (transf_completed[transf_check_pos] == TRANSF_CPL_BUSY) {
+            if (info->tx.busy_size!=0) {
                 /* иначе ждем событий от USB */
                 struct timeval tv;
                 tv.tv_sec =0;
