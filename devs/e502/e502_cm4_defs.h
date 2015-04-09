@@ -50,6 +50,8 @@ typedef enum {
     E502_CM4_ERR_FPGA_NOT_LOADED              = -1032, /**< ПЛИС не был загружен */
     E502_CM4_ERR_FLASH_SET_PROT_BITS          = -1033, /**< Не удалось изменить занчения битов защиты Flash-памяти */
     E502_CM4_ERR_FPGA_FW_INVALID_TEMP_RANGE   = -1034, /**< Загруженная прошивка ПЛИС предназначена для другого темп. исполнения */
+    E502_CM4_ERR_M0_STREAM_START_REQ          = -1035, /**< Нет ответа на запрос запуска потока от ядра Cortex-M0 */
+    E502_CM4_ERR_M0_STREAM_STOP_REQ           = -1036, /**< Нет ответа на запрос останова потока от ядра Cortex-M0 */
 } t_e502_cm4_errs;
 
 typedef enum {

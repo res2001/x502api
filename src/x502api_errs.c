@@ -143,7 +143,9 @@ static const t_err_table f_err_tbl[] = {
     { E502_CM4_ERR_INVALID_PASSWORD,    "Ошибка Cortex-M4: Неверный пароль для изменения сетевых настроек"},
     { E502_CM4_ERR_FPGA_NOT_LOADED,     "Ошибка Cortex-M4: ПЛИС не был загружен"},
     { E502_CM4_ERR_FLASH_SET_PROT_BITS, "Ошибка Cortex-M4: Не удалось изменить занчения битов защиты Flash-памяти"},
-    { E502_CM4_ERR_FPGA_FW_INVALID_TEMP_RANGE, "Ошибка Cortex-M4: Загруженная прошивка ПЛИС предназначена для другого темп. исполнения"}
+    { E502_CM4_ERR_FPGA_FW_INVALID_TEMP_RANGE, "Ошибка Cortex-M4: Загруженная прошивка ПЛИС предназначена для другого темп. исполнения"},
+    { E502_CM4_ERR_M0_STREAM_START_REQ,  "Ошибка Cortex-M4: Нет ответа на запрос запуска потока от ядра Cortex-M0"},
+    { E502_CM4_ERR_M0_STREAM_STOP_REQ,   "Ошибка Cortex-M4: Нет ответа на запрос останова потока от ядра Cortex-M0"}
 };
 
 
