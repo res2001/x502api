@@ -350,7 +350,7 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void 
                 osspec_mutex_release(info->mutex);
                 if (++transf_pos == USB_BULK_RX_MAX_TRANSF_CNT)
                     transf_pos = 0;
-               } else {
+            } else {
                 err = X502_ERR_RECV;
                 transf_completed[transf_pos] = TRANSF_CPL_IDLE;
                 info->rx.cpls[cpl_pos].state = RX_STATE_ERR;
