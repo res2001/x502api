@@ -13,7 +13,7 @@ int32_t e502_iface_fpga_write(t_x502_hnd hnd, uint32_t addr, uint32_t val);
 int32_t e502_iface_stream_running(t_x502_hnd hnd, uint32_t ch, int32_t* running);
 int32_t e502_iface_bf_mem_block_rd(t_x502_hnd hnd, uint32_t addr, uint32_t *block, uint32_t size);
 int32_t e502_iface_bf_mem_block_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t *block, uint32_t size);
-int32_t e502_iface_bf_firm_load(t_x502_hnd hnd, FILE* f);
+int32_t e502_iface_bf_firm_load(t_x502_hnd hnd, const char *filename);
 
 
 

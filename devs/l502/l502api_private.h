@@ -45,7 +45,7 @@ int32_t l502_iface_flash_set_prot(t_x502_hnd hnd, uint32_t prot, const uint8_t* 
 
 int32_t l502_iface_bf_mem_block_rd(t_x502_hnd hnd, uint32_t addr, uint32_t *block, uint32_t size);
 int32_t l502_iface_bf_mem_block_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t *block, uint32_t size);
-int32_t l502_iface_bf_firm_load(t_x502_hnd hnd, FILE* ldr_file);
+int32_t l502_iface_bf_firm_load(t_x502_hnd hnd, const char *filename);
 
 int32_t l502_devlist_gen(t_x502_devrec *info, void *iface_data);
 

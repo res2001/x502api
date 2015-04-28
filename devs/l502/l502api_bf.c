@@ -157,109 +157,116 @@ static int32_t f_bf_mem_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t* regs, 
     return err;
 }
 
-int32_t l502_iface_bf_firm_load(t_x502_hnd hnd, FILE *ldr_file) {
+int32_t l502_iface_bf_firm_load(t_x502_hnd hnd, const char *filename) {
     int32_t err = X502_ERR_OK;
-    int32_t next_err = X502_ERR_OK;
-    uint32_t *ldr_buff = NULL;
-    ldr_buff = malloc(LDR_BUFF_SIZE);
-    if (ldr_buff == NULL)
-        err = X502_ERR_MEMORY_ALLOC;
-
-    if (err == X502_ERR_OK) {
-        int rd_size = 0;
-        int stop = 0;
-        uint32_t reg;
-        uint8_t hdr[BF_LDR_HDR_SIZE];
-        t_ltimer tmr;
-
-        //uint32_t* pdw = (uint32_t*)ldr_buff;
-        t_bf_ldr_pkt pkt, pkt_next;
-        uint32_t bf_val = 0;
-        memset(&pkt_next, 0, sizeof(pkt_next));
-
-        l502_port_fpga_reg_read(hnd, L502_REGS_BF_CTL, &bf_val);
-        l502_port_fpga_reg_write(hnd, L502_REGS_BF_CTL, L502_REGBIT_BF_CTL_DSP_MODE_Msk
-                        | (bf_val & 0xF00)); //set rst
-        SLEEP_MS(1);
-        l502_port_fpga_reg_write(hnd, L502_REGS_BF_CTL, L502_REGBIT_BF_CTL_DSP_MODE_Msk |
-                        L502_REGBIT_BF_CTL_BF_RESET_Msk | (bf_val & 0xF00));  //release rst
-
-        ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(L502_BF_WAIT_LOAD_RDY_TOUT));
-        do {
-            l502_port_fpga_reg_read(hnd, L502_REGS_BF_CTL, &reg);
-            if ((reg & L502_REGBIT_BF_CTL_HOST_WAIT_Msk) && ltimer_expired(&tmr))
-                err = X502_ERR_BF_LOAD_RDY_TOUT;
-        } while ((err == X502_ERR_OK) && (reg & L502_REGBIT_BF_CTL_HOST_WAIT_Msk));
+    FILE* ldr_file=fopen(filename, "rb");
+    if (ldr_file==NULL) {
+        err = X502_ERR_LDR_FILE_OPEN;
+    } else {
+        int32_t next_err = X502_ERR_OK;
+        uint32_t *ldr_buff = NULL;
+        ldr_buff = malloc(LDR_BUFF_SIZE);
+        if (ldr_buff == NULL)
+            err = X502_ERR_MEMORY_ALLOC;
 
         if (err == X502_ERR_OK) {
-            err = fread(hdr, 1, BF_LDR_HDR_SIZE, ldr_file) == BF_LDR_HDR_SIZE ?
-                  f_parse_ldr_hdr(hdr, &pkt) : X502_ERR_LDR_FILE_READ;
-        }
+            int rd_size = 0;
+            int stop = 0;
+            uint32_t reg;
+            uint8_t hdr[BF_LDR_HDR_SIZE];
+            t_ltimer tmr;
 
-        while ((err == X502_ERR_OK) && !stop) {
-            if (next_err != X502_ERR_OK) {
-                err = next_err;
-            } else if (((pkt.flags & BF_LDR_FLAG_FILL) == 0) && (pkt.size != 0)) {
-                int r_size = (pkt.size > LDR_BUFF_SIZE) ? LDR_BUFF_SIZE : pkt.size;
+            //uint32_t* pdw = (uint32_t*)ldr_buff;
+            t_bf_ldr_pkt pkt, pkt_next;
+            uint32_t bf_val = 0;
+            memset(&pkt_next, 0, sizeof(pkt_next));
 
-                rd_size = (int)fread(ldr_buff, 1, r_size, ldr_file);
-                if (rd_size!=r_size)
-                    err = X502_ERR_LDR_FILE_READ;
-            }
+            l502_port_fpga_reg_read(hnd, L502_REGS_BF_CTL, &bf_val);
+            l502_port_fpga_reg_write(hnd, L502_REGS_BF_CTL, L502_REGBIT_BF_CTL_DSP_MODE_Msk
+                            | (bf_val & 0xF00)); //set rst
+            SLEEP_MS(1);
+            l502_port_fpga_reg_write(hnd, L502_REGS_BF_CTL, L502_REGBIT_BF_CTL_DSP_MODE_Msk |
+                            L502_REGBIT_BF_CTL_BF_RESET_Msk | (bf_val & 0xF00));  //release rst
+
+            ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(L502_BF_WAIT_LOAD_RDY_TOUT));
+            do {
+                l502_port_fpga_reg_read(hnd, L502_REGS_BF_CTL, &reg);
+                if ((reg & L502_REGBIT_BF_CTL_HOST_WAIT_Msk) && ltimer_expired(&tmr))
+                    err = X502_ERR_BF_LOAD_RDY_TOUT;
+            } while ((err == X502_ERR_OK) && (reg & L502_REGBIT_BF_CTL_HOST_WAIT_Msk));
+
             if (err == X502_ERR_OK) {
-                if (pkt.size > LDR_BUFF_SIZE) {
-                    pkt_next = pkt;
-                    pkt_next.addr += LDR_BUFF_SIZE;
-                    pkt_next.size -= LDR_BUFF_SIZE;
-                    pkt.size = LDR_BUFF_SIZE;
-                } else {
-                    next_err = fread(hdr, 1, BF_LDR_HDR_SIZE, ldr_file) == BF_LDR_HDR_SIZE ?
-                              f_parse_ldr_hdr(hdr, &pkt_next) : X502_ERR_LDR_FILE_READ;
-                    if (next_err != X502_ERR_OK) {
-                        pkt_next.size = 0;
-                    }
+                err = fread(hdr, 1, BF_LDR_HDR_SIZE, ldr_file) == BF_LDR_HDR_SIZE ?
+                      f_parse_ldr_hdr(hdr, &pkt) : X502_ERR_LDR_FILE_READ;
+            }
+
+            while ((err == X502_ERR_OK) && !stop) {
+                if (next_err != X502_ERR_OK) {
+                    err = next_err;
+                } else if (((pkt.flags & BF_LDR_FLAG_FILL) == 0) && (pkt.size != 0)) {
+                    int r_size = (pkt.size > LDR_BUFF_SIZE) ? LDR_BUFF_SIZE : pkt.size;
+
+                    rd_size = (int)fread(ldr_buff, 1, r_size, ldr_file);
+                    if (rd_size!=r_size)
+                        err = X502_ERR_LDR_FILE_READ;
                 }
-
-                if (pkt.size!=0) {
-                    uint32_t size = ((pkt.size+31)/(32))*8;
-                    if (pkt.flags & BF_LDR_FLAG_FILL) {
-                        uint32_t i;
-                        for (i=0; i < size; i++)
-                            ldr_buff[i] = pkt.arg;
+                if (err == X502_ERR_OK) {
+                    if (pkt.size > LDR_BUFF_SIZE) {
+                        pkt_next = pkt;
+                        pkt_next.addr += LDR_BUFF_SIZE;
+                        pkt_next.size -= LDR_BUFF_SIZE;
+                        pkt.size = LDR_BUFF_SIZE;
+                    } else {
+                        next_err = fread(hdr, 1, BF_LDR_HDR_SIZE, ldr_file) == BF_LDR_HDR_SIZE ?
+                                  f_parse_ldr_hdr(hdr, &pkt_next) : X502_ERR_LDR_FILE_READ;
+                        if (next_err != X502_ERR_OK) {
+                            pkt_next.size = 0;
+                        }
                     }
 
-                    if ((pkt.flags & BF_LDR_FLAG_FINAL)
-                        || ((pkt_next.flags & BF_LDR_FLAG_FINAL) && (pkt_next.size==0))) {
-                        uint32_t buf_pos = 0;
-                        err = BF_CHECK_ADDR_SIZE(pkt.addr, size);
-
-                        if ((err == X502_ERR_OK) && (size > 8)) {
-                            err = f_bf_mem_wr(hnd, pkt.addr, ldr_buff, size-8);
-                            pkt.addr+=4*(size-8);
-                            size = 8;
-                            buf_pos = size-8;
+                    if (pkt.size!=0) {
+                        uint32_t size = ((pkt.size+31)/(32))*8;
+                        if (pkt.flags & BF_LDR_FLAG_FILL) {
+                            uint32_t i;
+                            for (i=0; i < size; i++)
+                                ldr_buff[i] = pkt.arg;
                         }
 
-                        if (err == X502_ERR_OK)
-                            err = l502_port_fpga_reg_write(hnd, L502_REGS_BF_CMD, L502_BF_CMD_HIRQ);
-                        if (err == X502_ERR_OK)
-                            err = f_bf_mem_wr(hnd, pkt.addr, &ldr_buff[buf_pos], size);
-                        stop=1;
+                        if ((pkt.flags & BF_LDR_FLAG_FINAL)
+                            || ((pkt_next.flags & BF_LDR_FLAG_FINAL) && (pkt_next.size==0))) {
+                            uint32_t buf_pos = 0;
+                            err = BF_CHECK_ADDR_SIZE(pkt.addr, size);
 
-                        if (err == X502_ERR_OK) {
-                            err = l502_port_fpga_reg_write(hnd, L502_REGS_BF_CTL, L502_REGBIT_BF_CTL_DSP_MODE_Msk |
-                                        L502_REGBIT_BF_CTL_BF_RESET_Msk);
+                            if ((err == X502_ERR_OK) && (size > 8)) {
+                                err = f_bf_mem_wr(hnd, pkt.addr, ldr_buff, size-8);
+                                pkt.addr+=4*(size-8);
+                                size = 8;
+                                buf_pos = size-8;
+                            }
+
+                            if (err == X502_ERR_OK)
+                                err = l502_port_fpga_reg_write(hnd, L502_REGS_BF_CMD, L502_BF_CMD_HIRQ);
+                            if (err == X502_ERR_OK)
+                                err = f_bf_mem_wr(hnd, pkt.addr, &ldr_buff[buf_pos], size);
+                            stop=1;
+
+                            if (err == X502_ERR_OK) {
+                                err = l502_port_fpga_reg_write(hnd, L502_REGS_BF_CTL, L502_REGBIT_BF_CTL_DSP_MODE_Msk |
+                                            L502_REGBIT_BF_CTL_BF_RESET_Msk);
+                            }
+                        } else if (!(pkt.flags & BF_LDR_FLAG_IGNORE)) {
+                            err = BF_CHECK_ADDR_SIZE(pkt.addr, size);
+                            if (!err)
+                                err = f_bf_mem_wr(hnd, pkt.addr, ldr_buff, size);
                         }
-                    } else if (!(pkt.flags & BF_LDR_FLAG_IGNORE)) {
-                        err = BF_CHECK_ADDR_SIZE(pkt.addr, size);
-                        if (!err)
-                            err = f_bf_mem_wr(hnd, pkt.addr, ldr_buff, size);
                     }
+                    pkt = pkt_next;
                 }
-                pkt = pkt_next;
             }
         }
+        free(ldr_buff);
+
+        fclose(ldr_file);
     }
-    free(ldr_buff);
     return err;
 }

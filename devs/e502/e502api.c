@@ -37,46 +37,53 @@ int32_t e502_iface_bf_mem_block_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t
                                  NULL, 0, NULL, 0);
 }
 
-int32_t e502_iface_bf_firm_load(t_x502_hnd hnd, FILE* f) {
+int32_t e502_iface_bf_firm_load(t_x502_hnd hnd, const char *filename) {
     int32_t err = 0;
-    uint8_t *buf = malloc(hnd->iface_hnd->ioctl_max_data_size);
-    long size, done=0;
+    FILE* f=fopen(filename, "rb");
+    if (f==NULL) {
+        err = X502_ERR_LDR_FILE_OPEN;
+    } {
+        uint8_t *buf = malloc(hnd->iface_hnd->ioctl_max_data_size);
+        long size, done=0;
 
-    if (buf == NULL)
-        err = X502_ERR_MEMORY_ALLOC;
+        if (buf == NULL)
+            err = X502_ERR_MEMORY_ALLOC;
 
-    //определяем размер файла
-    fseek(f, 0, SEEK_END);
-    size = ftell(f);
-    fseek(f, 0, SEEK_SET);
+        //определяем размер файла
+        fseek(f, 0, SEEK_END);
+        size = ftell(f);
+        fseek(f, 0, SEEK_SET);
 
 
-    /* данные записываем блоками по L502_BF_REQ_DATA_SIZE */
-    while (!err && (size!=done)) {
-        unsigned block_size = size-done;
-        if (block_size > hnd->iface_hnd->ioctl_max_data_size)
-            block_size = hnd->iface_hnd->ioctl_max_data_size;
+        /* данные записываем блоками по L502_BF_REQ_DATA_SIZE */
+        while (!err && (size!=done)) {
+            unsigned block_size = size-done;
+            if (block_size > hnd->iface_hnd->ioctl_max_data_size)
+                block_size = hnd->iface_hnd->ioctl_max_data_size;
 
-        if (fread(buf, 1, block_size, f) != block_size) {
-            err = X502_ERR_LDR_FILE_READ;
+            if (fread(buf, 1, block_size, f) != block_size) {
+                err = X502_ERR_LDR_FILE_READ;
+            }
+
+            if (!err) {
+                err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_FIRM_BUF_WRITE,
+                                            done, buf, block_size, NULL, 0, NULL, 0);
+            }
+
+            if (!err) {
+                done += block_size;
+            }
         }
 
         if (!err) {
-            err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_FIRM_BUF_WRITE,
-                                        done, buf, block_size, NULL, 0, NULL, 0);
+            err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_BF_FIRM_LOAD, 0,
+                                        NULL, 0, NULL, 0, NULL, BF_LOAD_TOUT);
         }
 
-        if (!err) {
-            done += block_size;
-        }
-    }
+        free(buf);
 
-    if (!err) {
-        err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_BF_FIRM_LOAD, 0,
-                                    NULL, 0, NULL, 0, NULL, BF_LOAD_TOUT);
+        fclose(f);
     }
-
-    free(buf);
 
     return err;
 }

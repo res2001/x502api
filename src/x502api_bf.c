@@ -194,9 +194,7 @@ X502_EXPORT(int32_t) X502_BfCheckFirmwareIsLoaded(t_x502_hnd hnd, uint32_t *vers
     return err;
 }
 
-X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
-    uint32_t* ldr_buff = NULL;
-    FILE* ldr_file=NULL;
+X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {    
     int32_t err = X502_CHECK_HND_OPENED(hnd);
 
 
@@ -204,23 +202,14 @@ X502_EXPORT(int32_t) X502_BfLoadFirmware(t_x502_hnd hnd, const char* filename) {
         err = X502_ERR_BF_NOT_PRESENT;
 
 
-    if (!err && (filename!=NULL)) {
-        ldr_file = fopen(filename, "rb");
-        if (ldr_file==NULL)
-            err = X502_ERR_LDR_FILE_OPEN;
-    }
 
     if (!err) {
         err = osspec_mutex_lock(hnd->mutex_bf, BF_MUTEX_LOCK_TOUT);
         if (!err) {
-            err = hnd->iface_hnd->bf_firm_load(hnd, ldr_file);
+            err = hnd->iface_hnd->bf_firm_load(hnd, filename);
             osspec_mutex_release(hnd->mutex_bf);
         }
     }
-
-    if (ldr_file!=NULL)
-        fclose(ldr_file);
-    free(ldr_buff);
 
     if (!err) {
         SLEEP_MS(100);
