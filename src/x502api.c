@@ -116,43 +116,48 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
                 if (!(hnd->info.devflags & X502_DEVFLAGS_FPGA_LOADED)) {
                     err = X502_ERR_FPGA_NOT_LOADED;
                 } else {
-                    uint32_t val;
-                    err =  hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_IOHARD_IO_MODE, &val);
-                    if (err == X502_ERR_OK) {
-                        if (!(val & X502_REGBIT_ADC_SLV_CLK_LOCK_Msk)) {
-                            err = X502_ERR_REF_FREQ_NOT_LOCKED;
-                        } else {
-                             /* читаем информацию о версии прошивки ПЛИС'ов и наличии опций */
-                            uint32_t hard_id=0;
-                            int32_t err = hnd->iface_hnd->fpga_reg_read(hnd, hnd->iface_hnd->id_reg_addr, &hard_id);
-                            if (err == X502_ERR_OK) {
-                                hnd->info.fpga_ver = (hard_id >> 16) & 0x7FFF;
-                                hnd->info.plda_ver = (hard_id >> 4) & 0xF;
-                                hnd->info.board_rev  = (hard_id >> 8) & 0xF;
-                                FILL_HARD_ID_FLAGS(hnd->info.devflags, hard_id);
-                            }
-                        }
-                    }
+
 
                     /* определяем - в каком режиме работаем (BF или FPGA) */
-                    if (err == X502_ERR_OK) {
-                        uint32_t bf_ctl;
-                        err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_BF_CTL, &bf_ctl);
-                        if (!err) {
-                            uint32_t mode = bf_ctl;
-                            if (mode & X502_REGBIT_BF_CTL_DBG_MODE_Msk) {
-                                hnd->mode = X502_MODE_DEBUG;
-                            } else if (mode & X502_REGBIT_BF_CTL_DSP_MODE_Msk) {
-                                hnd->mode = X502_MODE_DSP;
-                            } else {
-                                hnd->mode = X502_MODE_FPGA;
-                            }
+                    uint32_t bf_ctl;
+                    err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_BF_CTL, &bf_ctl);
+                    if (!err) {
+                        uint32_t mode = bf_ctl;
+                        if (mode & X502_REGBIT_BF_CTL_DBG_MODE_Msk) {
+                            hnd->mode = X502_MODE_DEBUG;
+                        } else if (mode & X502_REGBIT_BF_CTL_DSP_MODE_Msk) {
+                            hnd->mode = X502_MODE_DSP;
+                        } else {
+                            hnd->mode = X502_MODE_FPGA;
                         }
 
                         /** @todo Для BlackFin проверить наличие прошивки */
 
                         if (hnd->mode==X502_MODE_DSP) {
                             err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
+                        }
+                    }
+
+                    /* проверка захвата PLL (сейчас невозможна в режиме DSP) */
+                    if ((err == X502_ERR_OK) && (hnd->mode!=X502_MODE_DSP)) {
+                        uint32_t val;
+                        err =  hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_IOHARD_IO_MODE, &val);
+                        if (err == X502_ERR_OK) {
+                            if (!(val & X502_REGBIT_ADC_SLV_CLK_LOCK_Msk)) {
+                                err = X502_ERR_REF_FREQ_NOT_LOCKED;
+                            }
+                        }
+                    }
+
+                    /* читаем информацию о версии прошивки ПЛИС'ов и наличии опций */
+                    if (err == X502_ERR_OK) {
+                        uint32_t hard_id=0;
+                        int32_t err = hnd->iface_hnd->fpga_reg_read(hnd, hnd->iface_hnd->id_reg_addr, &hard_id);
+                        if (err == X502_ERR_OK) {
+                            hnd->info.fpga_ver = (hard_id >> 16) & 0x7FFF;
+                            hnd->info.plda_ver = (hard_id >> 4) & 0xF;
+                            hnd->info.board_rev  = (hard_id >> 8) & 0xF;
+                            FILL_HARD_ID_FLAGS(hnd->info.devflags, hard_id);
                         }
                     }
 
