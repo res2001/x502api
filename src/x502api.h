@@ -24,14 +24,6 @@ extern "C" {
 #endif
 
 
-/** @todo
-        X502_AsyncGetAdcFrame
-        X502_OutCycleLoadStart
-        X502_OutCycleSetup
-        X502_OutCycleStop
-        */
-
-
 /***************************************************************************//**
   @addtogroup const_list Константы и перечисления.
   @{
@@ -462,8 +454,8 @@ typedef enum {
     X502_PULLUPS_DI_SYN2   = 0x08, /**< Линия SYN2 */
     X502_PULLDOWN_CONV_IN  = 0x10, /**< Подтяжка к 0 линии межмодульной
                                         синхронизации CONV_IN (только для E502) */
-    X502_PULLDOWN_SYNC_IN  = 0x20, /**< Подтяжка к 0 линии межмодульной
-                                        синхронизации SYNC_IN (только для E502) */
+    X502_PULLDOWN_START_IN = 0x20, /**< Подтяжка к 0 линии межмодульной
+                                        синхронизации START_IN (только для E502) */
 } t_x502_pullups;
 
 
