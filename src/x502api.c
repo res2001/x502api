@@ -625,7 +625,7 @@ X502_EXPORT(int32_t) X502_SetDigInPullup(t_x502_hnd hnd, uint32_t pullups) {
                 val |= 0x8;
             if (pullups & X502_PULLDOWN_CONV_IN)
                 val |= 0x10;
-            if (pullups & X502_PULLDOWN_SYNC_IN)
+            if (pullups & X502_PULLDOWN_START_IN)
                 val |= 0x20;
             err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_DIGIN_PULLUP, val);
         } else if (hnd->mode == X502_MODE_DSP) {

@@ -106,7 +106,6 @@ static void f_abort_handler(int sig) {
  * как результат функции */
 static uint32_t f_get_all_devrec(t_x502_devrec **pdevrec_list, uint32_t *ip_addr_list, unsigned ip_cnt) {
     int32_t fnd_devcnt = 0;
-    int32_t res;
     uint32_t pci_devcnt = 0;
     uint32_t usb_devcnt = 0;
 
@@ -124,14 +123,14 @@ static uint32_t f_get_all_devrec(t_x502_devrec **pdevrec_list, uint32_t *ip_addr
             unsigned i;
             /* получаем записи о модулях L502, но не больше pci_devcnt */
             if (pci_devcnt!=0) {
-                res = L502_GetDevRecordsList(&rec_list[fnd_devcnt], pci_devcnt, 0, NULL);
+                int32_t res = L502_GetDevRecordsList(&rec_list[fnd_devcnt], pci_devcnt, 0, NULL);
                 if (res >= 0) {
                     fnd_devcnt += res;
                 }
             }
             /* добавляем записи о модулях E502, подключенных по USB, в конец массива */
             if (usb_devcnt!=0) {
-                res = E502_UsbGetDevRecordsList(&rec_list[fnd_devcnt], usb_devcnt, 0, NULL);
+                int32_t res = E502_UsbGetDevRecordsList(&rec_list[fnd_devcnt], usb_devcnt, 0, NULL);
                 if (res >= 0) {
                     fnd_devcnt += res;
                 }

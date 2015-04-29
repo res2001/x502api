@@ -949,7 +949,8 @@ static int32_t f_fill_devlist(libusb_device_handle *hnd, t_x502_devrec *info) {
 
             if (f_ioreq(hnd, E502_CM4_CMD_GET_DEVFLAGS, 0,
                         NULL, 0, &devflags, sizeof(devflags), NULL, 0) == X502_ERR_OK) {
-                info->flags = devflags;
+                info->flags &= ~E502_CM4_DEVFLAGS;
+                info->flags |= devflags;
             }
         }
     }

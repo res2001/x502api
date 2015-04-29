@@ -153,7 +153,8 @@ int32_t e502_fill_devflags(t_x502_hnd hnd) {
     err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_GET_DEVFLAGS, 0, NULL, 0, &devflags,
                                     sizeof(devflags), NULL, 0);
     if (err == X502_ERR_OK) {
-        hnd->info.devflags = devflags;
+        hnd->info.devflags &= ~E502_CM4_DEVFLAGS;
+        hnd->info.devflags |= devflags;
     }
     return err;
 }

@@ -99,6 +99,10 @@ int x502_check_eeprom(t_x502_hnd hnd) {
     int err;
     uint32_t sign, size;
 
+    hnd->info.devflags &= ~(X502_DEVFLAGS_FLASH_DATA_VALID |
+                            X502_DEVFLAGS_FLASH_ADC_CALIBR_VALID |
+                            X502_DEVFLAGS_FLASH_DAC_CALIBR_VALID);
+
     /* проверяем признак правильного описателя в EEPROM и его размер */
     err = X502_FlashRead(hnd, X502_EEPROM_ADDR_DESCR, (uint8_t*)&sign, (uint32_t)sizeof(sign));
     if (err == X502_ERR_OK)

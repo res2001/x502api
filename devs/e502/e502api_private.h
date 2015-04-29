@@ -6,6 +6,12 @@
 #include "e502_cm4_defs.h"
 #include "lboot_req.h"
 
+
+#define E502_CM4_DEVFLAGS (X502_DEVFLAGS_IFACE_SUPPORT_ETH | \
+                            X502_DEVFLAGS_INDUSTRIAL | \
+                            X502_DEVFLAGS_FPGA_LOADED)
+
+
 #define E502_DEVICE_NAME "E502"
 
 int32_t e502_iface_fpga_read(t_x502_hnd hnd, uint32_t addr, uint32_t *val);
