@@ -152,8 +152,8 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
                     /* читаем информацию о версии прошивки ПЛИС'ов и наличии опций */
                     if (err == X502_ERR_OK) {
                         uint32_t hard_id=0;
-                        int32_t err = hnd->iface_hnd->fpga_reg_read(hnd, hnd->iface_hnd->id_reg_addr, &hard_id);
-                        if (err == X502_ERR_OK) {
+                        int32_t id_err = hnd->iface_hnd->fpga_reg_read(hnd, hnd->iface_hnd->id_reg_addr, &hard_id);
+                        if (id_err == X502_ERR_OK) {
                             hnd->info.fpga_ver = (hard_id >> 16) & 0x7FFF;
                             hnd->info.plda_ver = (hard_id >> 4) & 0xF;
                             hnd->info.board_rev  = (hard_id >> 8) & 0xF;
