@@ -541,8 +541,10 @@ X502_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
                     err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_PRELOAD_ADC, 1);
 
                 /* запуск канала DMA на прием данных */
-                if (err == X502_ERR_OK)
-                    err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_IN, 1);
+                if (err == X502_ERR_OK) {
+                    err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_IN,
+                                                       X502_STREAM_FLAG_SINGLE);
+                }
 
                 /* если общий синхронный ввод не был запущен  - разрешаем его */
                 if (err == X502_ERR_OK) {
@@ -585,5 +587,22 @@ X502_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
         osspec_mutex_release(hnd->mutex_cfg);
     }
 
+    return err;
+}
+
+
+X502_EXPORT(int32_t) X502_ManualStreamStart(t_x502_hnd hnd, uint32_t stream_ch, uint32_t flags) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK)
+        err = stream_ch == X502_STREAM_CH_IN ? f_stream_in_cfg(hnd) : f_stream_out_cfg(hnd);
+    if (err == X502_ERR_OK)
+        err = hnd->iface_hnd->stream_start(hnd, stream_ch, flags);
+    return err;
+}
+
+X502_EXPORT(int32_t) X502_ManualStreamStop(t_x502_hnd hnd, uint32_t stream_ch) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK)
+        err = hnd->iface_hnd->stream_free(hnd, stream_ch);
     return err;
 }

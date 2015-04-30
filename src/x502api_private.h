@@ -75,7 +75,7 @@ typedef int32_t (*t_x502_iface_fpga_reg_read)(t_x502_hnd hnd, uint32_t addr, uin
 typedef int32_t (*t_x502_iface_fpga_reg_write)(t_x502_hnd hnd, uint32_t addr, uint32_t val);
 
 typedef int32_t (*t_x502_iface_stream_cfg)(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *pars);
-typedef int32_t (*t_x502_iface_stream_start)(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
+typedef int32_t (*t_x502_iface_stream_start)(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
 typedef int32_t (*t_x502_iface_stream_stop)(t_x502_hnd hnd, uint32_t ch);
 typedef int32_t (*t_x502_iface_stream_free)(t_x502_hnd hnd, uint32_t ch);
 typedef int32_t (*t_x502_iface_stream_running)(t_x502_hnd hnd, uint32_t ch, int32_t* running);
@@ -106,7 +106,10 @@ typedef int32_t (*t_x502_iface_gen_ioctl)(t_x502_hnd hnd, uint32_t cmd_code, uin
                                           void* rcv_data, uint32_t recv_size,
                                           uint32_t* recvd_size, uint32_t tout);
 
-
+typedef enum {
+    X502_STREAM_FLAG_SINGLE  = 0x01,
+    X502_STREAM_FLAG_RAWMODE = 0x02
+} t_x502_streams_flags;
 
 typedef struct {
     uint16_t id_reg_addr;

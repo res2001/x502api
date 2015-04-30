@@ -106,7 +106,7 @@ static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr);
 static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
-static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
+static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
 static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch);
 static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch);
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout);
@@ -631,7 +631,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
 
 
 
-static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle) {
+static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     int err = 0;
 
@@ -645,7 +645,7 @@ static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle
         }
     }
 
-    if (!err) {
+    if (!err && !(flags & X502_STREAM_FLAG_RAWMODE)) {
         err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_START, (ch<<16),
                       NULL, 0, NULL, 0, NULL, 0);
     }

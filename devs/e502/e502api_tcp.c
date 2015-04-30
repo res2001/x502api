@@ -498,11 +498,13 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
     return err;
 }
 
-static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle) {
+static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     int32_t err = 0;
 
-    err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_START, (ch<<16),
+    if (!err && !(flags & X502_STREAM_FLAG_RAWMODE)) {
+        err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_START, (ch<<16),
                             NULL, 0, NULL, 0, NULL, 0);
+    }
     return err;
 }
 

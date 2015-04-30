@@ -75,3 +75,5 @@ EXPORTS
     X502_OutCycleLoadStart
     X502_OutCycleSetup
     X502_OutCycleStop
+    X502_ManualStreamStart
+    X502_ManualStreamStop
