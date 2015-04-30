@@ -75,8 +75,6 @@ if(X502API_BUILD_MINGW_LIBS)
 
     add_custom_command(OUTPUT ${MODULE_MINGW_LIBFILE} ALL
         COMMAND "${GENDEF}" - -a  ${PROJECT_NAME}.dll > ${MODULE_MINGW}_tmp.def
-        #удаляем дубликат экспортируемых функций с префиксами, оставленных для совместимости в старых библиотеках
-        COMMAND "${SED}" '/^_LTR/d' ${MODULE_MINGW}_tmp.def > ${MODULE_MINGW}.def
         COMMAND "${DLLTOOL}" -m ${MODULE_MINGW_MACHINE} -l ${MODULE_MINGW_LIBFILE} -k -d ${MODULE_MINGW}.def
         DEPENDS ${PROJECT_NAME}
         COMMENT "make mingw library for ${PROJECT_NAME}")
@@ -84,7 +82,7 @@ if(X502API_BUILD_MINGW_LIBS)
                     DEPENDS ${MODULE_MINGW_LIBFILE})
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${MODULE_MINGW_LIBFILE}
             DESTINATION ${X502_INSTALL_LIB}/mingw
-            RENAME ${PROJECT_NAME}.a)
+            RENAME lib${PROJECT_NAME}.a)
 endif(X502API_BUILD_MINGW_LIBS)
 
 
