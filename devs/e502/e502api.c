@@ -176,6 +176,22 @@ X502_EXPORT(int32_t) E502_ReloadFPGA(t_x502_hnd hnd) {
 }
 
 
+X502_EXPORT(int32_t) E502_CortexExecCmd(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par,
+                                     const uint8_t* snd_data, uint32_t snd_size,
+                                     uint8_t* rcv_data, uint32_t rcv_size,
+                                     uint32_t tout, uint32_t* recvd_size) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK) {
+        err = hnd->iface_hnd->gen_ioctl(hnd, cmd_code, par,
+                                        snd_data, snd_size, rcv_data, rcv_size,
+                                        recvd_size, tout);
+    }
+    return err;
+}
+
+
+
+
 #ifdef WIN32
 #include <winsock2.h>
 BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

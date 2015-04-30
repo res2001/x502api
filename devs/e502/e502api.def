@@ -31,4 +31,5 @@ EXPORTS
     E502_EthConfigSetNewPassword
     E502_SwitchToBootloader
     E502_ReloadFPGA
+    E502_CortexExecCmd
 
