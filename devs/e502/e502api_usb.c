@@ -735,7 +735,7 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
                             size-=cpy_size;
                             cpl->size -= cpy_size;
                             cpl->addr += cpy_size;
-                            info->rx.buf_get_rdy += cpy_size;
+                            info->rx.buf_get_rdy -= cpy_size;
                         }
                     }
 
