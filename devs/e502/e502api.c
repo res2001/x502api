@@ -11,7 +11,20 @@ int32_t e502_iface_fpga_read(t_x502_hnd hnd, uint32_t addr, uint32_t *val) {
 
 int32_t e502_iface_fpga_write(t_x502_hnd hnd, uint32_t addr, uint32_t val) {
     return hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_FPGA_REG_WRITE, addr, &val, sizeof(val),
-                                 NULL, 0, NULL,0);
+                                    NULL, 0, NULL,0);
+}
+
+
+int32_t e502_iface_fpga_mode_init(t_x502_hnd hnd) {
+    int32_t err;
+    t_e502_cm4_test_state res;
+    err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_TEST_GET_STATE, 0, NULL, 0,
+                                    &res, sizeof(res), NULL, 0);
+    if ((err == X502_ERR_OK)  && res.run) {
+        err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_TEST_STOP, 0, NULL, 0,
+                                     NULL, 0, NULL,0);
+    }
+    return err;
 }
 
 

@@ -163,8 +163,13 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
 
                     /* если был запущен сбор - то останавливаем его */
                     if ((err == X502_ERR_OK) && (hnd->mode==X502_MODE_FPGA)) {
-                        err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
                         hnd->last_dout = 0;
+
+                        if (hnd->iface_hnd->fpga_mode_init != NULL)
+                            err = hnd->iface_hnd->fpga_mode_init(hnd);
+
+                        if (err == X502_ERR_OK)
+                            err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
 
                         if (err == X502_ERR_OK)
                             err =  hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 0);

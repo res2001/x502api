@@ -60,6 +60,7 @@ static const t_x502_dev_iface f_pcie_iface = {
     f_iface_cycle_load_start,
     f_iface_cycle_setup,
     f_iface_cycle_stop,
+    NULL,
     NULL
 };
 
