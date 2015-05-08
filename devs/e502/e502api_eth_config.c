@@ -52,6 +52,16 @@ X502_EXPORT(t_e502_eth_config_hnd) E502_EthConfigCreate(void) {
     return cfg;
 }
 
+X502_EXPORT(int32_t) E502_EthConfigCopy(t_e502_eth_config_hnd src_cfg, t_e502_eth_config_hnd dst_cfg) {
+    int32_t err = E502_ETH_CHECK_CFG(src_cfg);
+    if (err == X502_ERR_OK)
+        err = E502_ETH_CHECK_CFG(dst_cfg);
+    if (err == X502_ERR_OK) {
+        memcpy(dst_cfg, src_cfg, sizeof(t_e502_eth_config_state));
+    }
+    return err;
+}
+
 X502_EXPORT(int32_t) E502_EthConfigFree(t_e502_eth_config_hnd cfg) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK) {
