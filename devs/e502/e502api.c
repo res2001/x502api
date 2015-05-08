@@ -55,7 +55,7 @@ int32_t e502_iface_bf_firm_load(t_x502_hnd hnd, const char *filename) {
     FILE* f=fopen(filename, "rb");
     if (f==NULL) {
         err = X502_ERR_LDR_FILE_OPEN;
-    } {
+    } else {
         uint8_t *buf = malloc(hnd->iface_hnd->ioctl_max_data_size);
         long size, done=0;
 

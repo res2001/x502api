@@ -594,14 +594,25 @@ X502_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
 X502_EXPORT(int32_t) X502_ManualStreamStart(t_x502_hnd hnd, uint32_t stream_ch, uint32_t flags) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err == X502_ERR_OK)
+        err = X502_StreamsEnable(hnd, stream_ch == X502_STREAM_CH_IN ? X502_STREAM_ALL_IN : X502_STREAM_ALL_OUT );
+    if (err == X502_ERR_OK)
         err = stream_ch == X502_STREAM_CH_IN ? f_stream_in_cfg(hnd) : f_stream_out_cfg(hnd);
     if (err == X502_ERR_OK)
         err = hnd->iface_hnd->stream_start(hnd, stream_ch, flags);
+    if ((err == X502_ERR_OK) && (stream_ch == X502_STREAM_CH_OUT)) {
+        err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
+        if (err==X502_ERR_OK) {
+            hnd->flags |= PRIV_FLAGS_PRELOAD_DONE;
+            osspec_mutex_release(hnd->mutex_cfg);
+        }
+    }
     return err;
 }
 
 X502_EXPORT(int32_t) X502_ManualStreamStop(t_x502_hnd hnd, uint32_t stream_ch) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK)
+        err = X502_StreamsDisable(hnd, stream_ch == X502_STREAM_CH_IN ? X502_STREAM_ALL_IN : X502_STREAM_ALL_OUT );
     if (err == X502_ERR_OK)
         err = hnd->iface_hnd->stream_free(hnd, stream_ch);
     return err;
