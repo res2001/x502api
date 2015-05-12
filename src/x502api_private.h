@@ -168,6 +168,10 @@ typedef enum {
     PRIV_FLAGS_STREAM_RUN         = 0x0080
 } t_x502_state_flags;
 
+typedef enum {
+    X502_RELOAD_FLAGS_NO_DAC = 0x0001,
+    X502_RELOAD_FLAGS_NO_ADC = 0x0002
+} t_x502_reload_flags;
 
 /** структура, описывающая параметры логического канала */
 typedef struct {
@@ -222,7 +226,7 @@ typedef int32_t (APIENTRY *t_x502_get_devinfo_list_cb)(t_x502_devrec* list, uint
 
 
 
-int x502_check_eeprom(t_x502_hnd hnd);
+int x502_check_eeprom(t_x502_hnd hnd, uint32_t flags);
 
 X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *info);
 X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
@@ -233,7 +237,7 @@ X502_EXPORT(int32_t) X502_GetSerialList(char serials[][X502_SERIAL_SIZE], uint32
 
 X502_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t val);
 X502_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val);
-X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd);
+X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd, uint32_t flags);
 
 #define x502_bf_set_par(hnd, par, data, size) X502_BfExecCmd(hnd, L502_BF_CMD_CODE_SET_PARAM, \
                             par, data, size, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL)

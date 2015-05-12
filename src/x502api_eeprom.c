@@ -95,13 +95,13 @@ X502_EXPORT(int32_t) X502_FlashSetProtection(t_x502_hnd hnd, uint32_t prot, uint
 /** Функция проверяет правильность информации о устройстве, записанной в EEPROM.
     При наличии верной инофрмации, из EEPROM считывается название устройства и
     серийный номер, а так же, при наличии, калибровочные коэффициенты */
-int x502_check_eeprom(t_x502_hnd hnd) {
+int x502_check_eeprom(t_x502_hnd hnd, uint32_t flags) {
     int err;
     uint32_t sign, size;
 
     hnd->info.devflags &= ~(X502_DEVFLAGS_FLASH_DATA_VALID |
-                            X502_DEVFLAGS_FLASH_ADC_CALIBR_VALID |
-                            X502_DEVFLAGS_FLASH_DAC_CALIBR_VALID);
+                            ((flags & X502_RELOAD_FLAGS_NO_ADC) ? 0 : X502_DEVFLAGS_FLASH_ADC_CALIBR_VALID) |
+                            ((flags & X502_RELOAD_FLAGS_NO_DAC) ? 0 : X502_DEVFLAGS_FLASH_DAC_CALIBR_VALID));
 
     /* проверяем признак правильного описателя в EEPROM и его размер */
     err = X502_FlashRead(hnd, X502_EEPROM_ADDR_DESCR, (uint8_t*)&sign, (uint32_t)sizeof(sign));
@@ -130,34 +130,37 @@ int x502_check_eeprom(t_x502_hnd hnd) {
                     memcpy(hnd->info.name, pdescr->hdr.name, sizeof(pdescr->hdr.name));
                     memcpy(hnd->info.factory_mac, pdescr->hdr.factory_mac, sizeof(pdescr->hdr.factory_mac));
 
-                    if ((pdescr->cbr_adc.hdr.cbr_sign == X502_EEPROM_CBR_SIGN) &&
-                            (pdescr->cbr_adc.hdr.format == X502_EEPROM_CBR_FROMAT) &&
-                            (pdescr->cbr_adc.hdr.src == X502_EEPROM_CBR_SRC_ADC) &&
-                            (pdescr->cbr_adc.hdr.range_cnt == X502_ADC_RANGE_CNT) &&
-                            (pdescr->cbr_adc.hdr.channel_cnt == 1)) {
-                        unsigned int i;
+                    if (!(flags & X502_RELOAD_FLAGS_NO_ADC)) {
+                        if ((pdescr->cbr_adc.hdr.cbr_sign == X502_EEPROM_CBR_SIGN) &&
+                                (pdescr->cbr_adc.hdr.format == X502_EEPROM_CBR_FROMAT) &&
+                                (pdescr->cbr_adc.hdr.src == X502_EEPROM_CBR_SRC_ADC) &&
+                                (pdescr->cbr_adc.hdr.range_cnt == X502_ADC_RANGE_CNT) &&
+                                (pdescr->cbr_adc.hdr.channel_cnt == 1)) {
+                            unsigned int i;
 
-                        hnd->info.devflags |= X502_DEVFLAGS_FLASH_ADC_CALIBR_VALID;
-                        for (i=0; (i < pdescr->cbr_adc.hdr.range_cnt) &&
-                             (i < X502_ADC_RANGE_CNT) && (err == X502_ERR_OK); i++) {
-                            err = X502_SetAdcCoef(hnd, i, pdescr->cbr_adc.coefs[i].k,
-                                                    pdescr->cbr_adc.coefs[i].offs);
+                            hnd->info.devflags |= X502_DEVFLAGS_FLASH_ADC_CALIBR_VALID;
+                            for (i=0; (i < pdescr->cbr_adc.hdr.range_cnt) &&
+                                 (i < X502_ADC_RANGE_CNT) && (err == X502_ERR_OK); i++) {
+                                err = X502_SetAdcCoef(hnd, i, pdescr->cbr_adc.coefs[i].k,
+                                                        pdescr->cbr_adc.coefs[i].offs);
+                            }
                         }
                     }
 
+                    if (!(flags & X502_RELOAD_FLAGS_NO_DAC)) {
+                        if ((pdescr->cbr_dac.hdr.cbr_sign == X502_EEPROM_CBR_SIGN) &&
+                                (pdescr->cbr_dac.hdr.format == X502_EEPROM_CBR_FROMAT) &&
+                                (pdescr->cbr_dac.hdr.src == X502_EEPROM_CBR_SRC_DAC) &&
+                                (pdescr->cbr_dac.hdr.range_cnt == 1) &&
+                                (pdescr->cbr_dac.hdr.channel_cnt == X502_DAC_CH_CNT)) {
+                            unsigned int i;
 
-                    if ((pdescr->cbr_dac.hdr.cbr_sign == X502_EEPROM_CBR_SIGN) &&
-                            (pdescr->cbr_dac.hdr.format == X502_EEPROM_CBR_FROMAT) &&
-                            (pdescr->cbr_dac.hdr.src == X502_EEPROM_CBR_SRC_DAC) &&
-                            (pdescr->cbr_dac.hdr.range_cnt == 1) &&
-                            (pdescr->cbr_dac.hdr.channel_cnt == X502_DAC_CH_CNT)) {
-                        unsigned int i;
-
-                        hnd->info.devflags |= X502_DEVFLAGS_FLASH_DAC_CALIBR_VALID;
-                        for (i=0; (i < pdescr->cbr_dac.hdr.channel_cnt) &&
-                             (i < X502_ADC_RANGE_CNT) && (err == X502_ERR_OK); i++) {
-                            err = X502_SetDacCoef(hnd, i, pdescr->cbr_dac.coefs[i].k,
-                                                    pdescr->cbr_dac.coefs[i].offs);
+                            hnd->info.devflags |= X502_DEVFLAGS_FLASH_DAC_CALIBR_VALID;
+                            for (i=0; (i < pdescr->cbr_dac.hdr.channel_cnt) &&
+                                 (i < X502_ADC_RANGE_CNT) && (err == X502_ERR_OK); i++) {
+                                err = X502_SetDacCoef(hnd, i, pdescr->cbr_dac.coefs[i].k,
+                                                        pdescr->cbr_dac.coefs[i].offs);
+                            }
                         }
                     }
                 }
@@ -169,11 +172,11 @@ int x502_check_eeprom(t_x502_hnd hnd) {
 }
 
 
-X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd) {
+X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd, uint32_t flags) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if ((err==X502_ERR_OK) && (hnd->iface_hnd->reload_dev_info!=NULL))
         err = hnd->iface_hnd->reload_dev_info(hnd);
     if (err==X502_ERR_OK)
-        err = x502_check_eeprom(hnd);
+        err = x502_check_eeprom(hnd, flags);
     return err;
 }

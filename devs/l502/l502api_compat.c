@@ -281,5 +281,5 @@ LPCIE_EXPORT(int32_t) L502_FpgaRegRead(t_l502_hnd hnd, uint32_t reg, uint32_t *v
 }
 
 LPCIE_EXPORT(int32_t) L502_ReloadDevInfo(t_l502_hnd hnd) {
-    return X502_ReloadDevInfo(hnd);
+    return X502_ReloadDevInfo(hnd, 0);
 }
