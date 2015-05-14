@@ -361,7 +361,7 @@ X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
                 && (hnd->set.ref_freq!=X502_REF_FREQ_2000KHZ)
                 &&(hnd->set.ref_freq!=X502_REF_FREQ_1500KHZ)) {
             err = X502_ERR_INVALID_REF_FREQ;
-        } else if (hnd->set.ref_freq > X502_EXT_REF_FREQ_MAX) {
+        } else if (hnd->set.ref_freq > 2000000) {
             err = X502_ERR_INVALID_REF_FREQ;
         }
     }

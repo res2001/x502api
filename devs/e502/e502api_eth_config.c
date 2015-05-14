@@ -117,14 +117,14 @@ X502_EXPORT(int32_t) E502_EthConfigSetNewPassword(t_e502_eth_config_hnd cfg, con
 }
 
 
-X502_EXPORT(int32_t) E502_EthConfigGetEnabled(t_e502_eth_config_hnd cfg, int32_t *en) {
+X502_EXPORT(int32_t) E502_EthConfigGetEnabled(t_e502_eth_config_hnd cfg, uint32_t *en) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK)
         *en = cfg->params.cfg.flags & E502_ETH_FLAGS_IFACE_ENABLED;
     return err;
 }
 
-X502_EXPORT(int32_t) E502_EthConfigSetEnabled(t_e502_eth_config_hnd cfg, int32_t en) {
+X502_EXPORT(int32_t) E502_EthConfigSetEnabled(t_e502_eth_config_hnd cfg, uint32_t en) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK) {
         if (en) {
@@ -136,14 +136,14 @@ X502_EXPORT(int32_t) E502_EthConfigSetEnabled(t_e502_eth_config_hnd cfg, int32_t
     return err;
 }
 
-X502_EXPORT(int32_t) E502_EthConfigGetAutoIPEnabled(t_e502_eth_config_hnd cfg, int32_t *en) {
+X502_EXPORT(int32_t) E502_EthConfigGetAutoIPEnabled(t_e502_eth_config_hnd cfg, uint32_t *en) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK)
         *en = cfg->params.cfg.flags & E502_ETH_FLAGS_AUTO_IP;
     return err;
 }
 
-X502_EXPORT(int32_t) E502_EthConfigSetAutoIPEnabled(t_e502_eth_config_hnd cfg, int32_t en) {
+X502_EXPORT(int32_t) E502_EthConfigSetAutoIPEnabled(t_e502_eth_config_hnd cfg, uint32_t en) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK) {
         if (en) {
@@ -155,14 +155,14 @@ X502_EXPORT(int32_t) E502_EthConfigSetAutoIPEnabled(t_e502_eth_config_hnd cfg, i
     return err;
 }
 
-X502_EXPORT(int32_t) E502_EthConfigGetUserMACEnabled(t_e502_eth_config_hnd cfg, int32_t *en) {
+X502_EXPORT(int32_t) E502_EthConfigGetUserMACEnabled(t_e502_eth_config_hnd cfg, uint32_t *en) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK)
         *en = cfg->params.cfg.flags & E502_ETH_FLAGS_USER_MAC;
     return err;
 }
 
-X502_EXPORT(int32_t) E502_EthConfigSetUserMACEnabled(t_e502_eth_config_hnd cfg, int32_t en) {
+X502_EXPORT(int32_t) E502_EthConfigSetUserMACEnabled(t_e502_eth_config_hnd cfg, uint32_t en) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK) {
         if (en) {

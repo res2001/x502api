@@ -290,7 +290,7 @@ X502_EXPORT(int32_t) E502_EthConfigCopy(t_e502_eth_config_hnd src_cfg,
                        иначе --- 0
     @return            Код ошибки
 *******************************************************************************/
-X502_EXPORT(int32_t) E502_EthConfigGetEnabled(t_e502_eth_config_hnd cfg, int32_t *en);
+X502_EXPORT(int32_t) E502_EthConfigGetEnabled(t_e502_eth_config_hnd cfg, uint32_t *en);
 
 /***************************************************************************//**
     @brief Разрешение интерфейса Ethernet
@@ -301,7 +301,7 @@ X502_EXPORT(int32_t) E502_EthConfigGetEnabled(t_e502_eth_config_hnd cfg, int32_t
     @param[in] en     0 означает запрет интерфейса Ethernet, 1 --- разрешение
     @return           Код ошибки
 *******************************************************************************/
-X502_EXPORT(int32_t) E502_EthConfigSetEnabled(t_e502_eth_config_hnd cfg, int32_t en);
+X502_EXPORT(int32_t) E502_EthConfigSetEnabled(t_e502_eth_config_hnd cfg, uint32_t en);
 
 /***************************************************************************//**
     @brief Определение, разрешено ли автоматическое получение параметров IP
@@ -314,7 +314,7 @@ X502_EXPORT(int32_t) E502_EthConfigSetEnabled(t_e502_eth_config_hnd cfg, int32_t
                        возвращается 1, иначе --- 0
     @return            Код ошибки
 *******************************************************************************/
-X502_EXPORT(int32_t) E502_EthConfigGetAutoIPEnabled(t_e502_eth_config_hnd cfg, int32_t *en);
+X502_EXPORT(int32_t) E502_EthConfigGetAutoIPEnabled(t_e502_eth_config_hnd cfg, uint32_t *en);
 /***************************************************************************//**
     @brief Разрешение автоматического получения параметров IP
 
@@ -326,7 +326,7 @@ X502_EXPORT(int32_t) E502_EthConfigGetAutoIPEnabled(t_e502_eth_config_hnd cfg, i
                        возвращается 1, иначе --- 0
     @return            Код ошибки
 *******************************************************************************/
-X502_EXPORT(int32_t) E502_EthConfigSetAutoIPEnabled(t_e502_eth_config_hnd cfg, int32_t en);
+X502_EXPORT(int32_t) E502_EthConfigSetAutoIPEnabled(t_e502_eth_config_hnd cfg, uint32_t en);
 
 /***************************************************************************//**
     @brief Определение, разрешен ли пользовательский MAC-адрес
@@ -339,7 +339,7 @@ X502_EXPORT(int32_t) E502_EthConfigSetAutoIPEnabled(t_e502_eth_config_hnd cfg, i
                        возвращается 1, иначе (если используется заводской) --- 0
     @return            Код ошибки
 *******************************************************************************/
-X502_EXPORT(int32_t) E502_EthConfigGetUserMACEnabled(t_e502_eth_config_hnd cfg, int32_t *en);
+X502_EXPORT(int32_t) E502_EthConfigGetUserMACEnabled(t_e502_eth_config_hnd cfg, uint32_t *en);
 /***************************************************************************//**
     @brief Определение, разрешен ли пользовательский MAC-адрес
 
@@ -351,7 +351,7 @@ X502_EXPORT(int32_t) E502_EthConfigGetUserMACEnabled(t_e502_eth_config_hnd cfg, 
                        возвращается 1, иначе (если используется заводской) --- 0
     @return            Код ошибки
 *******************************************************************************/
-X502_EXPORT(int32_t) E502_EthConfigSetUserMACEnabled(t_e502_eth_config_hnd cfg, int32_t en);
+X502_EXPORT(int32_t) E502_EthConfigSetUserMACEnabled(t_e502_eth_config_hnd cfg, uint32_t en);
 
 /***************************************************************************//**
     @brief Получение установленного статического IP-адреса
