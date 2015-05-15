@@ -45,4 +45,4 @@ endif
 
 
 all:
-	$(CC) main.c $(FLAGS) -ll502api -le502api -lx502api -o x502_stream_read
+	$(CC) main.c $(FLAGS) -ll502api -le502api -lx502api -o x502_cycle_out

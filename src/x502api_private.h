@@ -267,6 +267,21 @@ X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd, uint32_t flags);
 } while(0)
 
 
+static int32_t stream_out_cfg(t_x502 *hnd) {
+    t_x502_stream_ch_params params;
+
+    memset(&params, 0, sizeof(params));
+
+    params.buf_size = hnd->stream_pars[X502_STREAM_CH_OUT].buf_size ?
+                hnd->stream_pars[X502_STREAM_CH_OUT].buf_size :
+                X502_DMA_OUT_BUF_SIZE;
+
+    params.step = hnd->stream_pars[X502_STREAM_CH_OUT].step ?
+                hnd->stream_pars[X502_STREAM_CH_OUT].step :
+                X502_DMA_OUT_IRQ_STEP;
+
+    return hnd->iface_hnd->stream_cfg(hnd, X502_STREAM_CH_OUT, &params);
+}
 
 
 #endif // X502API_PRIVATE_H

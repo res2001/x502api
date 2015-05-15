@@ -115,7 +115,7 @@ static uint32_t f_get_all_devrec(t_x502_devrec **pdevrec_list, uint32_t *ip_addr
     L502_GetDevRecordsList(NULL, 0, 0, &pci_devcnt);
     E502_UsbGetDevRecordsList(NULL, 0, 0, &usb_devcnt);
 
-    if ((pci_devcnt+usb_devcnt + ip_cnt) != 0) {
+    if ((pci_devcnt + usb_devcnt + ip_cnt) != 0) {
         /* выделяем память для массива для сохранения найденного количества записей */
         rec_list = malloc((pci_devcnt + usb_devcnt + ip_cnt) * sizeof(t_x502_devrec));
 

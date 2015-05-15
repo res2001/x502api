@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="x502_stream_read"
-	ProjectGUID="{D9460CE1-B571-4A69-A4C1-0676BF57EB04}"
-	RootNamespace="x502_stream_read"
+	Name="x502_cycle_out"
+	ProjectGUID="{CA9882D8-F21E-47DD-87A6-44AD55ED0ED2}"
+	RootNamespace="x502_cycle_out"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="c:\Program Files (x86)\L-Card\lpcie\include\"
+				AdditionalIncludeDirectories="c:\Program Files (x86)\L-Card\lpcie\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="x502api.lib l502api.lib e502api.lib"
+				AdditionalDependencies="l502api.lib e502api.lib x502api.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="c:\Program Files (x86)\L-Card\lpcie\lib\msvc"
 				GenerateDebugInformation="true"
@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="c:\Program Files (x86)\L-Card\lpcie\include\"
+				AdditionalIncludeDirectories="c:\Program Files (x86)\L-Card\lpcie\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="x502api.lib l502api.lib e502api.lib"
+				AdditionalDependencies="l502api.lib e502api.lib x502api.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="c:\Program Files (x86)\L-Card\lpcie\lib\msvc"
 				GenerateDebugInformation="true"
@@ -176,10 +176,6 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath=".\main.c"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Заголовочные файлы"
@@ -192,6 +188,10 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath=".\main.c"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

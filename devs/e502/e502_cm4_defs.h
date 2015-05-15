@@ -52,6 +52,10 @@ typedef enum {
     E502_CM4_ERR_FPGA_FW_INVALID_TEMP_RANGE   = -1034, /**< Загруженная прошивка ПЛИС предназначена для другого темп. исполнения */
     E502_CM4_ERR_M0_STREAM_START_REQ          = -1035, /**< Нет ответа на запрос запуска потока от ядра Cortex-M0 */
     E502_CM4_ERR_M0_STREAM_STOP_REQ           = -1036, /**< Нет ответа на запрос останова потока от ядра Cortex-M0 */
+    E502_CM4_ERR_OUT_STREAM_RUNNING           = -1037, /**< Уже запущен вывод в потоковом режиме */
+    E502_CM4_ERR_OUT_NO_CYCLE_BUF             = -1038, /**< Нет свободного буфера для циклического режима. Не произошла смена страниц */
+    E502_CM4_ERR_OUT_CYCLE_BUF_SIZE           = -1039, /**< Задан слишком большой размер циклического буфера */
+    E502_CM4_ERR_OUT_CYCLE_NOT_LOADED         = -1040, /**< Не был полностью загружен циклический буфер перед сменой */
 } t_e502_cm4_errs;
 
 typedef enum {
@@ -95,6 +99,10 @@ typedef enum {
     E502_CM4_CMD_RELOAD_FPGA         = 0x24,
     E502_CM4_CMD_GET_DEVFLAGS        = 0x25,
 
+    E502_CM4_CMD_OUT_CYCLE_LOAD      = 0x26,
+    E502_CM4_CMD_OUT_CYCLE_SETUP     = 0x27,
+    E502_CM4_CMD_OUT_CYCLE_STOP      = 0x28,
+
 
     E502_CM4_CMD_TEST_START          = 0x40,
     E502_CM4_CMD_TEST_STOP           = 0x41,
@@ -107,12 +115,14 @@ typedef enum {
 
 
 typedef enum {
-    E502_TEST_NONE=0,
-    E502_TEST_SRAM_BUF_RING,
-    E502_TEST_SRAM_SDRAM_RING_DMA,
-    E502_TEST_USB_TX_CNTR,
-    E502_TEST_USB_RING,
-    E502_TEST_SPI_SLAVE
+    E502_CM4_TEST_NONE=0,
+    E502_CM4_TEST_SRAM_BUF_RING,
+    E502_CM4_TEST_SRAM_SDRAM_RING_DMA,
+    E502_CM4_TEST_USB_TX_CNTR,
+    E502_CM4_TEST_USB_RING,
+    E502_CM4_TEST_SPI_SLAVE,
+    E502_CM4_TEST_SDRAM,
+    E502_CM4_TEST_ETH_PHY_LOOPBACK
 } t_test_number;
 
 
