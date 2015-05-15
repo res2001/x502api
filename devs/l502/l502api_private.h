@@ -23,8 +23,8 @@ int32_t l502_port_open(t_x502_hnd hnd, const t_x502_devrec *devrec);
 int32_t l502_port_free_iface_data(void *intptr);
 int32_t l502_port_close(t_x502_hnd hnd);
 int32_t l502_port_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t single);
-int32_t l502_port_stream_stop(t_x502_hnd hnd, uint32_t ch);
-int32_t l502_port_stream_free(t_x502_hnd hnd, uint32_t ch);
+int32_t l502_port_stream_stop(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
+int32_t l502_port_stream_free(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
 int32_t l502_port_stream_read(t_x502_hnd hnd, uint32_t *buff, uint32_t size, uint32_t timeout);
 int32_t l502_port_stream_write(t_x502_hnd hnd, const uint32_t *buff, uint32_t size,
                          uint32_t timeout);

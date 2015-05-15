@@ -89,8 +89,8 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t signle);
-static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch);
-static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch);
+static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
+static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout);
 static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout) ;
 static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_cnt);
@@ -502,27 +502,30 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     int32_t err = 0;
 
-    if (!err && !(flags & X502_STREAM_FLAG_RAWMODE)) {
+    if (!err && !(flags & X502_STREAM_FLAG_NO_REQUEST)) {
         err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_START, (ch<<16),
                             NULL, 0, NULL, 0, NULL, 0);
     }
     return err;
 }
 
-static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
+static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     int32_t err = 0;
-    int32_t running;
 
-    err = hnd->iface_hnd->stream_running(hnd, ch, &running);
-    if (!err && running) {
-        err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
+    if (!(flags & X502_STREAM_FLAG_NO_REQUEST)) {
+        int32_t running;
+
+        err = hnd->iface_hnd->stream_running(hnd, ch, &running);
+        if (!err && running) {
+            err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
                                       NULL, 0, NULL, 0, NULL, 0);       
+        }
     }
     return err;
 }
 
-static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
-    int32_t err =  hnd->iface_hnd->stream_stop(hnd, ch);
+static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
+    int32_t err =  hnd->iface_hnd->stream_stop(hnd, ch, flags);
     if (err == X502_ERR_OK) {
         t_tcp_iface_data *tcp_data = (t_tcp_iface_data *)hnd->iface_data;
         if (tcp_data->data_sock!=INVALID_SOCKET) {

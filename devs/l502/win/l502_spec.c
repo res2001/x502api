@@ -130,12 +130,12 @@ int32_t l502_port_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t single) {
                    L502_IOCTL_TIMEOUT);
 }
 
-int32_t l502_port_stream_stop(t_x502_hnd hnd, uint32_t ch) {
+int32_t l502_port_stream_stop(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     return f_ioctl(L502_PCI_IFACE_FILE(hnd), LPCIE_IOCTL_STREAM_STOP, &ch, sizeof(ch), NULL, 0, NULL,
                    L502_IOCTL_TIMEOUT);
 }
 
-int32_t l502_port_stream_free(t_x502_hnd hnd, uint32_t ch) {
+int32_t l502_port_stream_free(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     return f_ioctl(L502_PCI_IFACE_FILE(hnd), LPCIE_IOCTL_STREAM_FREE, &ch, sizeof(ch), NULL, 0, NULL,
                    L502_IOCTL_TIMEOUT);
 }

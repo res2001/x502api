@@ -135,7 +135,7 @@ int32_t e502_iface_cycle_load_start(t_x502_hnd hnd, uint32_t size) {
     if (!(hnd->flags & PRIV_FLGAS_CYCLE_MODE)) {
         err = stream_out_cfg(hnd);
         if (err == X502_ERR_OK)
-            err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_OUT, X502_STREAM_FLAG_RAWMODE);
+            err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_OUT, X502_STREAM_FLAG_NO_REQUEST);
     }
 
     if (err == X502_ERR_OK) {
@@ -152,7 +152,7 @@ int32_t e502_iface_cycle_setup(t_x502_hnd hnd, uint32_t flags) {
 int32_t e502_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags) {
     int32_t err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_OUT_CYCLE_STOP, flags, NULL,0, NULL, 0, NULL, 0);
     if (err == X502_ERR_OK)
-        err = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_OUT);
+        err = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_OUT, X502_STREAM_FLAG_NO_REQUEST);
     return err;
 }
 

@@ -108,8 +108,8 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec);
 static int32_t f_iface_close(t_x502_hnd hnd);
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params);
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
-static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch);
-static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch);
+static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
+static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch, uint32_t flags);
 static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size, uint32_t tout);
 static int32_t f_iface_stream_write(t_x502_hnd hnd, const uint32_t *buf, uint32_t size, uint32_t tout) ;
 static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_cnt);
@@ -659,7 +659,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
 
 
         if (err) {
-            f_iface_stream_free(hnd, ch);
+            f_iface_stream_free(hnd, ch, 0);
         }
     }
 
@@ -686,7 +686,7 @@ static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t flags)
         }
     }
 
-    if (!err && !(flags & X502_STREAM_FLAG_RAWMODE)) {
+    if (!err && !(flags & X502_STREAM_FLAG_NO_REQUEST)) {
         err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_START, (ch<<16),
                       NULL, 0, NULL, 0, NULL, 0);
     }
@@ -694,17 +694,20 @@ static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t flags)
     return err;
 }
 
-static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
+static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     t_transf_info *info = &usb_data->streams[ch];
-    int err = 0;
-    int ioctl_err;
+    int err = X502_ERR_OK;
+    int ioctl_err = X502_ERR_OK;
     int32_t running;
 
-    ioctl_err = hnd->iface_hnd->stream_running(hnd, ch, &running);
-    if (!ioctl_err && running)
-        ioctl_err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
-                            NULL, 0, NULL, 0, NULL, 0);
+    if (!(flags & X502_STREAM_FLAG_NO_REQUEST)) {
+        ioctl_err = hnd->iface_hnd->stream_running(hnd, ch, &running);
+        if (!ioctl_err && running) {
+            ioctl_err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
+                                NULL, 0, NULL, 0, NULL, 0);
+        }
+    }
 
 
     if (info->thread != OSSPEC_INVALID_THREAD) {
@@ -718,12 +721,12 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch) {
 }
 
 
-static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch) {
+static int32_t f_iface_stream_free(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     int32_t err;
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
     t_transf_info *info = &usb_data->streams[ch];
 
-    err = hnd->iface_hnd->stream_stop(hnd, ch);
+    err = hnd->iface_hnd->stream_stop(hnd, ch, flags);
 
     free(info->data);
     info->data = NULL;

@@ -180,7 +180,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
                             for (ch=0; (ch < X502_STREAM_CH_CNT) && !err; ch++) {
                                 err = hnd->iface_hnd->stream_running(hnd, ch, &running);
                                 if (!err && running) {
-                                    err = hnd->iface_hnd->stream_stop(hnd, ch);
+                                    err = hnd->iface_hnd->stream_stop(hnd, ch, 0);
                                 }
                             }
                         }

@@ -172,12 +172,12 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
                    останавливаем их */
                 if ((err == X502_ERR_OK) && (old_streams & X502_STREAM_ALL_IN) &&
                         !(hnd->streams & X502_STREAM_ALL_IN)) {
-                    err = hnd->iface_hnd->stream_stop(hnd, X502_STREAM_CH_IN);
+                    err = hnd->iface_hnd->stream_stop(hnd, X502_STREAM_CH_IN, 0);
                 }
 
                 if ((err == X502_ERR_OK) && (old_streams & X502_STREAM_ALL_OUT) &&
                         !(hnd->streams & X502_STREAM_ALL_OUT)) {
-                    err = hnd->iface_hnd->stream_stop(hnd, X502_STREAM_CH_OUT);
+                    err = hnd->iface_hnd->stream_stop(hnd, X502_STREAM_CH_OUT, 0);
                     if (err == X502_ERR_OK) {
                         hnd->flags &= ~PRIV_FLAGS_PRELOAD_DONE;
                     }
@@ -269,7 +269,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
         }
 
         if (err && in_started) {
-            hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN);
+            hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN, 0);
         }
 
 
@@ -298,8 +298,8 @@ X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
                               NULL, 0, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL);
         }
 
-        stop_err1 = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN);
-        stop_err2 = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_OUT);
+        stop_err1 = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN, 0);
+        stop_err2 = hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_OUT, 0);
         if (err == X502_ERR_OK)
             err = stop_err1;
         if (err == X502_ERR_OK)
@@ -565,7 +565,7 @@ X502_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
                     hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_GO_SYNC_IO, 0);
 
                 hnd->proc_adc_ch = 0;
-                hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN);
+                hnd->iface_hnd->stream_free(hnd, X502_STREAM_CH_IN, 0);
                 /* восстанавливаем те потоки, которые были разрешены */
                 f_set_streams(hnd, old_streams);
                 free(wrds);
@@ -607,6 +607,6 @@ X502_EXPORT(int32_t) X502_ManualStreamStop(t_x502_hnd hnd, uint32_t stream_ch) {
     if (err == X502_ERR_OK)
         err = X502_StreamsDisable(hnd, stream_ch == X502_STREAM_CH_IN ? X502_STREAM_ALL_IN : X502_STREAM_ALL_OUT );
     if (err == X502_ERR_OK)
-        err = hnd->iface_hnd->stream_free(hnd, stream_ch);
+        err = hnd->iface_hnd->stream_free(hnd, stream_ch, 0);
     return err;
 }
