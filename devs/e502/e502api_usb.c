@@ -62,6 +62,7 @@ typedef struct {
 typedef struct st_transf_info {
     t_x502_hnd dev;
     uint8_t addr; /* адрес конечной точки */
+    uint16_t pkt_size;
     t_mutex mutex;
     t_thread thread;
     t_event  user_wake_evt;
@@ -192,15 +193,48 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
     if (err == X502_ERR_OK) {
         t_usb_iface_data *usb_data = calloc(1, sizeof(t_usb_iface_data));
         unsigned stream;
+        struct libusb_config_descriptor* cfg;
 
         usb_data->devhnd = devhnd;
 
-        /** @todo нахождение адресов кт по дускриптору конфигурации */
-        usb_data->streams[X502_STREAM_CH_IN].addr  = 0x81;
-        usb_data->streams[X502_STREAM_CH_OUT].addr = 0x01;
-
-
-
+        /* Чтобы определить номера используемых конечных точек, получаем
+         * конфигурацию устройства и находим по одной конечной точки типа
+         * bulk на каждое направление (in/out) */
+        usberr = libusb_get_config_descriptor(dev, 0, &cfg);
+        if (!usberr) {
+            int intf_idx, s, fnd_in=0, fnd_out=0;
+            for (intf_idx = 0; intf_idx < cfg->bNumInterfaces; intf_idx++) {
+                for (s=0; s < cfg->interface[intf_idx].num_altsetting; s++) {
+                    int e;
+                    for (e=0; e < cfg->interface[intf_idx].altsetting[s].bNumEndpoints; e++) {
+                        const struct libusb_endpoint_descriptor *ep_descr =
+                                &cfg->interface[intf_idx].altsetting[s].endpoint[e];
+                        if ((ep_descr->bmAttributes & 0x3)==
+                                LIBUSB_TRANSFER_TYPE_BULK ) {
+                            if ((ep_descr->bEndpointAddress & 0x80)
+                                    == LIBUSB_ENDPOINT_IN) {
+                                if (!fnd_in) {
+                                     usb_data->streams[X502_STREAM_CH_IN].addr = ep_descr->bEndpointAddress;
+                                     usb_data->streams[X502_STREAM_CH_IN].pkt_size = ep_descr->wMaxPacketSize;
+                                     fnd_in = 1;
+                                }
+                            } else {
+                                if (!fnd_out) {
+                                    usb_data->streams[X502_STREAM_CH_OUT].addr = ep_descr->bEndpointAddress;
+                                    usb_data->streams[X502_STREAM_CH_OUT].pkt_size = ep_descr->wMaxPacketSize;
+                                    fnd_out = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            libusb_free_config_descriptor(cfg);
+            if (!fnd_in || !fnd_out)
+                err = X502_ERR_INVALID_USB_CONFIGURATION;
+        } else {
+            err = X502_ERR_INVALID_USB_CONFIGURATION;
+        }
 
         for (stream=0; stream < X502_STREAM_CH_CNT; stream++) {
             usb_data->streams[stream].mutex = osspec_mutex_create();
@@ -432,6 +466,8 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
     unsigned transf_check_pos=0;
     unsigned idx;
     int err = 0;
+    int last_full_packet = 0; /* признак, что последний пакет был полный, чтобы
+                                 послять нулевой пакет */
     unsigned snd_pos = 0;
 
 
@@ -477,7 +513,7 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
         }
 
 
-        while ((snd_rdy_size != 0) && (transf_completed[transf_pos] == TRANSF_CPL_IDLE)
+        while (((snd_rdy_size != 0) || last_full_packet) && (transf_completed[transf_pos] == TRANSF_CPL_IDLE)
                 && (err == X502_ERR_OK)) {
             uint32_t snd_size = snd_rdy_size;
             if (snd_size > USB_BULK_TX_MAX_TRANSF_SIZE)
@@ -492,6 +528,8 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
                                         (void*)&transf_completed[transf_pos],
                                         USB_BULK_TX_TRANSFER_TOUT);
 
+
+
             transf_completed[transf_pos] = TRANSF_CPL_BUSY;
             if (libusb_submit_transfer(transfers[transf_pos])==0) {
                 osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);                
@@ -503,6 +541,8 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
                 if (snd_pos==info->buf_size)
                     snd_pos = 0;
                 snd_rdy_size-=snd_size;
+
+                last_full_packet = (snd_size != 0) && ((snd_size % (info->pkt_size/sizeof(info->data[0]))) == 0);
             } else {
                 transf_completed[transf_pos] = TRANSF_CPL_IDLE;
                 err = X502_ERR_SEND;
@@ -518,7 +558,7 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
                 tv.tv_usec = 200 * 1000;
                 libusb_handle_events_timeout_completed(NULL, &tv,
                                                        (int*)&transf_completed[transf_check_pos]);
-            } else if (snd_rdy_size==0) {
+            } else if ((snd_rdy_size==0) && !last_full_packet) {
                 /* если буфер занят - ждем события от потока чтения */
                 osspec_event_wait(info->usb_wake_evt, OSSPEC_TIMEOUT_INFINITY);
             }

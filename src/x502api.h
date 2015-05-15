@@ -180,6 +180,8 @@ typedef enum {
     X502_ERR_INVALID_OP_FOR_IFACE         = -32,
     /** Не загружен ПЛИС модуля */
     X502_ERR_FPGA_NOT_LOADED              = -33,
+    /** Неверная конфигурация USB-устройства */
+    X502_ERR_INVALID_USB_CONFIGURATION    = -34,
 
     /** Задан неверный размер логической таблицы */
     X502_ERR_INVALID_LTABLE_SIZE          = -102,
