@@ -13,7 +13,7 @@
 #include "l502_bf_cmd_defs.h"
 #include "x502_fpga_regs.h"
 #include <stdio.h>
-
+#include <string.h>
 
 struct st_x502_devrec_inptr {
     const void *iface;
@@ -266,22 +266,17 @@ X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd, uint32_t flags);
     } \
 } while(0)
 
-
-static int32_t stream_out_cfg(t_x502 *hnd) {
-    t_x502_stream_ch_params params;
-
-    memset(&params, 0, sizeof(params));
-
-    params.buf_size = hnd->stream_pars[X502_STREAM_CH_OUT].buf_size ?
-                hnd->stream_pars[X502_STREAM_CH_OUT].buf_size :
-                X502_DMA_OUT_BUF_SIZE;
-
-    params.step = hnd->stream_pars[X502_STREAM_CH_OUT].step ?
-                hnd->stream_pars[X502_STREAM_CH_OUT].step :
-                X502_DMA_OUT_IRQ_STEP;
-
-    return hnd->iface_hnd->stream_cfg(hnd, X502_STREAM_CH_OUT, &params);
-}
+#define STREAM_OUT_CFG(hnd, err) do { \
+    t_x502_stream_ch_params params; \
+    memset(&params, 0, sizeof(params)); \
+    params.buf_size = hnd->stream_pars[X502_STREAM_CH_OUT].buf_size ? \
+                hnd->stream_pars[X502_STREAM_CH_OUT].buf_size : \
+                X502_DMA_OUT_BUF_SIZE; \
+    params.step = hnd->stream_pars[X502_STREAM_CH_OUT].step ? \
+                hnd->stream_pars[X502_STREAM_CH_OUT].step : \
+                X502_DMA_OUT_IRQ_STEP; \
+    err = hnd->iface_hnd->stream_cfg(hnd, X502_STREAM_CH_OUT, &params); \
+} while(0)
 
 
 #endif // X502API_PRIVATE_H

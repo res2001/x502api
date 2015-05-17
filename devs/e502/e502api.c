@@ -133,7 +133,7 @@ int32_t e502_iface_reload_dev_info(t_x502_hnd hnd) {
 int32_t e502_iface_cycle_load_start(t_x502_hnd hnd, uint32_t size) {
     int32_t err = X502_ERR_OK;
     if (!(hnd->flags & PRIV_FLGAS_CYCLE_MODE)) {
-        err = stream_out_cfg(hnd);
+        STREAM_OUT_CFG(hnd, err);
         if (err == X502_ERR_OK)
             err = hnd->iface_hnd->stream_start(hnd, X502_STREAM_CH_OUT, X502_STREAM_FLAG_NO_REQUEST);
     }

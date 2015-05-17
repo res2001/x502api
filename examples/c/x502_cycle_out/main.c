@@ -97,7 +97,7 @@ static t_sig_struct f_sig_tbl[] = {
     {100000, X502_DAC_RANGE, f_gen_saw, 0, NULL, NULL}, /* пила на одном канале с частотой 10 Гц */
     {2000, X502_DAC_RANGE, f_gen_sin, 0, NULL, NULL}, /* синусоидальный сигнал на одном канале с частотой 500 Гц */
     {100, X502_DAC_RANGE/2, f_gen_sin, X502_DAC_RANGE, f_gen_saw, NULL}, /* синус ампл. 2.5 и пила по 10 КГц */
-    {50, 0, NULL, X502_DAC_RANGE, f_gen_sin, NULL}, /* синус только на втором канале с частотой 20 КГц */
+    {50, 0, NULL, X502_DAC_RANGE, f_gen_sin, f_gen_dout_cntr}, /* синус только на втором канале с частотой 20 КГц */
     {2550, 1.5, f_gen_sin, 2.5, f_gen_sin2, f_gen_dout_meander}, /* на втором канале синус с частотой в 2 раза больше. меандр на цифровых линиях */
 };
 
@@ -147,7 +147,7 @@ static int32_t f_load_block(t_x502_hnd hnd, uint32_t cntr, uint32_t size, uint32
         int32_t snd_cnt = X502_Send(hnd, sbuf, size*ch_cnt, SEND_TOUT);
         if (snd_cnt < 0) {
             err = snd_cnt;
-            fprintf(stderr, "Ошибка передачи данных\n", X502_GetErrorString(err));
+            fprintf(stderr, "Ошибка передачи данных: %s\n", X502_GetErrorString(err));
         } else if ((uint32_t)snd_cnt != size*ch_cnt) {
             /* так как мы шлем всегда не больше чем готово, то должны
                всегда передать все */
@@ -354,7 +354,7 @@ int main(int argc, char **argv) {
     uint32_t ver;
     t_x502_hnd hnd = NULL;
 
-#if _WIN32
+#ifdef _WIN32
     /* устанавливаем локаль, чтобы можно было выводить по-русски в CP1251 без перевода в OEM */
     setlocale(LC_CTYPE, "");
 #endif
@@ -425,7 +425,7 @@ int main(int argc, char **argv) {
 
                 printf("Введите одно из следующего:\n");
                 printf("  число от 1 до %d - установить сигнал с указанным номером\n",
-                       sizeof(f_sig_tbl)/sizeof(f_sig_tbl[0]));
+                       (int)(sizeof(f_sig_tbl)/sizeof(f_sig_tbl[0])));
                 printf("  s или stop       - останов генерации сигнала\n");
                 printf("  e или exit       - выход из программы\n");
 
@@ -445,7 +445,7 @@ int main(int argc, char **argv) {
                         }
                     } else {
                         int sig = atoi(cmd);
-                        if ((sig<=0) || (sig>sizeof(f_sig_tbl)/sizeof(f_sig_tbl[0]))) {
+                        if ((sig <= 0) || (sig > (int)(sizeof(f_sig_tbl)/sizeof(f_sig_tbl[0])))) {
                             fprintf(stderr, "Неверный номер сигнала или неизвестная команда\n");
                         } else {
                             err = f_load_cycle_signal(hnd, sig-1);
