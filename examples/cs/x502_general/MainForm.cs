@@ -152,6 +152,7 @@ namespace x502_example
             
             btnOpen.Enabled = (hnd!=null) || (cbbSerialList.SelectedItem != null);
             btnOpenByIP.Enabled = (hnd == null);
+            edtIpAddr.Enabled = (hnd == null);
 
             chkSyncDin.Enabled = (hnd != null) && !threadRunning;
             btnStart.Enabled = (hnd != null) && !threadRunning;
@@ -404,7 +405,7 @@ namespace x502_example
             {
                 /* создание объекта */
                 hnd = X502.Create(rec.DevName);
-                /* устанавливаем связь по выбранному серийному номеру */
+                /* станавливаем связь устанавливаем связь по созданной записи */
                 lpcie.Errs res = hnd.Open(rec);
                 if (res == lpcie.Errs.OK)
                 {

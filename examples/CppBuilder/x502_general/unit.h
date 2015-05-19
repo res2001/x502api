@@ -70,6 +70,11 @@ __published:	// IDE-managed Components
     TLabel *Label8;
     TComboBox *cbbLChCnt;
     TLabel *Label9;
+    TLabel *lbl11;
+    TEdit *edtMcuVer;
+    TCheckBox *chkEthPresent;
+    TButton *btnOpenByIP;
+    TEdit *edtIpAddr;
 
     void __fastcall btnRefreshDeviceListClick(TObject *Sender);
     void __fastcall btnStartClick(TObject *Sender);
@@ -85,6 +90,7 @@ __published:	// IDE-managed Components
     void __fastcall btnAsyncAdcFrameClick(TObject *Sender);
     void __fastcall cbbDevListChange(TObject *Sender);
     void __fastcall cbbLChCntChange(TObject *Sender);
+    void __fastcall btnOpenByIPClick(TObject *Sender);
 private:	// User declarations
     t_x502_hnd hnd;  //описатель модуля
     bool threadRunning; //признак, запущен ли поток сбора данных
@@ -94,6 +100,8 @@ private:	// User declarations
     void freeDevList();
     void refreshDeviceList();
     void closeDevice();
+    void showDevInfo();
+    uint32_t parseIpAddr(AnsiString addr);
 
     int32_t setSyncDinStream();
     int32_t setAdcFreq();

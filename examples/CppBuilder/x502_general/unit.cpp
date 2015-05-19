@@ -4,6 +4,7 @@
 #pragma hdrstop
 
 #include "unit.h"
+#include <stdio.h>
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
@@ -18,6 +19,8 @@ void TForm1::updateControls() {
     btnOpen->Caption = hnd == NULL ? "Установить связь с модулем" :
                         "Разорвать связь с модулем";
     btnOpen->Enabled = (hnd!=NULL) || (cbbDevList->ItemIndex >= 0);
+    btnOpenByIP->Enabled = (hnd==NULL);
+    edtIpAddr->Enabled = (hnd==NULL);
 
     chkSyncDin->Enabled = (hnd!=NULL) && !threadRunning;
     btnStart->Enabled = (hnd!=NULL) && !threadRunning;
@@ -40,6 +43,7 @@ void TForm1::freeDevList() {
     }
     cbbDevList->Items->Clear();
 }
+
 
 
 /* обновление списка подключенных плат L502 и E502*/
@@ -255,7 +259,35 @@ void __fastcall TForm1::btnStopClick(TObject *Sender) {
 }
 
 
+void TForm1::showDevInfo(void) {
+    t_x502_info info;
+    int32_t err = X502_GetDevInfo(hnd, &info);
+    if (err == X502_ERR_OK) {
+        chkDacPresent->Checked = info.devflags & X502_DEVFLAGS_DAC_PRESENT;
+        chkGalPresent->Checked = info.devflags & X502_DEVFLAGS_GAL_PRESENT;
+        chkDspPresent->Checked = info.devflags & X502_DEVFLAGS_BF_PRESENT;
+        chkEthPresent->Checked = info.devflags & X502_DEVFLAGS_IFACE_SUPPORT_ETH;
 
+        edtPldaVer->Text = IntToStr(info.plda_ver);
+        edtFpgaVer->Text = IntToStr((info.fpga_ver>>8)&0xFF) + "."
+                            + IntToStr(info.fpga_ver & 0xFF);
+        if (info.mcu_firmware_ver != 0) {
+			edtMcuVer->Text = IntToStr((int)(info.mcu_firmware_ver>>24)&0xFF) + "." +
+							  IntToStr((int)(info.mcu_firmware_ver>>16)&0xFF) + "." +
+							  IntToStr((int)(info.mcu_firmware_ver>>8)&0xFF) + "." +
+                             IntToStr((int)info.mcu_firmware_ver & 0xFF);
+        } else {
+            edtMcuVer->Text = "";
+        }                           
+    } else {
+        MessageDlg("Ошибка получения информации о модуле: " + String(X502_GetErrorString(err)),
+                              mtError, TMsgDlgButtons() << mbOK,NULL);
+
+        X502_Close(hnd);
+        X502_Free(hnd);
+        hnd = NULL;
+    }
+}
 /* функция открытия устройства с выбранным серийным номером или закрытия его,
     если оно уже было открыто */
 void __fastcall TForm1::btnOpenClick(TObject *Sender)   {
@@ -268,7 +300,7 @@ void __fastcall TForm1::btnOpenClick(TObject *Sender)   {
             if (hnd==NULL) {
                 MessageDlg("Ошибка создания описателя модуля", mtError, TMsgDlgButtons() << mbOK,NULL);
             } else {
-                /* открываем модуль с выбранным серийным номером */
+                /* открываем модуль, соответствующий записи с выбранным индексом */
                 int32_t err = X502_OpenByDevRecord(hnd, &devrecList[idx]);
                 if (err != X502_ERR_OK) {
                     MessageDlg("Ошибка открытия модуля: " + String(X502_GetErrorString(err)),
@@ -276,24 +308,7 @@ void __fastcall TForm1::btnOpenClick(TObject *Sender)   {
                     X502_Free(hnd);
                     hnd = NULL;
                 } else {
-                    t_x502_info info;
-                    err = X502_GetDevInfo(hnd, &info);
-                    if (err == X502_ERR_OK) {
-                        chkDacPresent->Checked = info.devflags & X502_DEVFLAGS_DAC_PRESENT;
-                        chkGalPresent->Checked = info.devflags & X502_DEVFLAGS_GAL_PRESENT;
-                        chkDspPresent->Checked = info.devflags & X502_DEVFLAGS_BF_PRESENT;
-
-                        edtPldaVer->Text = IntToStr(info.plda_ver);
-                        edtFpgaVer->Text = IntToStr((info.fpga_ver>>8)&0xFF) + "."
-                                        + IntToStr(info.fpga_ver & 0xFF);
-                    } else {
-                        MessageDlg("Ошибка получения информации о модуле: " + String(X502_GetErrorString(err)),
-                                mtError, TMsgDlgButtons() << mbOK,NULL);
-
-                        X502_Close(hnd);
-                        X502_Free(hnd);
-                        hnd = NULL;
-                    }
+                    showDevInfo();
                 }
             }
         }
@@ -302,7 +317,47 @@ void __fastcall TForm1::btnOpenClick(TObject *Sender)   {
         closeDevice();
     }
     updateControls();
+}
 
+uint32_t TForm1::parseIpAddr(AnsiString addr) {
+    int a[4],i;
+    if (sscanf(addr.c_str(), "%d.%d.%d.%d", &a[0], &a[1], &a[2], &a[3])!=4) {
+        throw new Exception("Неверный формат IP-адреса!!");
+    }
+
+    for (i=0; i < 4; i++) {
+        if ((a[i]<0) || (a[i] > 255)) {
+            throw new Exception("Недействительный IP-адрес!!");
+        }
+    }
+
+
+    return (a[0] << 24) | (a[1]<<16) | (a[2]<<8) | a[3];
+}
+void __fastcall TForm1::btnOpenByIPClick(TObject *Sender) {
+    t_x502_devrec devrec;
+    int32_t err = E502_MakeDevRecordByIpAddr(&devrec, parseIpAddr(edtIpAddr->Text), 0, 5000);
+    if (err != X502_ERR_OK) {
+         MessageDlg("Ошибка создания записи: " + String(X502_GetErrorString(err)),
+                                                mtError, TMsgDlgButtons() << mbOK,NULL);
+    } else {
+        hnd = X502_Create();
+        if (hnd==NULL) {
+            MessageDlg("Ошибка создания описателя модуля", mtError, TMsgDlgButtons() << mbOK,NULL);
+        } else {
+            /* устанавливаем связь по созданной записи */
+            int32_t err = X502_OpenByDevRecord(hnd, &devrec);
+            if (err != X502_ERR_OK) {
+                 MessageDlg("Ошибка открытия модуля: " + String(X502_GetErrorString(err)),
+                              mtError, TMsgDlgButtons() << mbOK,NULL);
+                 X502_Free(hnd);
+                 hnd = NULL;
+            } else {
+                showDevInfo();
+            }
+        }
+    }
+    updateControls();
 }
 
 
@@ -465,4 +520,7 @@ void __fastcall TForm1::cbbLChCntChange(TObject *Sender) {
 }
 //---------------------------------------------------------------------------
 
+
+
+//---------------------------------------------------------------------------
 
