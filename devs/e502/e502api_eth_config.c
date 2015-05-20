@@ -115,8 +115,12 @@ X502_EXPORT(int32_t) E502_EthConfigSetNewPassword(t_e502_eth_config_hnd cfg, con
     int32_t err =  E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK) {
         cfg->flags |= E502_ETH_CONFIG_FLAGS_SET_NEW_PASSWD;
-        strncpy(cfg->params.new_passwd, new_passwd, E502_ETHCONFIG_PASSWD_SIZE);
-        cfg->params.new_passwd[E502_ETHCONFIG_PASSWD_SIZE-1] = '\0';
+        if (new_passwd != NULL) {
+            strncpy(cfg->params.new_passwd, new_passwd, E502_ETHCONFIG_PASSWD_SIZE);
+            cfg->params.new_passwd[E502_ETHCONFIG_PASSWD_SIZE-1] = '\0';
+        } else {
+            cfg->params.new_passwd[0] = '\0';
+        }
     }
     return err;
 }
@@ -255,8 +259,12 @@ X502_EXPORT(int32_t) E502_EthConfigGetInstanceName(t_e502_eth_config_hnd cfg, ch
 X502_EXPORT(int32_t) E502_EthConfigSetInstanceName(t_e502_eth_config_hnd cfg, const char *name) {
     int32_t err = E502_ETH_CHECK_CFG(cfg);
     if (err == X502_ERR_OK) {
-        strncpy(cfg->params.cfg.inst_name, name, E502_ETHCONFIG_INSTANCE_NAME_SIZE);
-        cfg->params.cfg.inst_name[E502_ETHCONFIG_INSTANCE_NAME_SIZE-1] = '\0';
+        if (name != NULL) {
+            strncpy(cfg->params.cfg.inst_name, name, E502_ETHCONFIG_INSTANCE_NAME_SIZE);
+            cfg->params.cfg.inst_name[E502_ETHCONFIG_INSTANCE_NAME_SIZE-1] = '\0';
+        } else {
+            cfg->params.cfg.inst_name[0] = '\0';
+        }
     }
     return err;
 }
