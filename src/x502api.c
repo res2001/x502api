@@ -98,7 +98,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
             hnd->flags = PRIV_FLAGS_OPENED;
 
 
-            if ((err == X502_ERR_OK) && (hnd->info.devflags & X502_DEVFLAGS_BF_PRESENT)) {
+            if (err == X502_ERR_OK) {
                 hnd->mutex_bf = osspec_mutex_create();
                 if (hnd->mutex_bf == OSSPEC_INVALID_MUTEX)
                     err = X502_ERR_MUTEX_CREATE;
