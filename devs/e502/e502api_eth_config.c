@@ -96,8 +96,13 @@ X502_EXPORT(int32_t) E502_EthConfigWrite(t_x502_hnd hnd, t_e502_eth_config_hnd c
         err = X502_CHECK_HND_OPENED(hnd);
     }
     if (err == X502_ERR_OK) {
-        strncpy(cfg->params.passwd, passwd, E502_ETHCONFIG_PASSWD_SIZE);
-        cfg->params.passwd[E502_ETHCONFIG_PASSWD_SIZE-1] = '\0';
+        if (passwd != NULL) {
+            strncpy(cfg->params.passwd, passwd, E502_ETHCONFIG_PASSWD_SIZE);
+            cfg->params.passwd[E502_ETHCONFIG_PASSWD_SIZE-1] = '\0';
+        } else {
+            cfg->params.passwd[0] = '\0';
+        }
+
         err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_ETH_CFG_SET, cfg->flags,
                                     &cfg->params, sizeof(cfg->params),
                                     NULL, 0, NULL, 0);

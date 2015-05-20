@@ -187,7 +187,7 @@ implementation
     strptr:=GetMemory(X502_INSTANCE_NAME_SIZE);
     res:=_eth_config_get_instance_name(cfg, strptr);
     if res = X502_ERR_OK then
-      name:=string(strptr);
+      name:=string(Utf8Decode(strptr));
     FreeMemory(strptr);
     E502_EthConfigGetInstanceName:= res;
   end;
@@ -195,7 +195,7 @@ implementation
 
   function E502_EthConfigSetInstanceName(cfg: t_e502_eth_config_hnd; const name: string): LongInt; stdcall;
   begin
-    E502_EthConfigSetInstanceName:=_eth_config_set_instance_name(cfg, PAnsiChar(AnsiString(name)));
+    E502_EthConfigSetInstanceName:=_eth_config_set_instance_name(cfg, PAnsiChar(Utf8Encode(AnsiString(name))));
   end;
 
   function E502_EthConfigSetNewPassword(cfg: t_e502_eth_config_hnd; const new_passwd: string): LongInt; stdcall;

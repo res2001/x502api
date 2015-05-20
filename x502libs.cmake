@@ -30,6 +30,9 @@ endif()
 
 install(FILES ${SETUP_HEADERS} DESTINATION ${X502_INSTALL_INCLUDE})
 
+if(WIN32)
+    install(FILES pas/${PROJECT}.pas DESTINATION ${X502_INSTALL_PASCAL})
+endif(WIN32)
 
 if(X502API_BUILD_BORLAND_LIBS)
     #создание цели для создания библиотеки для borland C++/C++ Builder
