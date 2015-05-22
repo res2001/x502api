@@ -513,7 +513,8 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
         }
 
 
-        while (((snd_rdy_size != 0) || last_full_packet) && (transf_completed[transf_pos] == TRANSF_CPL_IDLE)
+        while (((snd_rdy_size != 0) || (last_full_packet && (info->tx.busy_size==0)))
+               && (transf_completed[transf_pos] == TRANSF_CPL_IDLE)
                 && (err == X502_ERR_OK)) {
             uint32_t snd_size = snd_rdy_size;
             if (snd_size > USB_BULK_TX_MAX_TRANSF_SIZE)
