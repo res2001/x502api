@@ -86,7 +86,6 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
             hnd->set.adc_freq_div = 1;
             hnd->set.adc_frame_delay = 0;
             hnd->set.sync_mode = X502_SYNC_INTERNAL;
-            hnd->set.sync_mode = X502_SYNC_INTERNAL;
             hnd->set.sync_start_mode = X502_SYNC_INTERNAL;
 
             hnd->set.din_freq_div = 1;

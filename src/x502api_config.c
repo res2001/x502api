@@ -1,6 +1,8 @@
 #include "x502api_private.h"
 #include "x502_fpga_regs.h"
 
+#define SYNC_FREQ_CODE(mode) ((mode == X502_SYNC_DI_SYN2_RISE) ? X502_SYNC_DI_SYN1_FALL : \
+                               (mode == X502_SYNC_DI_SYN1_FALL) ? X502_SYNC_DI_SYN2_RISE : mode)
 
 #define CHECK_SYNC_MODE(mode) (((mode)) != X502_SYNC_INTERNAL) \
     && ((mode)!=X502_SYNC_EXTERNAL_MASTER) \
@@ -412,7 +414,7 @@ X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
 
             if (!err) {
                 err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_IO_MODE,
-                                                 (hnd->set.sync_mode & 0x7)
+                                                 (SYNC_FREQ_CODE(hnd->set.sync_mode) & 0x7)
                                               | ((hnd->set.sync_start_mode&0x7)<<3)
                                               | ((hnd->set.ref_freq==X502_REF_FREQ_2000KHZ ?
                                                       0 : 2) << 7)
@@ -448,8 +450,9 @@ X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
                                        &hnd->set.ref_freq, 1);
             }
             if (!err) {
+                uint32_t sync_code = SYNC_FREQ_CODE(hnd->set.sync_mode);
                 err = x502_bf_set_par(hnd, L502_BF_PARAM_SYNC_MODE,
-                                      &hnd->set.sync_mode, 1);
+                                      &sync_code, 1);
             }
             if (!err) {
                 err = x502_bf_set_par(hnd, L502_BF_PARAM_SYNC_START_MODE,
