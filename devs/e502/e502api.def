@@ -6,6 +6,7 @@ EXPORTS
     E502_OpenUsb
     E502_OpenByIpAddr
     E502_MakeDevRecordByIpAddr
+    E502_MakeDevRecordByEthSvc
     E502_EthConfigCreate
     E502_EthConfigFree
     E502_GetIpAddr
@@ -33,4 +34,11 @@ EXPORTS
     E502_SwitchToBootloader
     E502_ReloadFPGA
     E502_CortexExecCmd
+    E502_EthSvcRecordFree
+    E502_EthSvcRecordGetInstanceName
+    E502_EthSvcRecordGetDevSerial
+    E502_EthSvcRecordResolveIPv4Addr
+    E502_EthSvcBrowseStart
+    E502_EthSvcBrowseGetEvent
+    E502_EthSvcBrowseStop
 

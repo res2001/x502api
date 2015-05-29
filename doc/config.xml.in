@@ -15,6 +15,7 @@
     <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_misc.tex"           sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__misc.xml </file>
     <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_devrec.tex"         sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__devrec.xml </file>
     <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_eth_config.tex"     sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__eth__config.xml </file>    
+    <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/funcs_eth_svc_browse.tex" sect_lvl="2" type="xml" > @CMAKE_CURRENT_BINARY_DIR@/doc/xml/group__func__eth__svc__browse.xml </file>    
     <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/sect_gen_descr.tex"       type="tex"> @CMAKE_CURRENT_BINARY_DIR@/doc/latex/sect_gen_descr.tex </file>
     <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/sect_setup.tex"  	       type="tex"> @CMAKE_CURRENT_BINARY_DIR@/doc/latex/sect_setup.tex </file>
     <file output="@CMAKE_CURRENT_BINARY_DIR@/doc/pdf/sect_about.tex"           type="tex"> @CMAKE_CURRENT_BINARY_DIR@/doc/latex/sect_about.tex </file>

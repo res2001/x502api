@@ -2,6 +2,7 @@
 #include "e502_tcp_protocol.h"
 #include "ltimer.h"
 #include "e502_fpga_regs.h"
+#include "e502api_tcp_private.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -64,12 +65,7 @@
 #define TCP_IN_STREAM_BUF_MIN  128
 
 
-typedef struct {
-    uint16_t cmd_port;
-    uint32_t ip_addr;
-    uint32_t open_tout;
-    uint32_t flags;
-} t_tcp_devinfo_data;
+
 
 
 typedef struct {
@@ -401,6 +397,9 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
 }
 
 static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr) {
+    t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data*)devinfo_ptr->iface_data;
+    if ((devinfo_data != NULL)  && (devinfo_data->svc_rec != NULL))
+        E502_EthSvcRecordFree(devinfo_data->svc_rec);
     free(devinfo_ptr->iface_data);
     free(devinfo_ptr);
     return X502_ERR_OK;
@@ -410,11 +409,18 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
     int32_t err = X502_ERR_OK;
     t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data*)devrec->internal->iface_data;
     t_socket s = INVALID_SOCKET;
-    err = f_con_sock(&s, devinfo_data->ip_addr, devinfo_data->cmd_port, devinfo_data->open_tout);
+
+    if (devinfo_data->svc_rec) {
+        err = e502_svc_fill_devinfo(devinfo_data);
+    }
+
     if (err == X502_ERR_OK) {
-        int flag = 1;
-        if (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag))==SOCKET_ERROR)
-            err = X502_ERR_SOCKET_OPEN;
+        err = f_con_sock(&s, devinfo_data->ip_addr, devinfo_data->cmd_port, devinfo_data->open_tout);
+        if (err == X502_ERR_OK) {
+            int flag = 1;
+            if (setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag))==SOCKET_ERROR)
+                err = X502_ERR_SOCKET_OPEN;
+        }
     }
 
     if (err == X502_ERR_OK) {
@@ -644,8 +650,8 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
     return err;
 }
 
-X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t ip_addr,
-                                               uint32_t flags, uint32_t tout) {
+
+int32_t e502_make_tcp_rec(t_x502_devrec *devrec, uint32_t flags, uint32_t tout) {
     int32_t err = (devrec == NULL) ? X502_ERR_INVALID_DEVICE_RECORD : X502_ERR_OK;
 
     X502_DevRecordInit(devrec);
@@ -658,32 +664,42 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
             err = X502_ERR_MEMORY_ALLOC;
         } else {
             strcpy(devrec->devname, E502_DEVICE_NAME);
-
             devinfo_data->cmd_port = E502_TCP_DEFAULT_CMD_PORT;
-            devinfo_data->ip_addr = ip_addr;
             devinfo_data->open_tout = tout;
             devinfo_data->flags = flags;
-
-
             devinfo_ptr->iface = &f_tcp_iface;
             devinfo_ptr->iface_data = devinfo_data;
 
 
             devrec->internal = devinfo_ptr;
             devrec->iface = X502_IFACE_ETH;
-            sprintf(devrec->location, "%d.%d.%d.%d",
-                    (ip_addr>>24) & 0xFF,
-                    (ip_addr>>16) & 0xFF,
-                    (ip_addr>>8) & 0xFF,
-                    (ip_addr>>0) & 0xFF);
-
-            devrec->flags = X502_DEVFLAGS_IFACE_SUPPORT_USB | X502_DEVFLAGS_IFACE_SUPPORT_ETH;
-        }
+            devrec->flags = X502_DEVFLAGS_IFACE_SUPPORT_USB | X502_DEVFLAGS_IFACE_SUPPORT_ETH;        }
 
         if (err != X502_ERR_OK) {
             free(devinfo_data);
             free(devinfo_ptr);
         }
+    }
+    return err;
+}
+
+X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t ip_addr,
+                                               uint32_t flags, uint32_t tout) {
+    int32_t err = e502_make_tcp_rec(devrec, flags, tout);
+    if (err == X502_ERR_OK) {
+        t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data *)devrec->internal->iface_data;
+
+        devinfo_data->cmd_port = E502_TCP_DEFAULT_CMD_PORT;
+        devinfo_data->ip_addr = ip_addr;
+        devinfo_data->svc_rec = NULL;
+
+        sprintf(devrec->location, "%d.%d.%d.%d",
+                (ip_addr>>24) & 0xFF,
+                (ip_addr>>16) & 0xFF,
+                (ip_addr>>8) & 0xFF,
+                (ip_addr>>0) & 0xFF);
+        devrec->location_type = X502_LOCATION_TYPE_ADDR;
+
     }
     return err;
 }

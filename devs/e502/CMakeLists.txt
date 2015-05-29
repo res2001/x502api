@@ -4,6 +4,7 @@ set(PROJECT e502api)
 project(${PROJECT} C)
 
 option(E502API_LIBUSB_DEBUG "Print debug messages from libusb" OFF)
+
 if(WIN32)
     option(LIBUSB_INTERNAL "use internal libusb realisation" ON)
 endif(WIN32)
@@ -29,6 +30,7 @@ set(HEADERS
     e502_cm4_defs.h
     e502_eth_config.h
     e502api_private.h
+    e502api_tcp_private.h
     e502_tcp_protocol.h)
 
 set(LIBS
@@ -39,6 +41,8 @@ if(E502API_LIBUSB_DEBUG)
     add_definitions(-DLIBUSB_DEBUG)
 endif(E502API_LIBUSB_DEBUG)
 
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
 if(LIBUSB_INTERNAL) 
     # использование внутренней реализации libusb, а не внешеней библиотеки
@@ -73,12 +77,18 @@ if(LIBUSB_INTERNAL)
         libusb-1.0/msvc/stdint.h
         )
 else()
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
     #ищем libusb-1.0
     find_package(LibUSB REQUIRED)
     include_directories(${LIBUSB_INCLUDE_DIR})
     set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
 endif()
+
+if(WIN32)
+    find_package(DNSSD REQUIRED)
+    include_directories(${DNSSD_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${DNSSD_LIBRARIES})
+    set(SOURCES ${SOURCES} e502api_dnssd.c)
+endif(WIN32)
 
 
 include_directories(${X502API_LIB_DIR}/osspec)

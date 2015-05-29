@@ -297,7 +297,7 @@ int main(int argc, char** argv) {
 #endif
     /* получаем версию библиотеки */
     ver = X502_GetLibraryVersion();
-    printf("Версия библиотеки l502api.dll: %d.%d.%d\n", (ver >> 24)&0xFF, (ver>>16)&0xFF, (ver>>8)&0xFF);
+    printf("Версия библиотеки: %d.%d.%d\n", (ver >> 24)&0xFF, (ver>>16)&0xFF, (ver>>8)&0xFF);
 
     /********** Получение списка устройств и выбор, с каким будем работать ******************/
     hnd = f_dev_select_open(argc, argv);
