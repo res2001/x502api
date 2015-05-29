@@ -263,12 +263,12 @@ typedef enum {
     Режимы задания источника частоты синхронизации и признака начала
     синхронного ввода-вывода */
 typedef enum {
-    L502_SYNC_INTERNAL        = X502_SYNC_INTERNAL, /**< Внутренний сигнал */
-    L502_SYNC_EXTERNAL_MASTER = X502_SYNC_EXTERNAL_MASTER, /**< От внешнего мастера по разъему синхронизации */
-    L502_SYNC_DI_SYN1_RISE    = X502_SYNC_DI_SYN1_RISE, /**< По фронту сигнала DI_SYN1 */
-    L502_SYNC_DI_SYN2_RISE    = X502_SYNC_DI_SYN2_RISE, /**< По фронту сигнала DI_SYN2 */
-    L502_SYNC_DI_SYN1_FALL    = X502_SYNC_DI_SYN1_FALL, /**< По спаду сигнала DI_SYN1 */
-    L502_SYNC_DI_SYN2_FALL    = X502_SYNC_DI_SYN2_FALL  /**< По спаду сигнала DI_SYN2 */
+    L502_SYNC_INTERNAL        = 0, /**< Внутренний сигнал */
+    L502_SYNC_EXTERNAL_MASTER = 1, /**< От внешнего мастера по разъему синхронизации */
+    L502_SYNC_DI_SYN1_RISE    = 2, /**< По фронту сигнала DI_SYN1 */
+    L502_SYNC_DI_SYN2_RISE    = 3, /**< По фронту сигнала DI_SYN2 */
+    L502_SYNC_DI_SYN1_FALL    = 6, /**< По спаду сигнала DI_SYN1 */
+    L502_SYNC_DI_SYN2_FALL    = 7  /**< По спаду сигнала DI_SYN2 */
 } t_l502_sync_mode;
 
 /** Флаги, управляющие обработкой принятых данных */
