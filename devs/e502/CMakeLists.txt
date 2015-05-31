@@ -7,6 +7,9 @@ option(E502API_LIBUSB_DEBUG "Print debug messages from libusb" OFF)
 
 if(WIN32)
     option(LIBUSB_INTERNAL "use internal libusb realisation" ON)
+    option(ENABLE_BONJOUR  "enable bonjour support" ON)
+else(WIN32)
+    option(ENABLE_AVAHI  "enable avahi support" ON)
 endif(WIN32)
 
 include(${LTIMER_DIR}/ltimer.cmake)
@@ -83,12 +86,21 @@ else()
     set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
 endif()
 
-if(WIN32)
+if(ENABLE_BONJOUR)
     find_package(DNSSD REQUIRED)
     include_directories(${DNSSD_INCLUDE_DIRS})
     set(LIBS ${LIBS} ${DNSSD_LIBRARIES})
     set(SOURCES ${SOURCES} e502api_dnssd.c)
-endif(WIN32)
+    add_definitions("-DENABLE_BONJOUR -DENABLE_DNSSD")
+endif(ENABLE_BONJOUR)
+
+if(ENABLE_AVAHI)
+    find_package(Avahi REQUIRED)
+    include_directories(${AVAHI_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${AVAHI_LIBRARIES})
+    set(SOURCES ${SOURCES} e502api_dnssd.c)
+    add_definitions("-DENABLE_AVAHI -DENABLE_DNSSD")
+endif(ENABLE_AVAHI)
 
 
 include_directories(${X502API_LIB_DIR}/osspec)

@@ -98,11 +98,11 @@ int main(int argc, char** argv) {
 #endif
                );
         while (!f_out && (err == X502_ERR_OK)) {
-            t_e502_eth_svc_record_hnd rec;
+            t_e502_eth_svc_record_hnd svc_rec;
             uint32_t event;
             /* пробуем получить запись, сообщающую о изменении информации о подулюенных
              * устройтсвах */
-            err = E502_EthSvcBrowseGetEvent(browse_hnd, &rec, &event, NULL, 300);
+            err = E502_EthSvcBrowseGetEvent(browse_hnd, &svc_rec, &event, NULL, 300);
             if (err != X502_ERR_OK) {
                 fprintf(stderr, "Ошибка получения записи о найденном устройстве (%d): %s\n",
                         err, X502_GetErrorString(err));
@@ -119,9 +119,9 @@ int main(int argc, char** argv) {
                  * о том, что изменение произошло. Для каждого события мы можем
                  * получить имя экземпляра и сер. номер устройства, для которого
                  * произошло событие */
-                cur_err = E502_EthSvcRecordGetInstanceName(rec, inst_name);
+                cur_err = E502_EthSvcRecordGetInstanceName(svc_rec, inst_name);
                 if (cur_err == X502_ERR_OK)
-                    cur_err = E502_EthSvcRecordGetDevSerial(rec, dev_serial);
+                    cur_err = E502_EthSvcRecordGetDevSerial(svc_rec, dev_serial);
 #ifdef _WIN32
                 if (cur_err == X502_ERR_OK) {
                     /* Имя устройства всегда в кодировке UTF-8. В Windows для
@@ -143,10 +143,10 @@ int main(int argc, char** argv) {
                             (event == E502_ETH_SVC_EVENT_CHANGED)) {
                         /* События ADD и CHANGE означают, что устройство присутствует,
                          * и мы можем получить IP-адрес устройства */
-                        cur_err = E502_EthSvcRecordResolveIPv4Addr(rec, &addr, 4000);
+                        cur_err = E502_EthSvcRecordResolveIPv4Addr(svc_rec, &addr, 4000);
 
                         if (cur_err == X502_ERR_OK) {
-                            printf("%s: %ls, S/N: %s, Адрес = %d.%d.%d.%d\n",
+                            printf("%s: " INST_NAME_PRINT_FMT ", S/N: %s, Адрес = %d.%d.%d.%d\n",
                                    event == E502_ETH_SVC_EVENT_ADD ? "Новое устройтсво" : "Изм. параметров",
 #ifdef _WIN32
                                    inst_name_w,
@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
                                     cur_err, X502_GetErrorString(cur_err));
                         }
                     } else if (event == E502_ETH_SVC_EVENT_REMOVE) {
-                        printf("Устройство удалено: %ls, S/N: %s\n",
+                        printf("Устройство удалено: " INST_NAME_PRINT_FMT ", S/N: %s\n",
 #ifdef _WIN32
                                 inst_name_w,
 #else
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
 
                 /* Для всех событий, кроме NONE, выделяется запись, которую
                  * нужно освободить вручную */
-                E502_EthSvcRecordFree(rec);
+                E502_EthSvcRecordFree(svc_rec);
             }
 
 #ifdef _WIN32

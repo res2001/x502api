@@ -38,6 +38,7 @@ EXPORTS
     E502_EthSvcRecordGetInstanceName
     E502_EthSvcRecordGetDevSerial
     E502_EthSvcRecordResolveIPv4Addr
+    E502_EthSvcRecordIsSameInstance
     E502_EthSvcBrowseStart
     E502_EthSvcBrowseGetEvent
     E502_EthSvcBrowseStop

@@ -194,6 +194,8 @@ typedef enum {
     X502_ERR_SVC_RESOLVE_TIMEOUT          = -39,
     /** Ошибка в кодировке имени экземляра устройства */
     X502_ERR_INSTANCE_NAME_ENCODING       = -40,
+    /** Экземпляры модулей не совпадают */
+    X502_ERR_INSTANCE_MISMATCH            = -41,
 
 
 

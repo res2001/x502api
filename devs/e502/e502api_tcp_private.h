@@ -8,7 +8,9 @@ typedef struct {
     uint32_t ip_addr;
     uint32_t open_tout;
     uint32_t flags;
+#ifdef ENABLE_DNSSD
     t_e502_eth_svc_record_hnd svc_rec;
+#endif
 } t_tcp_devinfo_data;
 
 int32_t e502_make_tcp_rec(t_x502_devrec *devrec, uint32_t flags, uint32_t tout);

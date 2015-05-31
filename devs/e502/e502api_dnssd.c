@@ -1,7 +1,31 @@
-#include "dns_sd.h"
+#define ENABLE_AVAHI
+#ifdef ENABLE_BONJOUR
+    #include "dns_sd.h"
+
+    typedef uint32_t t_svc_iface_idx;
+    typedef struct {
+        uint16_t  txtLen,
+        const unsigned char *txtStr,
+    } t_svc_txt_record;
+#elif defined ENABLE_AVAHI
+    #include <netinet/in.h>
+    #include <avahi-client/client.h>
+    #include <avahi-client/lookup.h>
+
+    #include <avahi-common/simple-watch.h>
+    #include <avahi-common/malloc.h>
+    #include <avahi-common/error.h>
+
+    typedef AvahiIfIndex t_svc_iface_idx;
+    typedef AvahiStringList* t_svc_txt_record;
+#else
+    #error Invalid DNSSD backend
+#endif
 #include "ltimer.h"
 #include "e502api_tcp_private.h"
 
+
+#include <stdlib.h>
 
 #define E502_SVC_REC_SIGN     0xE502CCA5
 #define E502_SVC_BROWSE_SIGN  0xE502BBA5
@@ -26,7 +50,7 @@ typedef struct st_e502_eth_svc_record {
     char *domain;
     char *hosttarget;
     uint16_t port;
-    uint32_t iface_idx;
+    t_svc_iface_idx iface_idx;
     uint32_t ipv4_addr;
     int op_in_progr;
     int32_t op_err;
@@ -34,10 +58,12 @@ typedef struct st_e502_eth_svc_record {
 
 
 
-
-
 typedef struct {
+#ifdef ENABLE_BONJOUR
     DNSServiceRef sdref;
+#elif defined ENABLE_AVAHI
+    AvahiServiceResolver *resolver;
+#endif
     t_e502_eth_svc_event event;
     int init_done;
     t_e502_eth_svc_record_hnd rec;
@@ -45,12 +71,37 @@ typedef struct {
 
 typedef struct st_e502_eth_svc_browse_context {
     uint32_t sign;
+#if defined ENABLE_BONJOUR
     DNSServiceRef main_ref;
     DNSServiceRef browse_ref;
     int socket;
+#elif defined ENABLE_AVAHI
+    AvahiSimplePoll *poll;
+    AvahiClient *client;
+    AvahiServiceBrowser *sb;
+#endif
+    int32_t err;
     unsigned svc_cnt;
     t_service_context services[SERVICE_CONTEXT_MAX_CNT];
 } t_e502_service_browse_context;
+
+
+
+#if   defined ENABLE_BONJOUR
+
+
+#elif defined ENABLE_AVAHI
+
+    static void f_resolve_callback(AvahiServiceResolver *r,  AvahiIfIndex interface,
+                                    AvahiProtocol protocol, AvahiResolverEvent event,
+                                    const char *name, const char *type,
+                                    const char *domain,  const char *host_name,
+                                    const AvahiAddress *address, uint16_t port,
+                                    AvahiStringList *txt, AvahiLookupResultFlags flags,
+                                    void* userdata);
+#endif
+
+
 
 static LINLINE void f_set_timeval_left(t_ltimer *tmr, struct timeval *tval) {
     t_lclock_ticks left = ltimer_expiration(tmr);
@@ -102,8 +153,13 @@ X502_EXPORT(int32_t) E502_EthSvcRecordFree(t_e502_eth_svc_record_hnd rec) {
 
 
 static void f_svc_context_free(t_service_context *svc_context) {
+#if defined ENABLE_BONJOUR
     if (svc_context->sdref != NULL)
         DNSServiceRefDeallocate(svc_context->sdref);
+#elif defined ENABLE_AVAHI
+    if (svc_context->resolver)
+        avahi_service_resolver_free(svc_context->resolver);
+#endif
     if (svc_context->rec != NULL)
         E502_EthSvcRecordFree(svc_context->rec);
     svc_context->event = E502_ETH_SVC_EVENT_NONE;
@@ -117,12 +173,21 @@ static int32_t f_browse_context_free(t_e502_eth_svc_browse_hnd context) {
         for (i=0; i < context->svc_cnt; i++) {
             f_svc_context_free(&context->services[i]);
         }
-
+#if defined ENABLE_BONJOUR
         if (context->browse_ref != NULL)
             DNSServiceRefDeallocate(context->browse_ref);
         if (context->main_ref != NULL)
             DNSServiceRefDeallocate(context->main_ref);
-
+#elif defined ENABLE_AVAHI
+        if (context->sb != NULL)
+            avahi_service_browser_free(context->sb);
+        if (context->client != NULL)
+            avahi_client_free(context->client);
+        if (context->poll != NULL) {
+            avahi_simple_poll_quit(context->poll);
+            avahi_simple_poll_free(context->poll);
+        }
+#endif
         memset(context, 0, sizeof(t_e502_service_browse_context));
         free(context);
     }
@@ -130,7 +195,140 @@ static int32_t f_browse_context_free(t_e502_eth_svc_browse_hnd context) {
 }
 
 
+#if defined ENABLE_BONJOUR
+    static const char* f_get_txt_rec(t_svc_txt_record txt_record, const char *name, uint8_t *len) {
+        return TXTRecordGetValuePtr(txt_record->txtLen, txt_record->txtStr, name, len);
+    }
+#elif defined ENABLE_AVAHI
+    static const char* f_get_txt_rec(t_svc_txt_record txt_record, const char *name, uint8_t *len) {
+        const char *ret = NULL;
+        int out = 0;
+        int name_len = strlen(name);
+        while (!out) {
+            const char *label = (const char*)txt_record->text;
+            int rec_len = strlen(label);
+            const char *label_end = strchr(label, '=');
+            int label_len = (label_end != NULL) ? label_end - label : rec_len;
+            if ((name_len == label_len) && !memcmp(name, label, label_len)) {
+                int val_len = label_end == NULL ? 0 : rec_len - label_len;
+                if (val_len != 0) {
+                    ret = label_end+1;
+                } else {
+                    ret = NULL;
+                }
+                *len = val_len;
+                out = 1;
+            }
 
+            if (!out) {
+                if (txt_record->next != NULL) {
+                    txt_record = txt_record->next;
+                } else {
+                    out = 1;
+                }
+            }
+        }
+        return ret;
+    }
+#endif
+
+/* Анализ текстовой информации о найденном сервисе и проверка, подходит ли он */
+static int32_t f_svc_check_resolved(t_service_context *svc_context,
+                                     t_svc_txt_record txt_record) {
+    uint8_t len;
+    int32_t err = X502_ERR_OK;
+    const char *devname_ptr = f_get_txt_rec(txt_record, "devname", &len);
+    const char *serial_ptr;
+    if ((devname_ptr != NULL) && !strncmp(devname_ptr, E502_DEVICE_NAME, len)) {
+        memcpy(svc_context->rec->devname, devname_ptr, len);
+        serial_ptr = f_get_txt_rec(txt_record, "serial", &len);
+        if (serial_ptr != NULL) {
+            if (len >= X502_SERIAL_SIZE)
+                len = X502_SERIAL_SIZE-1;
+            memcpy(svc_context->rec->serial, serial_ptr, len);
+            svc_context->rec->serial[len] = 0;
+        }
+        if (svc_context->init_done == 0) {
+            svc_context->init_done = 1;
+            svc_context->event = E502_ETH_SVC_EVENT_ADD;
+        } else {
+            svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
+        }
+    } else {
+        err = X502_ERR_INVALID_DEVICE;
+    }
+    return err;
+}
+
+
+static void f_add_new_svc(t_e502_eth_svc_browse_hnd browse_context, t_svc_iface_idx iface_idx,
+                         const char *svc_name, const char *domain, const char *regtype) {
+    if (browse_context->svc_cnt < SERVICE_CONTEXT_MAX_CNT) {
+        t_service_context *svc_context = &browse_context->services[browse_context->svc_cnt];
+        size_t domain_len = strlen(domain) + 1;
+
+        memset(svc_context, 0, sizeof(t_service_context));
+#ifdef ENABLE_BONJOUR
+        svc_context->sdref = browse_context->main_ref;
+#endif
+        svc_context->rec = f_service_record_create();
+        if (svc_context->rec != NULL) {
+            strncpy(svc_context->rec->service_name, svc_name, X502_INSTANCE_NAME_SIZE);
+            svc_context->rec->domain = malloc(domain_len);
+            if (svc_context->rec->domain != NULL) {
+                strcpy(svc_context->rec->domain, domain);
+
+                svc_context->rec->iface_idx = iface_idx;
+#ifdef ENABLE_BONJOUR
+                if (DNSServiceResolve(&svc_context->sdref, kDNSServiceFlagsShareConnection,
+                                      iface_idx, svc_name, regtype, domain,
+                                      f_cb_resolve, context) == kDNSServiceErr_NoError) {
+#elif defined ENABLE_AVAHI
+                svc_context->resolver = avahi_service_resolver_new(browse_context->client,
+                                                                   iface_idx, AVAHI_PROTO_INET,
+                                                                   svc_name, regtype, domain,
+                                                                   AVAHI_PROTO_UNSPEC, 0, f_resolve_callback, browse_context);
+                if (svc_context->resolver != NULL) {
+#endif
+                    browse_context->svc_cnt++;
+                } else {
+                    E502_EthSvcRecordFree(svc_context->rec);
+                }
+            } else {
+                E502_EthSvcRecordFree(svc_context->rec);
+            }
+        }
+    }
+}
+
+static void f_remove_service_idx(t_e502_eth_svc_browse_hnd browse_context, unsigned i) {
+    t_service_context *svc_context = &browse_context->services[i];
+    if (svc_context->init_done) {
+        svc_context->event = E502_ETH_SVC_EVENT_REMOVE;
+    } else {
+        f_svc_context_free(svc_context);
+        if (i != (browse_context->svc_cnt-1)) {
+            memmove(&browse_context->services[i], &browse_context->services[i+1],
+                    (browse_context->svc_cnt-i-1)*sizeof(browse_context->services[0]));
+        }
+        browse_context->svc_cnt--;
+    }
+}
+
+static void f_remove_service(t_e502_eth_svc_browse_hnd browse_context, const char *svc_name,
+                             const char *domain) {
+    unsigned i;
+    for (i = 0; i < browse_context->svc_cnt; i++) {
+        t_service_context *svc_context = &browse_context->services[i];
+        if (!strcmp(svc_name, svc_context->rec->service_name) &&
+                !strcmp(domain, svc_context->rec->domain)) {
+            f_remove_service_idx(browse_context, i);
+            break;
+        }
+    }
+}
+
+#ifdef ENABLE_BONJOUR
 static void DNSSD_API f_get_addr_info_reply(
     DNSServiceRef                    sdRef,
     DNSServiceFlags                  flags,
@@ -172,7 +370,7 @@ void DNSSD_API f_cb_gethosttarget(DNSServiceRef sdRef, DNSServiceFlags flags,
         rec->op_err = X502_ERR_DNSSD_COMMUNICATION;
     } else {
         size_t hostlen = strlen(hosttarget)+1;
-        rec->port = htons(port);
+        rec->port = ntohs(port);
         if (rec->hosttarget != NULL)
             free(rec->hosttarget);
         rec->hosttarget = malloc(hostlen);
@@ -202,27 +400,14 @@ void DNSSD_API f_cb_resolve (DNSServiceRef sdRef, DNSServiceFlags flags,
     for (i=0; i < browse_context->svc_cnt; i++) {
         t_service_context *svc_context = &browse_context->services[i];
         if (svc_context->sdref == sdRef) {
-            uint8_t len;
-            const char *devname_ptr = TXTRecordGetValuePtr(txtLen, txtRecord, "devname", &len);
-            const char *serial_ptr;
-            if ((devname_ptr != NULL) && !strncmp(devname_ptr, E502_DEVICE_NAME, len)) {
-
-                memcpy(svc_context->rec->devname, devname_ptr, len);
-                serial_ptr = TXTRecordGetValuePtr(txtLen, txtRecord, "serial", &len);
-                if (serial_ptr != NULL) {
-                    if (len > X502_SERIAL_SIZE)
-                        len = X502_SERIAL_SIZE;
-                    memcpy(svc_context->rec->serial, serial_ptr, len);
-                }
-                svc_context->rec->port = port;
-
-                if (svc_context->init_done == 0) {
-                    svc_context->init_done = 1;
-                    svc_context->event = E502_ETH_SVC_EVENT_ADD;
-                } else {
-                    svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
-                }
+            t_svc_txt_record txt_rec;
+            txt_rec.txtLen = txtLen;
+            txt_rec.txtStr = txtRecord;
+            int32_t err = f_svc_check_resolved(svc_context, txt_rec);
+            if (err != X502_ERR_OK) {
+                f_remove_service_idx(browse_context, i);
             }
+
         }
     }
 }
@@ -232,65 +417,119 @@ static void DNSSD_API f_browse_replay (DNSServiceRef sdRef, DNSServiceFlags flag
                                        uint32_t  interfaceIndex, DNSServiceErrorType errorCode,
                                        const char *serviceName, const char *regtype,
                                        const char *replyDomain, void *context) {
-    if (errorCode == kDNSServiceErr_NoError) {
-        t_e502_eth_svc_browse_hnd browse_context = (t_e502_eth_svc_browse_hnd)context;
+    t_e502_eth_svc_browse_hnd browse_context = (t_e502_eth_svc_browse_hnd)context;
+    if (errorCode != kDNSServiceErr_NoError) {
+        context->err = X502_ERR_DNSSD_COMMUNICATION;
+    } else {
         if (flags & kDNSServiceFlagsAdd) {
-            if (browse_context->svc_cnt < SERVICE_CONTEXT_MAX_CNT) {
-                t_service_context *svc_context = &browse_context->services[browse_context->svc_cnt];
-                int32_t err;
-                size_t domain_len = strlen(replyDomain) + 1;
-
-                memset(svc_context, 0, sizeof(t_service_context));
-
-
-                svc_context->sdref = browse_context->main_ref;
-                svc_context->rec = f_service_record_create();
-                if (svc_context->rec != NULL) {
-                    strncpy(svc_context->rec->service_name, serviceName, X502_INSTANCE_NAME_SIZE);
-                    svc_context->rec->domain = malloc(domain_len);
-                    if (svc_context->rec->domain != NULL) {
-                        strcpy(svc_context->rec->domain, replyDomain);
-
-
-
-                        svc_context->rec->iface_idx = interfaceIndex;
-                        err = DNSServiceResolve(&svc_context->sdref, kDNSServiceFlagsShareConnection,
-                                            interfaceIndex, serviceName, regtype, replyDomain,
-                                                                f_cb_resolve, context);
-                        if (err == kDNSServiceErr_NoError) {
-                            browse_context->svc_cnt++;
-                        } else {
-                            E502_EthSvcRecordFree(svc_context->rec);
-                        }
-                    } else {
-                        E502_EthSvcRecordFree(svc_context->rec);
-                    }
-                }
-            }
+            f_add_new_svc(browse_context, interfaceIndex, serviceName, replyDomain, regtype);
         } else {            
-            unsigned i;
-            for (i = 0; i < browse_context->svc_cnt; i++) {
-                t_service_context *svc_context = &browse_context->services[i];
-                if (!strcmp(serviceName, svc_context->rec->service_name) &&
-                       (interfaceIndex == svc_context->rec->iface_idx) &&
-                        !strcmp(replyDomain, svc_context->rec->domain)) {
-                    if (svc_context->init_done) {
-                        svc_context->event = E502_ETH_SVC_EVENT_REMOVE;
-                    } else {
-                        f_svc_context_free(svc_context);
-                        if (i != (browse_context->svc_cnt-1)) {
-                            memmove(&browse_context->services[i], &browse_context->services[i+1],
-                                    (browse_context->svc_cnt-i-1)*sizeof(browse_context->services[0]));
-                        }
-                        browse_context->svc_cnt--;
-                    }
-                    break;
-                }
-            }
+            f_remove_service(browse_context, serviceName, replayDomain);
         }
     }
 }
+#elif defined ENABLE_AVAHI
+    static void f_resolve_addr_callback(AvahiServiceResolver *r,  AvahiIfIndex interface,
+                                AvahiProtocol protocol, AvahiResolverEvent event,
+                                const char *name, const char *type,
+                                const char *domain,  const char *host_name,
+                                const AvahiAddress *address, uint16_t port,
+                                AvahiStringList *txt, AvahiLookupResultFlags flags,
+                                void* userdata) {
+        t_e502_eth_svc_record_hnd rec = (t_e502_eth_svc_record_hnd) userdata;
+        switch (event) {
+            case AVAHI_RESOLVER_FAILURE:
+                rec->op_err = X502_ERR_DNSSD_COMMUNICATION;
+                rec->op_in_progr = 0;
+                break;
+            case AVAHI_RESOLVER_FOUND: {
+                    size_t hostlen = strlen(host_name);
+                    rec->port = port;
+                    if (rec->hosttarget != NULL)
+                        free(rec->hosttarget);
+                    rec->hosttarget = malloc(hostlen);
+                    if (rec->hosttarget != NULL) {
+                        strcpy(rec->hosttarget, host_name);
+                        rec->op_err = X502_ERR_OK;
+                        rec->ipv4_addr =  ntohl(address->data.ipv4.address);
+                    } else {
+                        rec->op_err = X502_ERR_MEMORY_ALLOC;
+                    }
+                    rec->op_in_progr = 0;
+                }
+                break;
+        }
+    }
 
+    static void f_resolve_callback(AvahiServiceResolver *r,  AvahiIfIndex interface,
+                                    AvahiProtocol protocol, AvahiResolverEvent event,
+                                    const char *name, const char *type,
+                                    const char *domain,  const char *host_name,
+                                    const AvahiAddress *address, uint16_t port,
+                                    AvahiStringList *txt, AvahiLookupResultFlags flags,
+                                    void* userdata) {
+        t_e502_eth_svc_browse_hnd browse_context = (t_e502_eth_svc_browse_hnd)userdata;
+        unsigned i;
+        for (i=0; i < browse_context->svc_cnt; i++) {
+            t_service_context *svc_context = &browse_context->services[i];
+            /* Called whenever a service has been resolved successfully or timed out */
+            switch (event) {
+                case AVAHI_RESOLVER_FAILURE:
+                    f_remove_service_idx(browse_context, i);
+                    break;
+                case AVAHI_RESOLVER_FOUND:
+                    if (svc_context->resolver == r) {
+                        int32_t err = f_svc_check_resolved(svc_context, txt);
+                        if (err != X502_ERR_OK) {
+                            f_remove_service_idx(browse_context, i);
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    static void f_browse_callback(AvahiServiceBrowser *b,  AvahiIfIndex interface,
+                                  AvahiProtocol protocol, AvahiBrowserEvent event,
+                                  const char *name, const char *type,
+                                  const char *domain, AvahiLookupResultFlags flags,
+                                  void* userdata) {
+        t_e502_eth_svc_browse_hnd context = (t_e502_eth_svc_browse_hnd)userdata;
+        switch (event) {
+            case AVAHI_BROWSER_FAILURE:
+                context->err = X502_ERR_DNSSD_COMMUNICATION;
+                avahi_simple_poll_quit(context->poll);
+                return;
+
+            case AVAHI_BROWSER_NEW:
+                f_add_new_svc(context, interface, name, domain, type);
+                break;
+
+            case AVAHI_BROWSER_REMOVE:
+                f_remove_service(context, name, domain);
+                break;
+
+            case AVAHI_BROWSER_ALL_FOR_NOW:
+            case AVAHI_BROWSER_CACHE_EXHAUSTED:
+
+                break;
+        }
+    }
+
+    static void f_client_callback(AvahiClient *c, AvahiClientState state, void * userdata) {
+
+        /* Called whenever the client or server state changes */
+
+        if (state == AVAHI_CLIENT_FAILURE) {
+            t_e502_eth_svc_browse_hnd context = (t_e502_eth_svc_browse_hnd)userdata;
+            context->err = X502_ERR_DNSSD_NOT_RUNNING;
+            avahi_simple_poll_quit(context->poll);
+        }
+    }
+
+
+
+#endif
 
 
 static t_e502_eth_svc_event f_get_event(t_e502_eth_svc_browse_hnd browse_context,
@@ -347,10 +586,12 @@ X502_EXPORT(int32_t) E502_EthSvcRecordGetDevSerial(t_e502_eth_svc_record_hnd rec
 }
 
 
+#ifdef ENABLE_BONJOUR
 static int32_t f_wait_result(DNSServiceRef ref, t_e502_eth_svc_record_hnd rec, t_ltimer *ptmr) {
     int32_t err = X502_ERR_OK;
     int sock = DNSServiceRefSockFD(ref);
     int nfds = sock + 1;
+    int out = 0;
     do {
         fd_set readfds;
         struct timeval tv;
@@ -365,6 +606,7 @@ static int32_t f_wait_result(DNSServiceRef ref, t_e502_eth_svc_record_hnd rec, t
             if (dnssd_err == kDNSServiceErr_NoError) {
                 if (!rec->op_in_progr) {
                     err = rec->op_err;
+                    out = 1;
                 }
             } else {
                 err = X502_ERR_DNSSD_COMMUNICATION;
@@ -373,15 +615,17 @@ static int32_t f_wait_result(DNSServiceRef ref, t_e502_eth_svc_record_hnd rec, t
             err = X502_ERR_SVC_RESOLVE_TIMEOUT;
             rec->op_in_progr = 0;
         }
-    } while ((err == X502_ERR_OK)  && rec->op_in_progr);
+    } while ((err == X502_ERR_OK)  && !out);
     DNSServiceRefDeallocate(ref);
     return err;
 }
+#endif
 
 X502_EXPORT(int32_t) E502_EthSvcRecordResolveIPv4Addr(t_e502_eth_svc_record_hnd rec,
                                                       uint32_t *addr, uint32_t tout) {
     int32_t err = addr == NULL ? X502_ERR_INVALID_POINTER : E502_CHECK_SVC_REC(rec);
     if (err == X502_ERR_OK) {
+#if defined ENABLE_BONJOUR
         DNSServiceRef ref;
         t_ltimer tmr;
         ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
@@ -406,9 +650,65 @@ X502_EXPORT(int32_t) E502_EthSvcRecordResolveIPv4Addr(t_e502_eth_svc_record_hnd 
                 err = X502_ERR_DNSSD_COMMUNICATION;
             }
         }
+#elif defined ENABLE_AVAHI
+        AvahiSimplePoll *poll = NULL;
+        AvahiClient *client = NULL;
+        AvahiServiceResolver *resolver = NULL;
+        poll = avahi_simple_poll_new();
+        if (poll == NULL) {
+            err = X502_ERR_MEMORY_ALLOC;
+        } else {
+            client = avahi_client_new(avahi_simple_poll_get(poll), 0,
+                                      NULL, NULL, NULL);
+            if (client == NULL) {
+                err = X502_ERR_DNSSD_COMMUNICATION;
+            }
+        }
 
         if (err == X502_ERR_OK) {
+            t_ltimer tmr;
+            int out = 0;
+            ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
+            resolver = avahi_service_resolver_new(client, rec->iface_idx, AVAHI_PROTO_INET,
+                                                  rec->service_name, E502_TCP_SERVICE_NAME,
+                                                  rec->domain, AVAHI_PROTO_UNSPEC, 0,
+                                                  f_resolve_addr_callback, rec);
+            do {
+                rec->op_in_progr = 1;
+                avahi_simple_poll_iterate(poll, LTIMER_CLOCK_TICKS_TO_MS(ltimer_expiration(&tmr)));
+                if (rec->op_in_progr == 0) {
+                    err = rec->op_err;
+                    out = 1;
+                } else if (ltimer_expired(&tmr)) {
+                    err = X502_ERR_SVC_RESOLVE_TIMEOUT;
+                }
+            }  while ((err == X502_ERR_OK) && !out);
+        }
+#endif
+        if (err == X502_ERR_OK) {
             *addr = rec->ipv4_addr;
+        }
+
+        if (resolver != NULL)
+            avahi_service_resolver_free(resolver);
+        if (client != NULL)
+            avahi_client_free(client);
+        if (poll != NULL) {
+            avahi_simple_poll_quit(poll);
+            avahi_simple_poll_free(poll);
+        }
+    }
+    return err;
+}
+
+X502_EXPORT(int32_t) E502_EthSvcRecordIsSameInstance(t_e502_eth_svc_record_hnd svc1,
+                                                     t_e502_eth_svc_record_hnd svc2) {
+    int32_t err = E502_CHECK_SVC_REC(svc1);
+    if (err == X502_ERR_OK)
+        err = E502_CHECK_SVC_REC(svc2);
+    if (err == X502_ERR_OK) {
+        if (strcmp(svc1->service_name, svc2->service_name) || strcmp(svc1->domain, svc2->domain)) {
+            err = X502_ERR_INSTANCE_MISMATCH;
         }
     }
     return err;
@@ -425,6 +725,7 @@ X502_EXPORT(int32_t) E502_EthSvcBrowseStart(t_e502_eth_svc_browse_hnd *pcontext,
         err = X502_ERR_MEMORY_ALLOC;
     }
 
+#ifdef ENABLE_BONJOUR
     if (err == X502_ERR_OK) {
         DNSServiceErrorType dnssd_err = DNSServiceCreateConnection(&context->main_ref);
         if (dnssd_err == kDNSServiceErr_NoError) {
@@ -445,6 +746,31 @@ X502_EXPORT(int32_t) E502_EthSvcBrowseStart(t_e502_eth_svc_browse_hnd *pcontext,
             }
         }
     }
+#elif defined ENABLE_AVAHI
+    if (err == X502_ERR_OK) {
+        context->poll = avahi_simple_poll_new();
+        if (context->poll == NULL) {
+            err = X502_ERR_MEMORY_ALLOC;
+        } else {
+            context->client = avahi_client_new(avahi_simple_poll_get(context->poll), 0,
+                                               f_client_callback, context, NULL);
+            if (context->client == NULL) {
+                err = X502_ERR_DNSSD_COMMUNICATION;
+            } else if (context->err != X502_ERR_OK) {
+                err = context->err;
+            }
+
+            if (err == X502_ERR_OK) {
+                context->sb = avahi_service_browser_new(context->client, AVAHI_IF_UNSPEC,
+                                                        AVAHI_PROTO_INET,
+                                                        E502_TCP_SERVICE_NAME, NULL, 0,
+                                                        f_browse_callback, context);
+                if (context->sb == NULL)
+                    err = X502_ERR_DNSSD_COMMUNICATION;
+            }
+        }
+    }
+#endif
 
     if (err != X502_ERR_OK) {
         if (context != NULL)
@@ -456,6 +782,9 @@ X502_EXPORT(int32_t) E502_EthSvcBrowseStart(t_e502_eth_svc_browse_hnd *pcontext,
     return err;
 }
 
+
+
+
 X502_EXPORT(int32_t) E502_EthSvcBrowseGetEvent(t_e502_eth_svc_browse_hnd context,
                                                  t_e502_eth_svc_record_hnd *svc, uint32_t *pevent,
                                                  uint32_t *flags, uint32_t tout) {
@@ -463,13 +792,13 @@ X502_EXPORT(int32_t) E502_EthSvcBrowseGetEvent(t_e502_eth_svc_browse_hnd context
                                                      E502_CHECK_BROWSE_CONTEXT(context);
 
     if (err == X502_ERR_OK) {
-        int nfds = context->socket + 1;
         t_ltimer tmr;
         t_e502_eth_svc_event evt = f_get_event(context, svc, flags);
-
         ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
+        context->err = X502_ERR_OK;
 
-        while ((evt == E502_ETH_SVC_EVENT_NONE) && !ltimer_expired(&tmr)) {
+        while ((evt == E502_ETH_SVC_EVENT_NONE) && !ltimer_expired(&tmr) && (err == X502_ERR_OK)) {
+#ifdef ENABLE_BONJOUR
             fd_set readfds;
             struct timeval tv;
             int result;
@@ -487,8 +816,15 @@ X502_EXPORT(int32_t) E502_EthSvcBrowseGetEvent(t_e502_eth_svc_browse_hnd context
                     err = X502_ERR_DNSSD_COMMUNICATION;
                 }
             }
-        }
-
+#elif defined ENABLE_AVAHI
+             avahi_simple_poll_iterate(context->poll, LTIMER_CLOCK_TICKS_TO_MS(ltimer_expiration(&tmr)));
+             if (context->err != X502_ERR_OK) {
+                 err = context->err;
+             } else {
+                evt = f_get_event(context, svc, flags);
+             }
+#endif
+        }        
         *pevent = evt;
     }
     return err;

@@ -398,8 +398,10 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
 
 static int32_t f_iface_free_devinfo_ptr(t_x502_devrec_inptr *devinfo_ptr) {
     t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data*)devinfo_ptr->iface_data;
+#ifdef ENABLE_DNSSD
     if ((devinfo_data != NULL)  && (devinfo_data->svc_rec != NULL))
         E502_EthSvcRecordFree(devinfo_data->svc_rec);
+#endif
     free(devinfo_ptr->iface_data);
     free(devinfo_ptr);
     return X502_ERR_OK;
@@ -409,10 +411,11 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
     int32_t err = X502_ERR_OK;
     t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data*)devrec->internal->iface_data;
     t_socket s = INVALID_SOCKET;
-
+#ifdef ENABLE_DNSSD
     if (devinfo_data->svc_rec) {
         err = e502_svc_fill_devinfo(devinfo_data);
     }
+#endif
 
     if (err == X502_ERR_OK) {
         err = f_con_sock(&s, devinfo_data->ip_addr, devinfo_data->cmd_port, devinfo_data->open_tout);
@@ -691,7 +694,9 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
 
         devinfo_data->cmd_port = E502_TCP_DEFAULT_CMD_PORT;
         devinfo_data->ip_addr = ip_addr;
+#ifdef ENABLE_DNSSD
         devinfo_data->svc_rec = NULL;
+#endif
 
         sprintf(devrec->location, "%d.%d.%d.%d",
                 (ip_addr>>24) & 0xFF,
