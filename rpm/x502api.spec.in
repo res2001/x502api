@@ -11,7 +11,7 @@ Source: @PACKAGE_SRC_TAR_NAME@
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 
-BuildRequires: cmake >= 2.6, udev
+BuildRequires: cmake >= 2.6, udev, avahi-devel
 
 Obsoletes: l502api
 

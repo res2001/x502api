@@ -1,7 +1,7 @@
 Source: @PACKAGE_NAME@
 Priority: optional
 Maintainer: Borisov Alexey <borisov@lcard.ru>
-Build-Depends: debhelper (>= 8.0.0), cmake, libusb-1.0-0-dev
+Build-Depends: debhelper (>= 8.0.0), cmake, libusb-1.0-0-dev, libavahi-common-dev, libavahi-client-dev
 Standards-Version: 3.9.3
 Section: libs
 Homepage: "http://www.lcard.ru"
@@ -34,6 +34,7 @@ Description:Library with general function for L-Card L502/E502 devices
 Package: libe502api1
 Section: libs
 Architecture: any
+Suggests: avahi-daemon
 Depends: ${shlibs:Depends}, ${misc:Depends}, udev
 Description:Library for control L-Card E502 device
  Library that allow you control L-Card E502 data acquisition devices.
