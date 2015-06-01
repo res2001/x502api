@@ -2,7 +2,28 @@ unit e502api;
 interface
 uses Windows, SysUtils, x502api;
 
+  const
+   { События поиска сетевых сервисов }
+   E502_ETH_SVC_EVENT_NONE     = 0; // Ни одного события не произошло
+   E502_ETH_SVC_EVENT_ADD      = 1; // Обнаружено появление нового сетевого сервиса
+   E502_ETH_SVC_EVENT_REMOVE   = 2; // Обнаружено исчезновение ранее доступного сетевого сервиса
+   E502_ETH_SVC_EVENT_CHANGED  = 3;  // Изменение параметров ранее обнаруженного сетевого сервиса
 
+    // Описатель конфигурации сетевого интерфейса.
+  type st_e502_eth_config_state = record
+  end;
+  type t_e502_eth_config_hnd = ^st_e502_eth_config_state;
+
+  type t_e502_mac_addr = array[0..X502_MAC_ADDR_SIZE-1] of byte;
+
+  //  Описатель контекста поиска устройств в сети
+  type st_e502_eth_svc_browse_context = record
+  end;
+  type t_e502_eth_svc_browse_hnd = ^st_e502_eth_svc_browse_context;
+  // Описатель сетевого сервиса
+  type st_e502_eth_svc_record = record
+  end;
+  type t_e502_eth_svc_record_hnd = ^st_e502_eth_svc_record;
 
   //Получение списка серийных номеров модулей E502, подключенных по USB
   function E502_UsbGetSerialList(out serials: array of string; flags: LongWord; out devcnt: LongWord) : LongInt; overload;
@@ -17,16 +38,14 @@ uses Windows, SysUtils, x502api;
   function E502_UsbGetDevRecordsList(out list: array of t_x502_devrec; flags : LongWord) : LongInt; overload;
   //Создание записи о устройстве с указанным IP-адресом
   function E502_MakeDevRecordByIpAddr(var devrec: t_x502_devrec; ip_addr: LongWord; flags : LongWord;  tout: LongWord) : LongInt; stdcall;
+  //Создание записи о устройстве по описателю сетевого сервиса
+  function E502_MakeDevRecordByEthSvc(var devrec: t_x502_devrec; svc : t_e502_eth_svc_record_hnd; flags : LongWord;  tout: LongWord) : LongInt; stdcall;
+
 
   //Получение текущего IP-адреса устройства
   function E502_GetIpAddr(hnd: t_x502_hnd; out ip_addr : LongWord) : LongInt; stdcall;
 
-  // Описатель конфигурации сетевого интерфейса.
-  type st_e502_eth_config_state = record
-  end;
-  type t_e502_eth_config_hnd = ^st_e502_eth_config_state;
 
-  type t_e502_mac_addr = array[0..X502_MAC_ADDR_SIZE-1] of byte;
 
   // Создание описателя конфигурации сетевого интерфейса.
   function E502_EthConfigCreate() : t_e502_eth_config_hnd; stdcall;
@@ -55,7 +74,7 @@ uses Windows, SysUtils, x502api;
   // Установка статического IP-адреса
   function E502_EthConfigSetIPv4Addr(cfg: t_e502_eth_config_hnd; ip_addr: LongWord): LongInt; stdcall;
   // Получение установленной статической маски подсети
-  function E502_EthConfigGetIPv4Mask(cfg: t_e502_eth_config_hnd; mask : LongWord): LongInt; stdcall;
+  function E502_EthConfigGetIPv4Mask(cfg: t_e502_eth_config_hnd; out mask : LongWord): LongInt; stdcall;
   // Установка статической маски подсети
   function E502_EthConfigSetIPv4Mask(cfg: t_e502_eth_config_hnd; mask : LongWord): LongInt; stdcall;
   // Получение установленного статического адреса шлюза
@@ -85,6 +104,23 @@ uses Windows, SysUtils, x502api;
                                         rcv_data : array of byte; rcv_size : LongWord;
                                         tout: LongWord; out recvd_size: LongWord): LongInt; stdcall;
 
+  // Начало сеанса поиска модулей в локальной сети
+  function E502_EthSvcBrowseStart(out context : t_e502_eth_svc_browse_hnd; flags : LongWord): LongInt; stdcall;
+  // Получение информации о изменении присутствия модулей в локальной сети
+  function E502_EthSvcBrowseGetEvent(context : t_e502_eth_svc_browse_hnd; out svc: t_e502_eth_svc_record_hnd; out event: LongWord; out flags : LongWord; tout : LongWord): LongInt; stdcall;
+  // Останов сеанса поиска модулей в локальной сети
+  function E502_EthSvcBrowseStop(context : t_e502_eth_svc_browse_hnd): LongInt; stdcall;
+  // Освобождение описателя сетевого сервиса
+  function E502_EthSvcRecordFree(svc : t_e502_eth_svc_record_hnd): LongInt; stdcall;
+  // Получить имя экземпляра по описателю сервиса
+  function E502_EthSvcRecordGetInstanceName(svc : t_e502_eth_svc_record_hnd; out name: string): LongInt; stdcall;
+  // Получить серийный номер модуля по описателю сетевого сервиса
+  function E502_EthSvcRecordGetDevSerial(svc : t_e502_eth_svc_record_hnd; out serial : string): LongInt; stdcall;
+  // Получить IP адрес сетевого сервиса
+  function E502_EthSvcRecordResolveIPv4Addr(svc : t_e502_eth_svc_record_hnd; out addr :LongWord; tout : LongWord): LongInt; stdcall;
+  // Проверка, указывают ли оба описателя на один экземпляр сервиса
+  function E502_EthSvcRecordIsSameInstance(svc1 : t_e502_eth_svc_record_hnd; svc2 : t_e502_eth_svc_record_hnd): LongInt; stdcall;
+
 implementation
 
   function _get_serials( ser_arr: p_x502_serial_array; size:LongWord;
@@ -97,6 +133,7 @@ implementation
   function _open_usb(hnd: t_x502_hnd; serial: PAnsiChar) : LongInt; stdcall; external 'e502api.dll' name 'E502_OpenUsb';
   function E502_OpenByIpAddr(hnd : t_x502_hnd; ip_addr: LongWord; flags : LongWord;  tout: LongWord) : LongInt; stdcall; external 'e502api.dll';
   function E502_MakeDevRecordByIpAddr(var devrec: t_x502_devrec; ip_addr: LongWord; flags : LongWord;  tout: LongWord) : LongInt; stdcall; external 'e502api.dll';
+  function E502_MakeDevRecordByEthSvc(var devrec: t_x502_devrec; svc : t_e502_eth_svc_record_hnd; flags : LongWord;  tout: LongWord) : LongInt; stdcall; external 'e502api.dll';
   function E502_GetIpAddr(hnd: t_x502_hnd; out ip_addr : LongWord) : LongInt; stdcall; external 'e502api.dll';
   function E502_EthConfigCreate() : t_e502_eth_config_hnd; stdcall; external 'e502api.dll';
   function E502_EthConfigFree(cfg: t_e502_eth_config_hnd): LongInt; stdcall; external 'e502api.dll';
@@ -111,7 +148,7 @@ implementation
   function E502_EthConfigSetUserMACEnabled(cfg: t_e502_eth_config_hnd; en : LongBool): LongInt; stdcall; external 'e502api.dll';
   function E502_EthConfigGetIPv4Addr(cfg: t_e502_eth_config_hnd; out ip_addr : LongWord): LongInt; stdcall; external 'e502api.dll';
   function E502_EthConfigSetIPv4Addr(cfg: t_e502_eth_config_hnd; ip_addr: LongWord): LongInt; stdcall; external 'e502api.dll';
-  function E502_EthConfigGetIPv4Mask(cfg: t_e502_eth_config_hnd; mask : LongWord): LongInt; stdcall; external 'e502api.dll';
+  function E502_EthConfigGetIPv4Mask(cfg: t_e502_eth_config_hnd; out mask : LongWord): LongInt; stdcall; external 'e502api.dll';
   function E502_EthConfigSetIPv4Mask(cfg: t_e502_eth_config_hnd; mask : LongWord): LongInt; stdcall; external 'e502api.dll';
   function E502_EthConfigGetIPv4Gate(cfg: t_e502_eth_config_hnd; out gate: LongWord): LongInt; stdcall; external 'e502api.dll';
   function E502_EthConfigSetIPv4Gate(cfg: t_e502_eth_config_hnd; gate: LongWord): LongInt; stdcall; external 'e502api.dll';
@@ -130,7 +167,14 @@ implementation
                             out rcv_data; rcv_size : LongWord;
                             tout: LongWord; out recvd_size: LongWord): LongInt; stdcall;  external 'e502api.dll' name 'E502_CortexExecCmd';
 
-
+  function E502_EthSvcBrowseStart(out context : t_e502_eth_svc_browse_hnd; flags : LongWord): LongInt; stdcall; external 'e502api.dll';
+  function E502_EthSvcBrowseGetEvent(context : t_e502_eth_svc_browse_hnd; out svc: t_e502_eth_svc_record_hnd; out event: LongWord; out flags : LongWord; tout : LongWord): LongInt; stdcall; external 'e502api.dll';
+  function E502_EthSvcBrowseStop(context : t_e502_eth_svc_browse_hnd): LongInt; stdcall; external 'e502api.dll';
+  function E502_EthSvcRecordFree(svc : t_e502_eth_svc_record_hnd): LongInt; stdcall; external 'e502api.dll';
+  function _eth_svc_record_get_instance_name(svc : t_e502_eth_svc_record_hnd; name: PAnsiChar): LongInt; stdcall; external 'e502api.dll' name 'E502_EthSvcRecordGetInstanceName';
+  function _eth_svc_record_get_dev_serial(svc : t_e502_eth_svc_record_hnd; serial : PAnsiChar): LongInt; stdcall; external 'e502api.dll' name 'E502_EthSvcRecordGetDevSerial';
+  function E502_EthSvcRecordResolveIPv4Addr(svc : t_e502_eth_svc_record_hnd; out addr :LongWord; tout : LongWord): LongInt; stdcall;  external 'e502api.dll';
+  function E502_EthSvcRecordIsSameInstance(svc1 : t_e502_eth_svc_record_hnd; svc2 : t_e502_eth_svc_record_hnd): LongInt; stdcall;  external 'e502api.dll';
 
 
 
@@ -214,5 +258,30 @@ implementation
     else
       E502_CortexExecCmd:=_cortex_exec_cmd(hnd, cmd_code, par, snd_data, snd_size, rcv_data, rcv_size, tout, recvd_size);
   end;
-end.
 
+  function E502_EthSvcRecordGetInstanceName(svc : t_e502_eth_svc_record_hnd; out name: string): LongInt; stdcall;
+  var
+    strptr: PAnsiChar;
+    res: LongInt;
+  begin
+    strptr:=GetMemory(X502_INSTANCE_NAME_SIZE);
+    res:=_eth_svc_record_get_instance_name(svc, strptr);
+    if res = X502_ERR_OK then
+      name:=string(Utf8Decode(strptr));
+    FreeMemory(strptr);
+    E502_EthSvcRecordGetInstanceName:= res;
+  end;
+
+  function E502_EthSvcRecordGetDevSerial(svc : t_e502_eth_svc_record_hnd; out serial : string): LongInt; stdcall;
+  var
+    strptr: PAnsiChar;
+    res: LongInt;
+  begin
+    strptr:=GetMemory(X502_SERIAL_SIZE);
+    res:=_eth_svc_record_get_dev_serial(svc, strptr);
+    if res = X502_ERR_OK then
+      serial:=string(strptr);
+    FreeMemory(strptr);
+    E502_EthSvcRecordGetDevSerial:= res;
+  end;
+end.  

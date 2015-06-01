@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
                                     cur_err, X502_GetErrorString(cur_err));
                         }
                     } else if (event == E502_ETH_SVC_EVENT_REMOVE) {
-                        printf("Устройство удалено: " INST_NAME_PRINT_FMT ", S/N: %s\n",
+                        printf("Устройство отключено: " INST_NAME_PRINT_FMT ", S/N: %s\n",
 #ifdef _WIN32
                                 inst_name_w,
 #else

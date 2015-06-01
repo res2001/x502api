@@ -18,7 +18,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 1)
 if(UNIX)
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
 endif(UNIX)
-
+if (COMPILE_DEFINITIONS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS "${COMPILE_DEFINITIONS}")
+endif(COMPILE_DEFINITIONS)
 
 if(WIN32)
     #для Windows устанавливаем .lib файл отдельно от .dll в поддиректорию msvc

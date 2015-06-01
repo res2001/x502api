@@ -1,11 +1,11 @@
-#define ENABLE_AVAHI
 #ifdef ENABLE_BONJOUR
     #include "dns_sd.h"
 
+
     typedef uint32_t t_svc_iface_idx;
     typedef struct {
-        uint16_t  txtLen,
-        const unsigned char *txtStr,
+        uint16_t  txtLen;
+        const unsigned char *txtStr;
     } t_svc_txt_record;
 #elif defined ENABLE_AVAHI
     #include <netinet/in.h>
@@ -23,6 +23,7 @@
 #endif
 #include "ltimer.h"
 #include "e502api_tcp_private.h"
+
 
 
 #include <stdlib.h>
@@ -59,8 +60,9 @@ typedef struct st_e502_eth_svc_record {
 
 
 typedef struct {
-#ifdef ENABLE_BONJOUR
+#if defined ENABLE_BONJOUR
     DNSServiceRef sdref;
+    DNSServiceRef sdref_addr;
 #elif defined ENABLE_AVAHI
     AvahiServiceResolver *resolver;
 #endif
@@ -87,8 +89,15 @@ typedef struct st_e502_eth_svc_browse_context {
 
 
 
-#if   defined ENABLE_BONJOUR
-
+#if defined ENABLE_BONJOUR
+    void DNSSD_API f_cb_resolve (DNSServiceRef sdRef, DNSServiceFlags flags,
+                                 uint32_t interfaceIndex,
+                                 DNSServiceErrorType errorCode,
+                                 const char *fullname, const char *hosttarget,
+                                 uint16_t  port,        /* In network byte order */
+                                 uint16_t  txtLen,
+                                 const unsigned char *txtRecord,
+                                 void  *context);
 
 #elif defined ENABLE_AVAHI
 
@@ -156,6 +165,8 @@ static void f_svc_context_free(t_service_context *svc_context) {
 #if defined ENABLE_BONJOUR
     if (svc_context->sdref != NULL)
         DNSServiceRefDeallocate(svc_context->sdref);
+    if (svc_context->sdref_addr)
+        DNSServiceRefDeallocate(svc_context->sdref_addr);
 #elif defined ENABLE_AVAHI
     if (svc_context->resolver)
         avahi_service_resolver_free(svc_context->resolver);
@@ -197,7 +208,7 @@ static int32_t f_browse_context_free(t_e502_eth_svc_browse_hnd context) {
 
 #if defined ENABLE_BONJOUR
     static const char* f_get_txt_rec(t_svc_txt_record txt_record, const char *name, uint8_t *len) {
-        return TXTRecordGetValuePtr(txt_record->txtLen, txt_record->txtStr, name, len);
+        return TXTRecordGetValuePtr(txt_record.txtLen, txt_record.txtStr, name, len);
     }
 #elif defined ENABLE_AVAHI
     static const char* f_get_txt_rec(t_svc_txt_record txt_record, const char *name, uint8_t *len) {
@@ -247,13 +258,7 @@ static int32_t f_svc_check_resolved(t_service_context *svc_context,
                 len = X502_SERIAL_SIZE-1;
             memcpy(svc_context->rec->serial, serial_ptr, len);
             svc_context->rec->serial[len] = 0;
-        }
-        if (svc_context->init_done == 0) {
-            svc_context->init_done = 1;
-            svc_context->event = E502_ETH_SVC_EVENT_ADD;
-        } else {
-            svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
-        }
+        }        
     } else {
         err = X502_ERR_INVALID_DEVICE;
     }
@@ -268,9 +273,6 @@ static void f_add_new_svc(t_e502_eth_svc_browse_hnd browse_context, t_svc_iface_
         size_t domain_len = strlen(domain) + 1;
 
         memset(svc_context, 0, sizeof(t_service_context));
-#ifdef ENABLE_BONJOUR
-        svc_context->sdref = browse_context->main_ref;
-#endif
         svc_context->rec = f_service_record_create();
         if (svc_context->rec != NULL) {
             strncpy(svc_context->rec->service_name, svc_name, X502_INSTANCE_NAME_SIZE);
@@ -280,20 +282,26 @@ static void f_add_new_svc(t_e502_eth_svc_browse_hnd browse_context, t_svc_iface_
 
                 svc_context->rec->iface_idx = iface_idx;
 #ifdef ENABLE_BONJOUR
+                svc_context->sdref = browse_context->main_ref;
                 if (DNSServiceResolve(&svc_context->sdref, kDNSServiceFlagsShareConnection,
                                       iface_idx, svc_name, regtype, domain,
-                                      f_cb_resolve, context) == kDNSServiceErr_NoError) {
+                                      f_cb_resolve, browse_context) == kDNSServiceErr_NoError) {
+                    browse_context->svc_cnt++;
+                } else {
+                    svc_context->sdref = NULL;
+                    E502_EthSvcRecordFree(svc_context->rec);
+                }
 #elif defined ENABLE_AVAHI
                 svc_context->resolver = avahi_service_resolver_new(browse_context->client,
                                                                    iface_idx, AVAHI_PROTO_INET,
                                                                    svc_name, regtype, domain,
                                                                    AVAHI_PROTO_UNSPEC, 0, f_resolve_callback, browse_context);
                 if (svc_context->resolver != NULL) {
-#endif
                     browse_context->svc_cnt++;
                 } else {
                     E502_EthSvcRecordFree(svc_context->rec);
                 }
+#endif
             } else {
                 E502_EthSvcRecordFree(svc_context->rec);
             }
@@ -329,6 +337,20 @@ static void f_remove_service(t_e502_eth_svc_browse_hnd browse_context, const cha
 }
 
 #ifdef ENABLE_BONJOUR
+static uint32_t f_get_addr(const struct sockaddr *address) {
+    uint32_t ipv4_addr = 0;
+    if (address && address->sa_family == AF_INET) {
+        const unsigned char *b = (const unsigned char *) &((struct sockaddr_in *)address)->sin_addr;
+        ipv4_addr =  ((uint32_t)b[0] << 24) |
+                          ((uint32_t)b[1] << 16) |
+                          ((uint32_t)b[2] << 8)  |
+                           b[3];
+    }
+    return ipv4_addr;
+}
+
+
+
 static void DNSSD_API f_get_addr_info_reply(
     DNSServiceRef                    sdRef,
     DNSServiceFlags                  flags,
@@ -344,12 +366,8 @@ static void DNSSD_API f_get_addr_info_reply(
         rec->op_err = X502_ERR_DNSSD_COMMUNICATION;
         rec->op_in_progr = 0;
     } else {
-        if (address && address->sa_family == AF_INET) {
-            const unsigned char *b = (const unsigned char *) &((struct sockaddr_in *)address)->sin_addr;
-            rec->ipv4_addr =  ((uint32_t)b[0] << 24) |
-                              ((uint32_t)b[1] << 16) |
-                              ((uint32_t)b[2] << 8)  |
-                               b[3];
+        if (address && address->sa_family == AF_INET) {            
+            rec->ipv4_addr = f_get_addr(address);
             rec->op_err = X502_ERR_OK;
             rec->op_in_progr = 0;
         }
@@ -385,6 +403,43 @@ void DNSSD_API f_cb_gethosttarget(DNSServiceRef sdRef, DNSServiceFlags flags,
 }
 
 
+static void DNSSD_API f_cb_browse_addr(
+    DNSServiceRef                    sdRef,
+    DNSServiceFlags                  flags,
+    uint32_t                         interfaceIndex,
+    DNSServiceErrorType              errorCode,
+    const char                       *hostname,
+    const struct sockaddr            *address,
+    uint32_t                         ttl,
+    void                             *context
+    ) {
+    t_e502_eth_svc_browse_hnd browse_context = (t_e502_eth_svc_browse_hnd)context;
+
+    unsigned i;
+
+    for (i=0; i < browse_context->svc_cnt; i++) {
+        t_service_context *svc_context = &browse_context->services[i];
+        if (svc_context->sdref_addr == sdRef) {
+            if (errorCode == kDNSServiceErr_NoError) {
+                if (address && address->sa_family == AF_INET) {
+                    uint32_t new_addr = f_get_addr(address);
+                    if (svc_context->init_done == 0) {
+                        svc_context->rec->ipv4_addr = new_addr;
+                        svc_context->init_done = 1;
+                        svc_context->event = E502_ETH_SVC_EVENT_ADD;
+                    } else if (svc_context->event == E502_ETH_SVC_EVENT_NONE) {
+                        if (new_addr != svc_context->rec->ipv4_addr) {
+                            svc_context->rec->ipv4_addr = new_addr;
+                            svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 void DNSSD_API f_cb_resolve (DNSServiceRef sdRef, DNSServiceFlags flags,
                              uint32_t interfaceIndex,
                              DNSServiceErrorType errorCode,
@@ -402,12 +457,26 @@ void DNSSD_API f_cb_resolve (DNSServiceRef sdRef, DNSServiceFlags flags,
         if (svc_context->sdref == sdRef) {
             t_svc_txt_record txt_rec;
             txt_rec.txtLen = txtLen;
-            txt_rec.txtStr = txtRecord;
-            int32_t err = f_svc_check_resolved(svc_context, txt_rec);
-            if (err != X502_ERR_OK) {
+            txt_rec.txtStr = txtRecord;            
+            if (f_svc_check_resolved(svc_context, txt_rec) != X502_ERR_OK) {
                 f_remove_service_idx(browse_context, i);
+            } else {
+                if (svc_context->init_done) {
+                    if (svc_context->event == E502_ETH_SVC_EVENT_NONE)
+                        svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
+                } else {
+                    svc_context->sdref_addr = browse_context->main_ref;
+                    if (DNSServiceGetAddrInfo(&svc_context->sdref_addr, kDNSServiceFlagsShareConnection,
+                                              interfaceIndex,
+                                              kDNSServiceProtocol_IPv4,
+                                              hosttarget, f_cb_browse_addr,
+                                              browse_context)
+                            != kDNSServiceErr_NoError) {
+                        svc_context->sdref_addr = NULL;
+                        f_remove_service_idx(browse_context, i);
+                    }
+                }
             }
-
         }
     }
 }
@@ -419,12 +488,12 @@ static void DNSSD_API f_browse_replay (DNSServiceRef sdRef, DNSServiceFlags flag
                                        const char *replyDomain, void *context) {
     t_e502_eth_svc_browse_hnd browse_context = (t_e502_eth_svc_browse_hnd)context;
     if (errorCode != kDNSServiceErr_NoError) {
-        context->err = X502_ERR_DNSSD_COMMUNICATION;
+        browse_context->err = X502_ERR_DNSSD_COMMUNICATION;
     } else {
         if (flags & kDNSServiceFlagsAdd) {
             f_add_new_svc(browse_context, interfaceIndex, serviceName, replyDomain, regtype);
         } else {            
-            f_remove_service(browse_context, serviceName, replayDomain);
+            f_remove_service(browse_context, serviceName, replyDomain);
         }
     }
 }
@@ -482,6 +551,14 @@ static void DNSSD_API f_browse_replay (DNSServiceRef sdRef, DNSServiceFlags flag
                         int32_t err = f_svc_check_resolved(svc_context, txt);
                         if (err != X502_ERR_OK) {
                             f_remove_service_idx(browse_context, i);
+                        } else {
+                            if (svc_context->init_done == 0) {
+                                svc_context->init_done = 1;
+                                svc_context->event = E502_ETH_SVC_EVENT_ADD;
+                            } else if (svc_context->event == E502_ETH_SVC_EVENT_NONE) {
+                                svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
+                            }
+
                         }
                     }
                     break;
@@ -684,10 +761,6 @@ X502_EXPORT(int32_t) E502_EthSvcRecordResolveIPv4Addr(t_e502_eth_svc_record_hnd 
                 }
             }  while ((err == X502_ERR_OK) && !out);
         }
-#endif
-        if (err == X502_ERR_OK) {
-            *addr = rec->ipv4_addr;
-        }
 
         if (resolver != NULL)
             avahi_service_resolver_free(resolver);
@@ -696,6 +769,10 @@ X502_EXPORT(int32_t) E502_EthSvcRecordResolveIPv4Addr(t_e502_eth_svc_record_hnd 
         if (poll != NULL) {
             avahi_simple_poll_quit(poll);
             avahi_simple_poll_free(poll);
+        }
+#endif
+        if (err == X502_ERR_OK) {
+            *addr = rec->ipv4_addr;
         }
     }
     return err;
@@ -807,7 +884,7 @@ X502_EXPORT(int32_t) E502_EthSvcBrowseGetEvent(t_e502_eth_svc_browse_hnd context
             FD_SET(context->socket, &readfds);
             f_set_timeval_left(&tmr, &tv);
 
-            result = select(nfds, &readfds, (fd_set*)NULL, (fd_set*)NULL, &tv);
+            result = select(context->socket + 1, &readfds, (fd_set*)NULL, (fd_set*)NULL, &tv);
             if (result > 0) {
                 DNSServiceErrorType dnssd_err = DNSServiceProcessResult(context->main_ref);
                 if (dnssd_err == kDNSServiceErr_NoError) {
