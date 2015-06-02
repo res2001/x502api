@@ -137,8 +137,9 @@ This package contain the shared object files for control L-Card L502 data acquis
 %package -n libx502api1-devel
 Summary: Developer files for  L-Card L502 and E502 devices
 Group:   Development/Libraries/C and C++
-Requires: libx502api1 = @PACKAGE_VERSION@,
-Requires: libe502api1 = @PACKAGE_VERSION@,          
+Requires: libx502api1 = @PACKAGE_VERSION@
+Requires: libe502api1 = @PACKAGE_VERSION@          
+Requires: libl502api1 = @PACKAGE_VERSION@
 Obsoletes: libl502api1-devel
 
 %description -n libx502api1-devel

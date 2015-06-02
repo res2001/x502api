@@ -12,6 +12,7 @@ Section: libdevel
 Architecture: any
 Depends: libx502api1 (= ${binary:Version}), 
          libe502api1 (= ${binary:Version}),
+         libl502api1 (= ${binary:Version}),
          ${misc:Depends}
 Replaces: libl502api1-dev
 Description:Library for control L-Card L502/E502 devices
