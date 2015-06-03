@@ -279,7 +279,13 @@ int32_t l502_port_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
         snprintf(path, path_len, "/dev/%s", devname);
         file = open(path, O_RDWR);
         if (file != -1) {
-            L502_PCI_IFACE_FILE(hnd) = file;
+            hnd->iface_data = malloc(sizeof(t_pci_iface_data));
+            if (hnd->iface_data == NULL) {
+                err = X502_ERR_MEMORY_ALLOC;
+                close(file);
+            } else {
+                L502_PCI_IFACE_FILE(hnd) = file;
+            }
         } else {
             /** @todo Разобрать коды ошибок */
             err = X502_ERR_DEVICE_OPEN;
@@ -292,8 +298,9 @@ int32_t l502_port_open(t_x502_hnd hnd, const t_x502_devrec *devinfo) {
 }
 
 int32_t l502_port_close(t_x502_hnd hnd) {
-    if (hnd->iface_data !=NULL)
+    if (hnd->iface_data !=NULL) {
         close(L502_PCI_IFACE_FILE(hnd));
+    }
     return X502_ERR_OK;
 }
 
