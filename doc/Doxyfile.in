@@ -228,7 +228,7 @@ TAB_SIZE               = 4
 # "Side Effects:". You can put \n's in the value part of an alias to insert
 # newlines.
 
-ALIASES                = "lpcie_sdk=<a href= http://lcard.ru/download/lpcie_setup.exe> \"L-Card E502/L502 SDK\" </a>" \
+ALIASES                = "lpcie_sdk=<a href= http://lcard.ru/download/lpcie_setup.exe> \"L-Card L502/E502 SDK\" </a>" \
                          "lpcie_sdk_dir=SDK_DIR" \
                          "filename{1}=<B>\1</B>" \
                          "langname{1}=*\1*" 
