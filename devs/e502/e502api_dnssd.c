@@ -141,8 +141,9 @@ static t_e502_eth_svc_record_hnd f_service_record_create_copy(t_e502_eth_svc_rec
              } else {
                  E502_EthSvcRecordFree(ret);
                  ret = NULL;
-             }
+             }             
          }
+         ret->hosttarget = NULL;
     }
     return ret;
 }

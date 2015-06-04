@@ -676,7 +676,8 @@ int32_t e502_make_tcp_rec(t_x502_devrec *devrec, uint32_t flags, uint32_t tout) 
 
             devrec->internal = devinfo_ptr;
             devrec->iface = X502_IFACE_ETH;
-            devrec->flags = X502_DEVFLAGS_IFACE_SUPPORT_USB | X502_DEVFLAGS_IFACE_SUPPORT_ETH;        }
+            devrec->flags = X502_DEVFLAGS_IFACE_SUPPORT_USB | X502_DEVFLAGS_IFACE_SUPPORT_ETH;
+        }
 
         if (err != X502_ERR_OK) {
             free(devinfo_data);
