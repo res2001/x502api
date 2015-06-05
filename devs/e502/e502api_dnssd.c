@@ -68,6 +68,7 @@ typedef struct {
 #endif
     t_e502_eth_svc_event event;
     int init_done;
+    int fail;
     t_e502_eth_svc_record_hnd rec;
 } t_service_context;
 
@@ -312,7 +313,7 @@ static void f_add_new_svc(t_e502_eth_svc_browse_hnd browse_context, t_svc_iface_
 
 static void f_remove_service_idx(t_e502_eth_svc_browse_hnd browse_context, unsigned i) {
     t_service_context *svc_context = &browse_context->services[i];
-    if (svc_context->init_done) {
+    if (svc_context->init_done && !svc_context->fail) {
         svc_context->event = E502_ETH_SVC_EVENT_REMOVE;
     } else {
         f_svc_context_free(svc_context);
@@ -323,6 +324,18 @@ static void f_remove_service_idx(t_e502_eth_svc_browse_hnd browse_context, unsig
         browse_context->svc_cnt--;
     }
 }
+
+
+static void f_svc_fail(t_e502_eth_svc_browse_hnd browse_context, unsigned i) {
+    t_service_context *svc_context = &browse_context->services[i];
+    if (svc_context->init_done) {
+        svc_context->event = E502_ETH_SVC_EVENT_REMOVE;
+    }
+    svc_context->fail = 1;
+    svc_context->init_done = 0;
+}
+
+
 
 static void f_remove_service(t_e502_eth_svc_browse_hnd browse_context, const char *svc_name,
                              const char *domain) {
@@ -506,7 +519,7 @@ static void DNSSD_API f_browse_replay (DNSServiceRef sdRef, DNSServiceFlags flag
                                 const AvahiAddress *address, uint16_t port,
                                 AvahiStringList *txt, AvahiLookupResultFlags flags,
                                 void* userdata) {
-        t_e502_eth_svc_record_hnd rec = (t_e502_eth_svc_record_hnd) userdata;
+        t_e502_eth_svc_record_hnd rec = (t_e502_eth_svc_record_hnd) userdata;        
         switch (event) {
             case AVAHI_RESOLVER_FAILURE:
                 rec->op_err = X502_ERR_DNSSD_COMMUNICATION;
@@ -539,13 +552,13 @@ static void DNSSD_API f_browse_replay (DNSServiceRef sdRef, DNSServiceFlags flag
                                     AvahiStringList *txt, AvahiLookupResultFlags flags,
                                     void* userdata) {
         t_e502_eth_svc_browse_hnd browse_context = (t_e502_eth_svc_browse_hnd)userdata;
-        unsigned i;
+        unsigned i;        
         for (i=0; i < browse_context->svc_cnt; i++) {
             t_service_context *svc_context = &browse_context->services[i];
             /* Called whenever a service has been resolved successfully or timed out */
             switch (event) {
                 case AVAHI_RESOLVER_FAILURE:
-                    f_remove_service_idx(browse_context, i);
+                    f_svc_fail(browse_context, i);
                     break;
                 case AVAHI_RESOLVER_FOUND:
                     if (svc_context->resolver == r) {
@@ -553,13 +566,13 @@ static void DNSSD_API f_browse_replay (DNSServiceRef sdRef, DNSServiceFlags flag
                         if (err != X502_ERR_OK) {
                             f_remove_service_idx(browse_context, i);
                         } else {
-                            if (svc_context->init_done == 0) {
+                            if (svc_context->init_done == 0)  {
                                 svc_context->init_done = 1;
+                                svc_context->fail = 0;
                                 svc_context->event = E502_ETH_SVC_EVENT_ADD;
                             } else if (svc_context->event == E502_ETH_SVC_EVENT_NONE) {
                                 svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
                             }
-
                         }
                     }
                     break;
@@ -573,18 +586,19 @@ static void DNSSD_API f_browse_replay (DNSServiceRef sdRef, DNSServiceFlags flag
                                   const char *domain, AvahiLookupResultFlags flags,
                                   void* userdata) {
         t_e502_eth_svc_browse_hnd context = (t_e502_eth_svc_browse_hnd)userdata;
+
         switch (event) {
             case AVAHI_BROWSER_FAILURE:
                 context->err = X502_ERR_DNSSD_COMMUNICATION;
-                avahi_simple_poll_quit(context->poll);
+                avahi_simple_poll_quit(context->poll);                
                 return;
 
             case AVAHI_BROWSER_NEW:
-                f_add_new_svc(context, interface, name, domain, type);
+                f_add_new_svc(context, interface, name, domain, type);                
                 break;
 
             case AVAHI_BROWSER_REMOVE:
-                f_remove_service(context, name, domain);
+                f_remove_service(context, name, domain);                
                 break;
 
             case AVAHI_BROWSER_ALL_FOR_NOW:
@@ -620,14 +634,7 @@ static t_e502_eth_svc_event f_get_event(t_e502_eth_svc_browse_hnd browse_context
         if (svc->event != E502_ETH_SVC_EVENT_NONE) {
             ret = svc->event;
 
-
-            if (svc->event != E502_ETH_SVC_EVENT_REMOVE) {
-                /* если событие ADD/CHANGE, то сбрасываем флаг события */
-                svc->event = E502_ETH_SVC_EVENT_NONE;
-                /* далаем копию записи, чтобы пользователь мог ее сохранить и
-                    после завершения */
-                *svc_hnd = f_service_record_create_copy(svc->rec);
-            } else {
+            if ((svc->event == E502_ETH_SVC_EVENT_REMOVE) && !svc->fail) {
                 /* так при удалении запись нам больше не нужна, то можно ее
                  * передать пользователю, без создания копии */
                 *svc_hnd = svc->rec;
@@ -638,6 +645,12 @@ static t_e502_eth_svc_event f_get_event(t_e502_eth_svc_browse_hnd browse_context
                             (browse_context->svc_cnt-i-1)*sizeof(browse_context->services[0]));
                 }
                 browse_context->svc_cnt--;
+            } else {
+                /* если событие ADD/CHANGE, то сбрасываем флаг события */
+                svc->event = E502_ETH_SVC_EVENT_NONE;
+                /* далаем копию записи, чтобы пользователь мог ее сохранить и
+                    после завершения */
+                *svc_hnd = f_service_record_create_copy(svc->rec);
             }
         }
     }
