@@ -554,28 +554,29 @@ static void DNSSD_API f_browse_replay (DNSServiceRef sdRef, DNSServiceFlags flag
         t_e502_eth_svc_browse_hnd browse_context = (t_e502_eth_svc_browse_hnd)userdata;
         unsigned i;        
         for (i=0; i < browse_context->svc_cnt; i++) {
-            t_service_context *svc_context = &browse_context->services[i];
-            /* Called whenever a service has been resolved successfully or timed out */
-            switch (event) {
-                case AVAHI_RESOLVER_FAILURE:
-                    f_svc_fail(browse_context, i);
-                    break;
-                case AVAHI_RESOLVER_FOUND:
-                    if (svc_context->resolver == r) {
-                        int32_t err = f_svc_check_resolved(svc_context, txt);
-                        if (err != X502_ERR_OK) {
-                            f_remove_service_idx(browse_context, i);
-                        } else {
-                            if (svc_context->init_done == 0)  {
-                                svc_context->init_done = 1;
-                                svc_context->fail = 0;
-                                svc_context->event = E502_ETH_SVC_EVENT_ADD;
-                            } else if (svc_context->event == E502_ETH_SVC_EVENT_NONE) {
-                                svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
+            t_service_context *svc_context = &browse_context->services[i];            
+            if (svc_context->resolver == r) {
+                /* Called whenever a service has been resolved successfully or timed out */
+                switch (event) {
+                    case AVAHI_RESOLVER_FAILURE:
+                        f_svc_fail(browse_context, i);
+                        break;
+                    case AVAHI_RESOLVER_FOUND: {
+                            int32_t err = f_svc_check_resolved(svc_context, txt);
+                            if (err != X502_ERR_OK) {
+                                f_remove_service_idx(browse_context, i);
+                            } else {
+                                if (svc_context->init_done == 0)  {
+                                    svc_context->init_done = 1;
+                                    svc_context->fail = 0;
+                                    svc_context->event = E502_ETH_SVC_EVENT_ADD;
+                                } else if (svc_context->event == E502_ETH_SVC_EVENT_NONE) {
+                                    svc_context->event = E502_ETH_SVC_EVENT_CHANGED;
+                                }
                             }
                         }
-                    }
-                    break;
+                        break;
+                }
             }
         }
     }
