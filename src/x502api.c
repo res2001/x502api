@@ -61,12 +61,6 @@ X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
             if (!err)
                 err = stop_err;
         }
-
-        if (hnd->iface_data) {
-            free(hnd->iface_data);
-            hnd->iface_data = NULL;
-        }
-
     }
     return err;
 }

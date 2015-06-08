@@ -477,6 +477,9 @@ static int32_t f_iface_close(t_x502_hnd hnd) {
             closesocket(tcp_data->cmd_sock);
             tcp_data->cmd_sock = INVALID_SOCKET;
         }
+
+        free(hnd->iface_data);
+        hnd->iface_data = NULL;
     }
     return err;
 }

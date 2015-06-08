@@ -298,6 +298,10 @@ static int32_t f_iface_close(t_x502_hnd hnd) {
 
         libusb_release_interface(usb_data->devhnd, 0);
         libusb_close(usb_data->devhnd);
+
+
+        free(hnd->iface_data);
+        hnd->iface_data = NULL;
     }
     return err;
 }
