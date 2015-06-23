@@ -42,7 +42,8 @@ L502 and E502 devices.
 %setup
 
 %build
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=%{_prefix}\
+    -DX502_INSTALL_INCLUDE=%{_includedir} -DX502_INSTALL_LIB=%{_libdir}
 make
 
 %install
@@ -71,7 +72,7 @@ ldconfig
 
 %files -n libx502api1
 %defattr(0644,root,root)
-/usr/lib/libx502api.so.*
+%{_libdir}/libx502api.so.*
 
 %description -n libx502api1
 This package contain the shared object files with general functions for E502 and L502 devices.
@@ -103,7 +104,7 @@ ldconfig
 %defattr(-,root,root)
 /usr/lib/udev/rules.d/e502.rules
 %defattr(0644,root,root)
-/usr/lib/libe502api.so.*
+%{_libdir}/libe502api.so.*
 
 %description -n libe502api1
 This package contain the shared object files for control L-Card E502 data acquisition module with USB and Ethernet interface.
@@ -124,7 +125,7 @@ ldconfig
 
 %files -n libl502api1
 %defattr(0644,root,root)
-/usr/lib/libl502api.so.*
+%{_libdir}/libl502api.so.*
 
 %description -n libl502api1
 This package contain the shared object files for control L-Card L502 data acquisition module with USB and Ethernet interface.
@@ -151,7 +152,7 @@ have little use for this package.
 
 %files -n libx502api1-devel
 %defattr(0644,root,root)
-/usr/include/*
-/usr/lib/lib*.so
+%{_includedir}/*
+%{_libdir}/lib*.so
 
 

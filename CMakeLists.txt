@@ -32,8 +32,12 @@ set(LTIMER_DIR       ${X502API_LIB_DIR}/ltimer)
 set(LCSPEC_DIR       ${X502API_LIB_DIR}/lcspec)
 set(X502_LIBS_CMAKE_FILE  ${CMAKE_CURRENT_SOURCE_DIR}/x502libs.cmake)
 
-set(X502_INSTALL_LIB        lib)
-set(X502_INSTALL_INCLUDE    include)
+if(NOT X502_INSTALL_LIB)
+    set(X502_INSTALL_LIB        lib)
+endif(NOT X502_INSTALL_LIB)
+if (NOT X502_INSTALL_INCLUDE)
+    set(X502_INSTALL_INCLUDE    include)
+endif(NOT X502_INSTALL_INCLUDE)
 set(X502_INSTALL_PASCAL     pas)
 
 
