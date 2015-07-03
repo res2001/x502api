@@ -306,7 +306,7 @@ X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
         if (err == X502_ERR_OK)
             err = stop_err2;
 
-        hnd->flags &= ~(PRIV_FLAGS_STREAM_RUN | PRIV_FLAGS_PRELOAD_DONE);
+        hnd->flags &= ~(PRIV_FLAGS_STREAM_RUN | PRIV_FLAGS_PRELOAD_DONE | PRIV_FLGAS_CYCLE_MODE);
 
         osspec_mutex_release(hnd->mutex_cfg);
     }
