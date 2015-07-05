@@ -27,6 +27,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
 static int32_t f_iface_cycle_load_start(t_x502_hnd hnd, uint32_t size);
 static int32_t f_iface_cycle_setup(t_x502_hnd hnd, uint32_t flags);
 static int32_t f_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags);
+static int32_t f_iface_cycle_check_setup(t_x502_hnd hnd, uint32_t *done);
 
 
 static const t_x502_dev_iface f_pcie_iface = {
@@ -60,6 +61,7 @@ static const t_x502_dev_iface f_pcie_iface = {
     f_iface_cycle_load_start,
     f_iface_cycle_setup,
     f_iface_cycle_stop,
+    f_iface_cycle_check_setup,
     NULL,
     NULL
 };
@@ -123,4 +125,8 @@ static int32_t f_iface_cycle_setup(t_x502_hnd hnd, uint32_t flags) {
 static int32_t f_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags) {
     return l502_port_cycle_stop(hnd, L502_DMA_CHNUM_OUT, (flags & X502_OUT_CYCLE_FLAGS_FORCE) ?
                            LPCIE_CYCLE_SW_EVT_IMMIDIATLY : LPCIE_CYCLE_SW_EVT_END_OF_CYCLE);
+}
+
+static int32_t f_iface_cycle_check_setup(t_x502_hnd hnd, uint32_t *done) {
+    return X502_ERR_NOT_SUP_BY_DRIVER;
 }

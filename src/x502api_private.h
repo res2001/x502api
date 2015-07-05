@@ -46,6 +46,8 @@ struct st_x502_devrec_inptr {
 
 #define X502_MUTEX_CFG_LOCK_TOUT 1000
 
+#define X502_OUT_CYCLE_WAIT_TOUT  10000
+
 
 #define X502_STREAM_CH_CNT 2
 
@@ -99,6 +101,7 @@ typedef int32_t (*t_x502_iface_reload_devinfo)(t_x502_hnd hnd);
 typedef int32_t (*t_x502_iface_cycle_load_start)(t_x502_hnd hnd, uint32_t size);
 typedef int32_t (*t_x502_iface_cycle_setup)(t_x502_hnd hnd, uint32_t flags);
 typedef int32_t (*t_x502_iface_cycle_stop)(t_x502_hnd hnd, uint32_t flags);
+typedef int32_t (*t_x502_iface_cycle_check_setup)(t_x502_hnd hnd, uint32_t *done);
 
 
 typedef int32_t (*t_x502_iface_gen_ioctl)(t_x502_hnd hnd, uint32_t cmd_code, uint32_t param,
@@ -144,6 +147,7 @@ typedef struct {
     t_x502_iface_cycle_load_start   cycle_load_start;
     t_x502_iface_cycle_setup        cycle_setup;
     t_x502_iface_cycle_stop         cycle_stop;
+    t_x502_iface_cycle_check_setup  cycle_check_setup;
     t_x502_iface_fpga_mode_init     fpga_mode_init;
     t_x502_iface_gen_ioctl          gen_ioctl;
 } t_x502_dev_iface;

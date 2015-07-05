@@ -1,6 +1,7 @@
 #include "x502api_private.h"
 #include "x502_fpga_regs.h"
 #include "l502_bf_cmd_defs.h"
+#include "ltimer.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -457,6 +458,28 @@ X502_EXPORT(int32_t) X502_OutCycleLoadStart(t_x502_hnd hnd, uint32_t size) {
 }
 
 
+static int32_t f_cycle_setup_wait(t_x502_hnd hnd, uint32_t tout) {
+    int32_t err = X502_ERR_OK;
+    t_ltimer tmr;
+    uint32_t done = 0;
+    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout));
+
+    do {
+        err = X502_OutCycleCheckSetupDone(hnd, &done);
+    } while (!done && !ltimer_expired(&tmr) && (err == X502_ERR_OK));
+
+    if ((err == X502_ERR_NOT_SUP_BY_DRIVER) || (err == X502_ERR_NOT_SUP_BY_FIRMWARE)) {
+        done = 1;
+        err = X502_ERR_OK;
+    }
+
+    if ((err == X502_ERR_OK) && !done) {
+        err = X502_ERR_OUT_CYCLE_SETUP_TOUT;
+    }
+
+    return err;
+
+}
 
 
 
@@ -464,6 +487,8 @@ X502_EXPORT(int32_t) X502_OutCycleSetup(t_x502_hnd hnd, uint32_t flags) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err == X502_ERR_OK)
         err = hnd->iface_hnd->cycle_setup(hnd, flags);
+    if ((err == X502_ERR_OK) && (flags & X502_OUT_CYCLE_FLAGS_WAIT_DONE))
+        err = f_cycle_setup_wait(hnd, X502_OUT_CYCLE_WAIT_TOUT);
     return err;
 }
 
@@ -479,6 +504,18 @@ X502_EXPORT(int32_t) X502_OutCycleStop(t_x502_hnd hnd, uint32_t flags) {
             hnd->flags &= ~PRIV_FLGAS_CYCLE_MODE;
             osspec_mutex_release(hnd->mutex_cfg);
         }
+    }
+
+    if ((err == X502_ERR_OK) && (flags & X502_OUT_CYCLE_FLAGS_WAIT_DONE))
+        err = f_cycle_setup_wait(hnd, X502_OUT_CYCLE_WAIT_TOUT);
+
+    return err;
+}
+
+X502_EXPORT(int32_t) X502_OutCycleCheckSetupDone(t_x502_hnd hnd, uint32_t *done) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK) {
+        err = hnd->iface_hnd->cycle_check_setup(hnd, done);
     }
     return err;
 }

@@ -2,6 +2,9 @@
 #define E502_LPC_CMD_DEFS_H
 
 
+#define E502_CM4_SUPPORT_OUT_CYCLE_SETUP_CHECK(ver) (ver >= 0x01000200)
+
+
 typedef enum {
     E502_CM4_ERR_OK                     = 0,
     E502_CM4_ERR_FPGA_NSTATUS_TOUT      = -1001, /**< При загрузке ПЛИС не удалось дождаться сигнала перехода в режим загрузки */
@@ -74,43 +77,45 @@ typedef enum {
 
 
 typedef enum {
-    E502_CM4_CMD_GET_MODULE_NAME     = 11,
-    E502_CM4_CMD_GET_USB_SPEED       = 6,
+    E502_CM4_CMD_GET_MODULE_NAME        = 11,
+    E502_CM4_CMD_GET_USB_SPEED          = 6,
 
-    E502_CM4_CMD_BOOT                = 0x0F,
-    E502_CM4_CMD_FPGA_REG_READ       = 0x10,
-    E502_CM4_CMD_FPGA_REG_WRITE      = 0x11,
-    E502_CM4_CMD_STREAM_START        = 0x12,
-    E502_CM4_CMD_STREAM_STOP         = 0x13,
-    E502_CM4_CMD_STREAM_SET_STEP     = 0x14,
-    E502_CM4_CMD_STREAM_IS_RUNNING   = 0x15,
-    E502_CM4_CMD_FIRM_BUF_WRITE      = 0x16,
-    E502_CM4_CMD_FLASH_RD            = 0x17,
-    E502_CM4_CMD_FLASH_WR            = 0x18,
-    E502_CM4_CMD_FLASH_ERASE         = 0x19,
-    E502_CM4_CMD_FLASH_SET_PROTECT   = 0x1A,
-    E502_CM4_CMD_FLASH_RELOAD_INFO   = 0x1B,
-    E502_CM4_CMD_ETH_CFG_SET         = 0x1C,
-    E502_CM4_CMD_ETH_CFG_GET         = 0x1D,
-    E502_CM4_CMD_BF_MEM_WRITE        = 0x20,
-    E502_CM4_CMD_BF_MEM_READ         = 0x21,
-    E502_CM4_CMD_BF_FIRM_LOAD        = 0x22,
-    E502_CM4_CMD_DROP_DATA_CON       = 0x23,
-    E502_CM4_CMD_RELOAD_FPGA         = 0x24,
-    E502_CM4_CMD_GET_DEVFLAGS        = 0x25,
+    E502_CM4_CMD_BOOT                   = 0x0F,
+    E502_CM4_CMD_FPGA_REG_READ          = 0x10,
+    E502_CM4_CMD_FPGA_REG_WRITE         = 0x11,
+    E502_CM4_CMD_STREAM_START           = 0x12,
+    E502_CM4_CMD_STREAM_STOP            = 0x13,
+    E502_CM4_CMD_STREAM_SET_STEP        = 0x14,
+    E502_CM4_CMD_STREAM_IS_RUNNING      = 0x15,
+    E502_CM4_CMD_FIRM_BUF_WRITE         = 0x16,
+    E502_CM4_CMD_FLASH_RD               = 0x17,
+    E502_CM4_CMD_FLASH_WR               = 0x18,
+    E502_CM4_CMD_FLASH_ERASE            = 0x19,
+    E502_CM4_CMD_FLASH_SET_PROTECT      = 0x1A,
+    E502_CM4_CMD_FLASH_RELOAD_INFO      = 0x1B,
+    E502_CM4_CMD_ETH_CFG_SET            = 0x1C,
+    E502_CM4_CMD_ETH_CFG_GET            = 0x1D,
+    E502_CM4_CMD_BF_MEM_WRITE           = 0x20,
+    E502_CM4_CMD_BF_MEM_READ            = 0x21,
+    E502_CM4_CMD_BF_FIRM_LOAD           = 0x22,
+    E502_CM4_CMD_DROP_DATA_CON          = 0x23,
+    E502_CM4_CMD_RELOAD_FPGA            = 0x24,
+    E502_CM4_CMD_GET_DEVFLAGS           = 0x25,
 
-    E502_CM4_CMD_OUT_CYCLE_LOAD      = 0x26,
-    E502_CM4_CMD_OUT_CYCLE_SETUP     = 0x27,
-    E502_CM4_CMD_OUT_CYCLE_STOP      = 0x28,
+    E502_CM4_CMD_OUT_CYCLE_LOAD         = 0x26,
+    E502_CM4_CMD_OUT_CYCLE_SETUP        = 0x27,
+    E502_CM4_CMD_OUT_CYCLE_STOP         = 0x28,
+    E502_CM4_CMD_OUT_CYCLE_SETUP_CHECK  = 0x29,
 
 
-    E502_CM4_CMD_TEST_START          = 0x40,
-    E502_CM4_CMD_TEST_STOP           = 0x41,
-    E502_CM4_CMD_TEST_GET_STATE      = 0x42,
 
-    E502_CM4_CMD_GET_MODULE_INFO     = 0x80,
-    E502_CM4_CMD_GET_MODULE_MODE     = 0x81,
-    E502_CM4_CMD_GET_LAST_ERROR      = 0x82
+    E502_CM4_CMD_TEST_START             = 0x40,
+    E502_CM4_CMD_TEST_STOP              = 0x41,
+    E502_CM4_CMD_TEST_GET_STATE         = 0x42,
+
+    E502_CM4_CMD_GET_MODULE_INFO        = 0x80,
+    E502_CM4_CMD_GET_MODULE_MODE        = 0x81,
+    E502_CM4_CMD_GET_LAST_ERROR         = 0x82
 } t_e502_cm4_cmd_codes;
 
 

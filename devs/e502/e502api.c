@@ -156,6 +156,21 @@ int32_t e502_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags) {
     return err;
 }
 
+int32_t e502_iface_cycle_check_setup(t_x502_hnd hnd, uint32_t *done) {
+
+    int32_t err = E502_CM4_SUPPORT_OUT_CYCLE_SETUP_CHECK(hnd->info.mcu_firmware_ver)
+            ? X502_ERR_OK : X502_ERR_NOT_SUP_BY_FIRMWARE;
+    if (err == X502_ERR_OK) {
+        uint8_t ret_done;
+        err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_OUT_CYCLE_SETUP_CHECK, 0, NULL,0, &ret_done, sizeof(ret_done), NULL, 0);
+        if (err == X502_ERR_OK) {
+            *done = ret_done ? 1 : 0;
+        }
+    }
+    return err;
+
+}
+
 void e502_devinfo_init(t_x502_info *info, const t_lboot_devinfo *lboot_info) {
     int ver[4];
     int ver_comp_valid;

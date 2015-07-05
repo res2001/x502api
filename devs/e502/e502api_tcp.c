@@ -127,6 +127,7 @@ static const t_x502_dev_iface f_tcp_iface = {
     e502_iface_cycle_load_start,
     e502_iface_cycle_setup,
     e502_iface_cycle_stop,
+    e502_iface_cycle_check_setup,
     e502_iface_fpga_mode_init,
     f_iface_gen_ioctl
 };
