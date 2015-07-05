@@ -632,7 +632,7 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
             *rdy_cnt = val/4;
         }
     } else {
-        /** @todo */
+        err = X502_ERR_NOT_IMPLEMENTED;
     }
 #else
     if (ch == X502_STREAM_CH_IN) {
@@ -643,6 +643,9 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
             *rdy_cnt = val/4;
         }
     } else {
+        err = X502_ERR_NOT_IMPLEMENTED;
+#if 0
+        /* Данный вариант в реальности не работает корректно */
         int buf_len, val;
         socklen_t optlen = sizeof(buf_len);
         if (getsockopt(tcp_data->data_sock, SOL_SOCKET, SO_SNDBUF, (char*)&buf_len, &optlen)==SOCKET_ERROR) {
@@ -652,6 +655,7 @@ static int32_t f_iface_stream_get_rdy_cnt(t_x502_hnd hnd, uint32_t ch, uint32_t 
         } else {
             *rdy_cnt = (buf_len - val)/4;
         }
+#endif
     }
 #endif
     return err;

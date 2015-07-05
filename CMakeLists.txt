@@ -132,6 +132,9 @@ if(BUILD_EXAMPLES OR BUILD_ALL)
     add_subdirectory(examples/c)
 endif(BUILD_EXAMPLES OR BUILD_ALL)
 
+if(BUILD_TESTS)
+    add_subdirectory(tests)
+endif(BUILD_TESTS)
 
 if(LPCIE_DOCGEN_DIR)
     include(${LPCIE_DOCGEN_DIR}/LDoxyToPdf.cmake)
