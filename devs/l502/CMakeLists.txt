@@ -20,6 +20,7 @@ set(SETUP_HEADERS
 
 set(HEADERS
     l502api_private.h
+    lpcie_ioctls.h
     ${LTIMER_HEADERS})
 
 set(LIBS

@@ -128,5 +128,19 @@ static int32_t f_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags) {
 }
 
 static int32_t f_iface_cycle_check_setup(t_x502_hnd hnd, uint32_t *done) {
-    return X502_ERR_NOT_SUP_BY_DRIVER;
+    uint32_t ver;
+    int32_t err = L502_GetDriverVersion(hnd, &ver);
+    if ((err == X502_ERR_OK) && !LPCIE_IOCTL_SUPPORT_CYCLE_CHECK_SETUP(ver))
+        err = X502_ERR_NOT_SUP_BY_DRIVER;
+    if (err == X502_ERR_OK)
+        err = l502_port_cycle_check_setup(hnd, L502_DMA_CHNUM_OUT, done);
+
+    if (err == X502_ERR_OK) {
+        /* за счет буфера в плате на вывод может пройти несколько мс после
+         * передачи в модуль данных до того как реально эти данные появятся
+         * на выходе. т.к. это отследить явно нельзя, то приходится ставить задержку */
+        SLEEP_MS(3);
+    }
+
+    return err;
 }

@@ -35,6 +35,7 @@ int32_t l502_port_get_drv_ver(t_x502_hnd hnd, uint32_t *ver);
 int32_t l502_port_cycle_load_start(t_x502_hnd hnd, uint32_t ch, uint32_t size);
 int32_t l502_port_cycle_setup(t_x502_hnd hnd, uint32_t ch, uint32_t evt);
 int32_t l502_port_cycle_stop(t_x502_hnd hnd, uint32_t ch, uint32_t evt);
+int32_t l502_port_cycle_check_setup(t_x502_hnd hnd, uint32_t ch, uint32_t *done);
 
 
 

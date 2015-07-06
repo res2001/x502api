@@ -8,26 +8,25 @@
 #ifndef LPCIE_IOCTLS_H
 #define LPCIE_IOCTLS_H
 
+/** Проверка по версии дарайвера, поддерживается ли запрос LPCIE_IOCTL_CYCLE_CHECK_SETUP */
+#define LPCIE_IOCTL_SUPPORT_CYCLE_CHECK_SETUP(ver)   (ver >= 0x01000900)
 
 /** Варианты событий, по которым должно произойти переключение
     циклического сигнала */
-typedef enum
-{
+typedef enum {
     LPCIE_CYCLE_SW_EVT_IMMIDIATLY    = 1, /**< сразу по получению команды */
     LPCIE_CYCLE_SW_EVT_END_OF_CYCLE  = 2  /**< по завершению текущего цикла */
 } t_lpcie_cycle_sw_evt;
 
 
 /** параметры для записи значения регистра */
-typedef struct
-{
+typedef struct {
     uint32_t addr; /** Адрес регистра */
     uint32_t val; /** Значение регистра */
 } t_lpcie_mem_rw;
 
 /** настройки канала DMA, передаваемые вместе с LPCIE_IOCTL_STREAM_SET_PARAMS */
-typedef struct
-{
+typedef struct {
     uint32_t ch;  /** канал DMA (ввод/вывод) */
     uint32_t res[2]; /** резерв */
     uint32_t buf_size; /** размер каждой страницы памяти в PC */
@@ -37,25 +36,28 @@ typedef struct
 } t_lpcie_stream_ch_params;
 
 /** параметры для установки циклического сигнала */
-typedef struct
-{
+typedef struct {
     uint32_t ch; /** канал DMA (доступно только на вывод) */
     uint32_t size; /** количество отсчетов в циклическом сигнале */
     uint32_t res[2];  /** резерв */
 } t_lpcie_cycle_set_par;
 
 /** параметры для остановки/смены циклического сигнала */
-typedef struct
-{
+typedef struct {
     uint32_t ch;    /** канал DMA (доступно только на вывод) */
     uint32_t evt;   /** событие для смены сигнала из #t_lpcie_cycle_sw_evt */
     uint32_t res[2]; /** резерв */
 } t_lpcie_cycle_evt_par;
 
+/** параметры для запроса LPCIE_IOCTL_CYCLE_CHECK_SETUP */
+typedef struct {
+    uint32_t ch;  /** канал DMA (доступно только на вывод) */
+    uint32_t done;  /** признак, завершена ли установка циклического сигнала */
+} t_lpcie_cycle_check_setup_par;
+
 /** параметры запроса для получения количества готовых для ввода или вывода
     отсчетов */
-typedef struct
-{
+typedef struct {
     uint32_t ch;  /** канал DMA (ввод/вывод) */
     uint32_t rdy_size; /** Количество отсчетов доступных на ввод или вывод */
 } t_lpcie_get_rdy_par;
@@ -100,6 +102,8 @@ typedef struct
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x851, METHOD_BUFFERED, FILE_ANY_ACCESS)
 #define LPCIE_IOCTL_CYCLE_STOP \
     CTL_CODE(FILE_DEVICE_UNKNOWN, 0x852, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define LPCIE_IOCTL_CYCLE_CHECK_SETUP \
+    CTL_CODE(FILE_DEVICE_UNKNOWN, 0x853, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 #else
 
@@ -124,9 +128,10 @@ typedef struct
 #define LPCIE_IOCTL_STREAM_FREE         _IOW(LPCIE_IO_MAGIC, 0x846, uint32_t)
 #define LPCIE_IOCTL_STREAM_START_SINGLE _IOW(LPCIE_IO_MAGIC, 0x847, uint32_t)
 
-#define LPCIE_IOCTL_CYCLE_LOAD   _IOW(LPCIE_IO_MAGIC, 0x850, t_lpcie_cycle_set_par)
-#define LPCIE_IOCTL_CYCLE_SWITCH _IOW(LPCIE_IO_MAGIC, 0x851, t_lpcie_cycle_evt_par)
-#define LPCIE_IOCTL_CYCLE_STOP   _IOW(LPCIE_IO_MAGIC, 0x852, t_lpcie_cycle_evt_par)
+#define LPCIE_IOCTL_CYCLE_LOAD          _IOW(LPCIE_IO_MAGIC, 0x850, t_lpcie_cycle_set_par)
+#define LPCIE_IOCTL_CYCLE_SWITCH        _IOW(LPCIE_IO_MAGIC, 0x851, t_lpcie_cycle_evt_par)
+#define LPCIE_IOCTL_CYCLE_STOP          _IOW(LPCIE_IO_MAGIC, 0x852, t_lpcie_cycle_evt_par)
+#define LPCIE_IOCTL_CYCLE_CHECK_SETUP   _IOWR(LPCIE_IO_MAGIC, 0x853, t_lpcie_cycle_check_setup_par)
 
 #endif
 

@@ -179,6 +179,15 @@ int32_t l502_port_cycle_stop(t_x502_hnd hnd, uint32_t ch, uint32_t evt) {
                     NULL, L502_IOCTL_TIMEOUT);
 }
 
+int32_t l502_port_cycle_check_setup(t_x502_hnd hnd, uint32_t ch, uint32_t *done) {
+    uint32_t rd_val;
+    int32_t err = f_ioctl (L502_PCI_IFACE_FILE(hnd), LPCIE_IOCTL_CYCLE_CHECK_SETUP, &ch, sizeof(ch),
+                          &rd_val, sizeof(rd_val), NULL, L502_IOCTL_TIMEOUT);
+    if ((err == X502_ERR_OK) && (done != NULL))
+        *done = rd_val;
+    return err;
+}
+
 int32_t l502_port_renew_info(t_x502_hnd hnd) {
     return f_ioctl(L502_PCI_IFACE_FILE(hnd), LPCIE_IOCTL_RELOAD_DEVINFO, NULL, 0, NULL, 0, NULL,
                    L502_IOCTL_TIMEOUT);
