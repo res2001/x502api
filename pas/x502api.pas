@@ -394,6 +394,11 @@ const
     //    конца цикла предыдущего сигнала.
     X502_OUT_CYCLE_FLAGS_FORCE = $01;
 
+    // Флаг указывает, что функция должна дождаться полной загрузки сигнала
+    // и установки сигнала на вывод (для X502_OutCycleSetup()) или завершения
+    // генерации циклического сигнала (для X502_OutCycleStop())
+    X502_OUT_CYCLE_FLAGS_WAIT_DONE = $02;
+
 
 type
   st_x502_devrec_inptr = record
@@ -580,6 +585,8 @@ type
   function X502_OutCycleSetup(hnd: t_x502_hnd; flags: LongWord):LongInt; stdcall;
   // Останов вывода циклического сигнала
   function X502_OutCycleStop(hnd: t_x502_hnd; flags: LongWord):LongInt; stdcall;
+  // Проверка, завершена ли установка или останов циклического сигнала
+  function X502_OutCycleCheckSetupDone(hnd: t_x502_hnd; out done : LongBool):LongInt; stdcall;
 
   // Установка размера буфера для синхронного ввода или вывода.
   function X502_SetStreamBufSize(hnd: t_x502_hnd;  dma_ch, size: LongWord): LongInt; stdcall;
@@ -699,6 +706,7 @@ implementation
   function X502_OutCycleLoadStart(hnd: t_x502_hnd; size: LongWord):LongInt; stdcall; external 'x502api.dll';
   function X502_OutCycleSetup(hnd: t_x502_hnd; flags: LongWord):LongInt; stdcall; external 'x502api.dll';
   function X502_OutCycleStop(hnd: t_x502_hnd; flags: LongWord):LongInt; stdcall; external 'x502api.dll';
+  function X502_OutCycleCheckSetupDone(hnd: t_x502_hnd; out done : LongBool):LongInt; stdcall; external 'x502api.dll';
   function X502_SetStreamBufSize(hnd: t_x502_hnd;  dma_ch, size: LongWord): LongInt; stdcall; external 'x502api.dll';
   function X502_SetStreamStep(hnd: t_x502_hnd; dma_ch, step: LongWord): LongInt; stdcall; external 'x502api.dll';
 

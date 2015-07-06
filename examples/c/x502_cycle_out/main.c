@@ -195,7 +195,7 @@ static int32_t f_load_cycle_signal(t_x502_hnd hnd, int sig) {
 
     /* делаем активным загруженный сигнал */
     if (err == X502_ERR_OK) {
-       err = X502_OutCycleSetup(hnd,0);
+       err = X502_OutCycleSetup(hnd, X502_OUT_CYCLE_FLAGS_WAIT_DONE);
        if (err != X502_ERR_OK)
             fprintf(stderr, "Ошибка установки циклического сигнала: %s!", X502_GetErrorString(err));
     }
@@ -438,7 +438,7 @@ int main(int argc, char **argv) {
                     if (!strcmp(cmd, "exit") || !strcmp(cmd,"e")) {
                         exit=1;
                     } else if (!strcmp(cmd, "stop")||!strcmp(cmd,"s")) {
-                        err = X502_OutCycleStop(hnd,0);
+                        err = X502_OutCycleStop(hnd, X502_OUT_CYCLE_FLAGS_WAIT_DONE);
                         if (err != X502_ERR_OK) {
                             fprintf(stderr, "Ошибка останова циклического сигнала (%d): %s\n",
                                     err, X502_GetErrorString(err));

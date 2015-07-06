@@ -46,7 +46,7 @@ struct st_x502_devrec_inptr {
 
 #define X502_MUTEX_CFG_LOCK_TOUT 1000
 
-#define X502_OUT_CYCLE_WAIT_TOUT  10000
+#define X502_OUT_CYCLE_WAIT_TOUT  20000
 
 
 #define X502_STREAM_CH_CNT 2
