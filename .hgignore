@@ -1,5 +1,4 @@
 syntax: glob
-test*
 *~
 CMakeLists.txt.user*
 *.orig
