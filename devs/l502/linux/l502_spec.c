@@ -86,6 +86,18 @@ int32_t l502_port_cycle_stop(t_x502_hnd hnd, uint32_t ch, uint32_t evt) {
     return f_ioctl (L502_PCI_IFACE_FILE(hnd), LPCIE_IOCTL_CYCLE_STOP, &par);
 }
 
+int32_t l502_port_cycle_check_setup(t_x502_hnd hnd, uint32_t ch, uint32_t *done) {
+    t_lpcie_cycle_check_setup_par par;
+    int32_t err;
+
+    memset(&par, 0, sizeof(par));
+    par.ch = ch;
+    err = f_ioctl(L502_PCI_IFACE_FILE(hnd), LPCIE_IOCTL_CYCLE_CHECK_SETUP, &par);
+    if (err == X502_ERR_OK)
+        *done = par.done;
+    return err;
+}
+
 int32_t l502_port_renew_info(t_x502_hnd hnd) {
     return f_ioctl(L502_PCI_IFACE_FILE(hnd), LPCIE_IOCTL_RELOAD_DEVINFO, NULL);
 }
