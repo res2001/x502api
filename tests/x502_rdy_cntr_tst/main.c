@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
                     err = f_recv(hnd, rdy_cnt);
 
 #ifdef _WIN32
-                sleep(SLEEP_TIME_MS);
+                Sleep(SLEEP_TIME_MS);
 #else
                 usleep(SLEEP_TIME_MS*1000);
 #endif
