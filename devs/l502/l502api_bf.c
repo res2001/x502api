@@ -239,9 +239,9 @@ int32_t l502_iface_bf_firm_load(t_x502_hnd hnd, const char *filename) {
 
                             if ((err == X502_ERR_OK) && (size > 8)) {
                                 err = f_bf_mem_wr(hnd, pkt.addr, ldr_buff, size-8);
-                                pkt.addr+=4*(size-8);
-                                size = 8;
+                                pkt.addr+=4*(size-8);                                
                                 buf_pos = size-8;
+                                size = 8;
                             }
 
                             if (err == X502_ERR_OK)
