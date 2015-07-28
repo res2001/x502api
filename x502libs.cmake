@@ -80,7 +80,7 @@ if(X502API_BUILD_MINGW_LIBS)
 
     add_custom_command(OUTPUT ${MODULE_MINGW_LIBFILE} ALL
         COMMAND "${GENDEF}" - -a  ${PROJECT_NAME}.dll > ${MODULE_MINGW}_tmp.def
-        COMMAND "${DLLTOOL}" -m ${MODULE_MINGW_MACHINE} -l ${MODULE_MINGW_LIBFILE} -k -d ${MODULE_MINGW}.def
+        COMMAND "${DLLTOOL}" -m ${MODULE_MINGW_MACHINE} -l ${MODULE_MINGW_LIBFILE} -k -d ${MODULE_MINGW}_tmp.def
         DEPENDS ${PROJECT_NAME}
         COMMENT "make mingw library for ${PROJECT_NAME}")
     add_custom_target(${MODULE_MINGW} ALL
