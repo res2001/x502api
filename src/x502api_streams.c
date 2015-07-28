@@ -33,10 +33,11 @@ static int32_t f_stream_in_cfg(t_x502 *hnd) {
     t_x502_stream_ch_params params;
     double din_freq = 0;
     uint32_t total_size = 0;
-    int ref_freq = hnd->set.ref_freq;
-
+    double ref_freq;
 
     memset(&params, 0, sizeof(params));
+
+    X502_GetRefFreqValue(hnd, &ref_freq);
 
     /* рассчитываем частоту сбора для потоков АЦП и DIN */
     if (hnd->streams & X502_STREAM_ADC) {

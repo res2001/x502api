@@ -208,8 +208,9 @@ X502_EXPORT(int32_t) X502_SetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_fr
         err = X502_ERR_INVALID_POINTER;
 
     if (!err) {
-        double ref_freq = hnd->set.ref_freq;
+        double ref_freq;
         double set_freq = *f_acq;
+        X502_GetRefFreqValue(hnd, &ref_freq);
         if (set_freq<=0)
             set_freq = ref_freq;
         hnd->set.adc_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
@@ -246,8 +247,11 @@ X502_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_fr
         err = X502_ERR_INVALID_POINTER;
 
     if (!err) {
-        double ref_freq = hnd->set.ref_freq;
-        double set_freq = ref_freq/hnd->set.adc_freq_div;
+        double ref_freq, set_freq;
+
+        X502_GetRefFreqValue(hnd, &ref_freq);
+
+        set_freq = ref_freq/hnd->set.adc_freq_div;
         if (f_acq!=NULL) {
             *f_acq = set_freq;
         }
@@ -269,8 +273,10 @@ X502_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din) {
         err = X502_ERR_INVALID_POINTER;
 
     if (!err) {
-        double ref_freq = hnd->set.ref_freq;
-        double set_freq = *f_din;
+        double ref_freq, set_freq;
+
+        X502_GetRefFreqValue(hnd, &ref_freq);
+        set_freq = *f_din;
         if (set_freq<=0)
             set_freq = ref_freq;
         hnd->set.din_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
@@ -292,8 +298,10 @@ X502_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout) {
         err = X502_ERR_INVALID_POINTER;
 
     if (!err) {
-        double ref_freq = hnd->set.ref_freq;
-        double set_freq = *f_dout;
+        double ref_freq, set_freq;
+
+        X502_GetRefFreqValue(hnd, &ref_freq);
+        set_freq = *f_dout;
         if (set_freq<=0)
             set_freq = ref_freq;
         hnd->set.out_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
@@ -316,9 +324,36 @@ X502_EXPORT(int32_t) X502_SetRefFreq(t_x502_hnd hnd, uint32_t freq) {
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err)
-        hnd->set.ref_freq = freq==0 ? 1 : freq;
+        hnd->set.ref_freq = freq;
     return err;
 }
+
+
+
+X502_EXPORT(int32_t) X502_SetExtRefFreqValue(t_x502_hnd hnd, double freq) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
+        err = X502_ERR_STREAM_IS_RUNNING;
+    if (!err)
+        hnd->set.ext_ref_freq = freq;
+    return err;
+}
+
+X502_EXPORT(int32_t) X502_GetRefFreqValue(t_x502_hnd hnd, double *freq) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+
+    if (!err) {
+        if ((hnd->set.sync_mode == X502_SYNC_INTERNAL) ||
+             (hnd->set.ext_ref_freq == 0)) {
+            *freq = hnd->set.ref_freq;
+        } else {
+            *freq = hnd->set.ext_ref_freq;
+        }
+    }
+    return err;
+}
+
+
 
 X502_EXPORT(int32_t) X502_SetSyncMode(t_x502_hnd hnd, uint32_t sync_mode) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
@@ -363,7 +398,7 @@ X502_EXPORT(int32_t) X502_Configure(t_x502_hnd hnd, uint32_t flags) {
                 && (hnd->set.ref_freq!=X502_REF_FREQ_2000KHZ)
                 &&(hnd->set.ref_freq!=X502_REF_FREQ_1500KHZ)) {
             err = X502_ERR_INVALID_REF_FREQ;
-        } else if (hnd->set.ref_freq > 2000000) {
+        } else if (hnd->set.ext_ref_freq > 2000000) {
             err = X502_ERR_INVALID_REF_FREQ;
         }
     }

@@ -40,6 +40,8 @@ EXPORTS
     X502_GetAdcFreq
     X502_SetOutFreq
     X502_SetRefFreq
+    X502_SetExtRefFreqValue
+    X502_GetRefFreqValue
     X502_SetSyncMode
     X502_SetSyncStartMode
     X502_SetMode

@@ -92,6 +92,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
             hnd->set.out_freq_div = 2;
 
             hnd->set.ref_freq = X502_REF_FREQ_2000KHZ;
+            hnd->set.ext_ref_freq = 0;
             hnd->streams = 0;
 
             hnd->flags = PRIV_FLAGS_OPENED;
