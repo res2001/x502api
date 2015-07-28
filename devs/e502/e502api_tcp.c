@@ -3,6 +3,7 @@
 #include "ltimer.h"
 #include "e502_fpga_regs.h"
 #include "e502api_tcp_private.h"
+#include "osspec.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -56,8 +57,9 @@
     #define MSG_NOSIGNAL 0
 #endif
 
-#define E502_TCP_REQ_TOUT           5000
-#define E502_TCP_STOP_WAIT_TOUT     5000
+#define E502_TCP_REQ_TOUT               5000
+#define E502_TCP_STOP_WAIT_TOUT         5000
+#define X502_MUTEX_TCP_IOCTL_LOCK_TOUT  5000
 
 
 
@@ -73,6 +75,7 @@ typedef struct {
     t_socket data_sock;
     uint32_t ip_addr;
     uint32_t open_tout;
+    t_mutex  ioctl_mutex;
 
     uint32_t recv_part_wrd; /**< принятое неполностью слово */
     uint32_t send_part_wrd; /**< переданное неполностью слово */
@@ -355,43 +358,49 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
     t_e502_tcp_resp_hdr cmd_resp;
     int32_t err = X502_ERR_OK;
     t_ltimer tmr;
-    t_socket s = ((t_tcp_iface_data*)hnd->iface_data)->cmd_sock;
+    t_tcp_iface_data* iface_data = (t_tcp_iface_data*)hnd->iface_data;
+    t_socket s = iface_data->cmd_sock;
 
-    ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout == 0 ? E502_TCP_REQ_TOUT : tout));
-    cmd_hdr.sign = E502_TCP_CMD_SIGNATURE;
-    cmd_hdr.cmd = cmd_code;
-    cmd_hdr.par = param;
-    cmd_hdr.data_len = snd_size;
-    cmd_hdr.resp_len = recv_size;
-
-    err = f_send_exact(s, (uint8_t*)&cmd_hdr, E502_TCP_CMD_HDR_SIZE, &tmr);
-    if ((err == X502_ERR_OK) && (snd_size > 0)) {
-        err = f_send_exact(s, snd_data, snd_size, &tmr);
-    }
+    err = osspec_mutex_lock(iface_data->ioctl_mutex, X502_MUTEX_TCP_IOCTL_LOCK_TOUT);
     if (err == X502_ERR_OK) {
-        err = f_recv_exact(s, (uint8_t*)&cmd_resp, E502_TCP_CMD_RESP_SIZE, &tmr);
-        if (err == X502_ERR_RECV_INSUFFICIENT_WORDS) {
-            err = X502_ERR_NO_CMD_RESPONSE;
-        }
-    }
-    if ((err == X502_ERR_OK) && (cmd_resp.len > 0)) {
-        if (cmd_resp.len > recv_size) {
-            err = X502_ERR_IOCTL_INVALID_RESP_SIZE;
-        } else {
-            err = f_recv_exact(s, rcv_data, cmd_resp.len, &tmr);
-        }
-    }
+        ltimer_set(&tmr, LTIMER_MS_TO_CLOCK_TICKS(tout == 0 ? E502_TCP_REQ_TOUT : tout));
+        cmd_hdr.sign = E502_TCP_CMD_SIGNATURE;
+        cmd_hdr.cmd = cmd_code;
+        cmd_hdr.par = param;
+        cmd_hdr.data_len = snd_size;
+        cmd_hdr.resp_len = recv_size;
 
-    if (err == X502_ERR_OK) {
-        if (recvd_size != NULL) {
-            *recvd_size = cmd_resp.len;
-        } else if (cmd_resp.len != recv_size) {
-            err = X502_ERR_IOCTL_INVALID_RESP_SIZE;
+        err = f_send_exact(s, (uint8_t*)&cmd_hdr, E502_TCP_CMD_HDR_SIZE, &tmr);
+        if ((err == X502_ERR_OK) && (snd_size > 0)) {
+            err = f_send_exact(s, snd_data, snd_size, &tmr);
         }
-    }
+        if (err == X502_ERR_OK) {
+            err = f_recv_exact(s, (uint8_t*)&cmd_resp, E502_TCP_CMD_RESP_SIZE, &tmr);
+            if (err == X502_ERR_RECV_INSUFFICIENT_WORDS) {
+                err = X502_ERR_NO_CMD_RESPONSE;
+            }
+        }
+        if ((err == X502_ERR_OK) && (cmd_resp.len > 0)) {
+            if (cmd_resp.len > recv_size) {
+                err = X502_ERR_IOCTL_INVALID_RESP_SIZE;
+            } else {
+                err = f_recv_exact(s, rcv_data, cmd_resp.len, &tmr);
+            }
+        }
 
-    if ((err == X502_ERR_OK) && (cmd_resp.res!=0)) {
-        err = cmd_resp.res;
+        if (err == X502_ERR_OK) {
+            if (recvd_size != NULL) {
+                *recvd_size = cmd_resp.len;
+            } else if (cmd_resp.len != recv_size) {
+                err = X502_ERR_IOCTL_INVALID_RESP_SIZE;
+            }
+        }
+
+        if ((err == X502_ERR_OK) && (cmd_resp.res!=0)) {
+            err = cmd_resp.res;
+        }
+
+        osspec_mutex_release(&iface_data->ioctl_mutex);
     }
 
     return err;
@@ -437,23 +446,30 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
             iface_data->data_sock = INVALID_SOCKET;
             iface_data->ip_addr = devinfo_data->ip_addr;
             iface_data->open_tout = devinfo_data->open_tout;
+            iface_data->ioctl_mutex = osspec_mutex_create();
+            if (iface_data->ioctl_mutex == OSSPEC_INVALID_MUTEX) {
+                err = X502_ERR_MUTEX_CREATE;
+            } else {
+                hnd->iface_data = iface_data;
 
-            hnd->iface_data = iface_data;
-
-            err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
+                err = hnd->iface_hnd->gen_ioctl(hnd, E502_CM4_CMD_GET_MODULE_INFO, 0, NULL, 0, &lboot_info,
                                         sizeof(lboot_info), NULL, 0);
 
-            if (err == X502_ERR_OK) {
-                if (strcmp(lboot_info.devname, devrec->devname)) {
-                    err = X502_ERR_INVALID_DEVICE;
-                } else {
-                    e502_devinfo_init(&hnd->info, &lboot_info);
-                    err = e502_fill_devflags(hnd);
+                if (err == X502_ERR_OK) {
+                    if (strcmp(lboot_info.devname, devrec->devname)) {
+                        err = X502_ERR_INVALID_DEVICE;
+                    } else {
+                        e502_devinfo_init(&hnd->info, &lboot_info);
+                        err = e502_fill_devflags(hnd);
+                    }
                 }
-            } else {
+            }
+
+            if (err != X502_ERR_OK) {
+                if (iface_data->ioctl_mutex != OSSPEC_INVALID_MUTEX)
+                    osspec_mutex_destroy(iface_data->ioctl_mutex);
                 hnd->iface_data = NULL;
                 free(iface_data);
-
             }
         }
     }
@@ -478,6 +494,12 @@ static int32_t f_iface_close(t_x502_hnd hnd) {
             closesocket(tcp_data->cmd_sock);
             tcp_data->cmd_sock = INVALID_SOCKET;
         }
+
+        if (tcp_data->ioctl_mutex != OSSPEC_INVALID_MUTEX) {
+            osspec_mutex_release(tcp_data->ioctl_mutex);
+            tcp_data->ioctl_mutex = OSSPEC_INVALID_MUTEX;
+        }
+
 
         free(hnd->iface_data);
         hnd->iface_data = NULL;
