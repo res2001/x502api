@@ -400,7 +400,7 @@ static int32_t f_iface_gen_ioctl(t_x502_hnd hnd, uint32_t cmd_code, uint32_t par
             err = cmd_resp.res;
         }
 
-        osspec_mutex_release(&iface_data->ioctl_mutex);
+        osspec_mutex_release(iface_data->ioctl_mutex);
     }
 
     return err;
