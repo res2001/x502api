@@ -503,8 +503,13 @@ type
   function X502_SetOutFreq(hnd: t_x502_hnd; var f_dout: Double): LongInt; stdcall;
   // Получить текущие значения частот сбора АЦП
   function X502_GetAdcFreq(hnd: t_x502_hnd; out f_acq, f_frame: Double): LongInt; stdcall;
-  // Установка значения опорной частоты синхронизации.
+  // Установка значения опорной частоты синхронизации
   function X502_SetRefFreq(hnd: t_x502_hnd; freq: LongWord): LongInt; stdcall;
+  // Установка значения внешней опорной частоты синхронизации
+  function X502_SetExtRefFreqValue(hnd: t_x502_hnd; freq : Double): LongInt; stdcall;
+  //Получение значения опорной частоты синхронизации
+  function X502_GetRefFreqValue(hnd: t_x502_hnd; out freq : Double): LongInt; stdcall;
+
   // Установка режима генерации частоты синхронизации.
   function X502_SetSyncMode(hnd: t_x502_hnd; sync_mode: LongWord): LongInt; stdcall;
   // Установка режима запуска частоты синхронизации.
@@ -665,6 +670,8 @@ implementation
   function X502_SetOutFreq(hnd: t_x502_hnd; var f_dout: Double): LongInt; stdcall; external 'x502api.dll';
   function X502_GetAdcFreq(hnd: t_x502_hnd; out f_acq, f_frame: Double): LongInt; stdcall; external 'x502api.dll';
   function X502_SetRefFreq(hnd: t_x502_hnd; freq: LongWord): LongInt; stdcall; external 'x502api.dll';
+  function X502_SetExtRefFreqValue(hnd: t_x502_hnd; freq : Double): LongInt; stdcall; external 'x502api.dll';
+  function X502_GetRefFreqValue(hnd: t_x502_hnd; out freq : Double): LongInt; stdcall; external 'x502api.dll';
   function X502_SetSyncMode(hnd: t_x502_hnd; sync_mode: LongWord): LongInt; stdcall; external 'x502api.dll';
   function X502_SetSyncStartMode(hnd: t_x502_hnd; sync_start_mode: LongWord): LongInt; stdcall; external 'x502api.dll';
   function X502_SetMode(hnd: t_x502_hnd; mode: LongWord): LongInt; stdcall; external 'x502api.dll';
