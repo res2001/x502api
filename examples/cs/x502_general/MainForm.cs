@@ -284,7 +284,7 @@ namespace x502_example
             if (err == lpcie.Errs.OK)
             {
                 hnd.SyncMode = f_sync_tbl[cbbSyncMode.SelectedIndex];
-                hnd.SyncMode = f_sync_tbl[cbbSyncStartMode.SelectedIndex];
+                hnd.SyncStartMode = f_sync_tbl[cbbSyncStartMode.SelectedIndex];
             }
 
             /* настраиваем частоту сбора с АЦП */
@@ -302,7 +302,7 @@ namespace x502_example
         {
             lpcie.Errs err;
             /* разрешаем или запрещаем поток синхронного ввода
-               в зависимости от состояния переключателя */
+               с цифровых линий в зависимости от состояния переключателя */
             if (chkSyncDin.Checked)
                 err = hnd.StreamsEnable(X502.Streams.DIN);
             else
