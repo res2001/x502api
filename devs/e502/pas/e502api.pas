@@ -38,6 +38,11 @@ uses Windows, SysUtils, x502api;
   function E502_UsbGetDevRecordsList(out list: array of t_x502_devrec; flags : LongWord) : LongInt; overload;
   //Создание записи о устройстве с указанным IP-адресом
   function E502_MakeDevRecordByIpAddr(var devrec: t_x502_devrec; ip_addr: LongWord; flags : LongWord;  tout: LongWord) : LongInt; stdcall;
+  //Установка TCP-порта управляющего соединения для записи о устройстве
+  function E502_EthDevRecordSetCmdPort(var devrec: t_x502_devrec; cmd_port: Word) : LongInt; stdcall;
+  // Установка TCP-порта соединения передачи данных для записи о устройстве
+  function E502_EthDevRecordSetDataPort(var devrec: t_x502_devrec; data_port: Word) : LongInt; stdcall;
+
   //Создание записи о устройстве по описателю сетевого сервиса
   function E502_MakeDevRecordByEthSvc(var devrec: t_x502_devrec; svc : t_e502_eth_svc_record_hnd; flags : LongWord;  tout: LongWord) : LongInt; stdcall;
 
@@ -133,6 +138,8 @@ implementation
   function _open_usb(hnd: t_x502_hnd; serial: PAnsiChar) : LongInt; stdcall; external 'e502api.dll' name 'E502_OpenUsb';
   function E502_OpenByIpAddr(hnd : t_x502_hnd; ip_addr: LongWord; flags : LongWord;  tout: LongWord) : LongInt; stdcall; external 'e502api.dll';
   function E502_MakeDevRecordByIpAddr(var devrec: t_x502_devrec; ip_addr: LongWord; flags : LongWord;  tout: LongWord) : LongInt; stdcall; external 'e502api.dll';
+  function E502_EthDevRecordSetCmdPort(var devrec: t_x502_devrec; cmd_port: Word) : LongInt; stdcall; external 'e502api.dll';
+  function E502_EthDevRecordSetDataPort(var devrec: t_x502_devrec; data_port: Word) : LongInt; stdcall; external 'e502api.dll';
   function E502_MakeDevRecordByEthSvc(var devrec: t_x502_devrec; svc : t_e502_eth_svc_record_hnd; flags : LongWord;  tout: LongWord) : LongInt; stdcall; external 'e502api.dll';
   function E502_GetIpAddr(hnd: t_x502_hnd; out ip_addr : LongWord) : LongInt; stdcall; external 'e502api.dll';
   function E502_EthConfigCreate() : t_e502_eth_config_hnd; stdcall; external 'e502api.dll';

@@ -42,4 +42,6 @@ EXPORTS
     E502_EthSvcBrowseStart
     E502_EthSvcBrowseGetEvent
     E502_EthSvcBrowseStop
+    E502_EthDevRecordSetCmdPort
+    E502_EthDevRecordSetDataPort
 

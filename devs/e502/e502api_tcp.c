@@ -75,6 +75,7 @@ typedef struct {
     t_socket data_sock;
     uint32_t ip_addr;
     uint32_t open_tout;
+    uint16_t data_port;
     t_mutex  ioctl_mutex;
 
     uint32_t recv_part_wrd; /**< принятое неполностью слово */
@@ -446,6 +447,7 @@ static int32_t f_iface_open(t_x502_hnd hnd, const t_x502_devrec *devrec) {
             iface_data->data_sock = INVALID_SOCKET;
             iface_data->ip_addr = devinfo_data->ip_addr;
             iface_data->open_tout = devinfo_data->open_tout;
+            iface_data->data_port = devinfo_data->data_port;
             iface_data->ioctl_mutex = osspec_mutex_create();
             if (iface_data->ioctl_mutex == OSSPEC_INVALID_MUTEX) {
                 err = X502_ERR_MUTEX_CREATE;
@@ -513,7 +515,7 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
     if (tcp_data->data_sock==INVALID_SOCKET) {
         err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_DROP_DATA_CON, 0, NULL, 0, NULL, 0, NULL, 0);
         if (err == X502_ERR_OK)
-            err = f_con_sock(&tcp_data->data_sock, tcp_data->ip_addr, E502_TCP_DEFAULT_DATA_PORT, tcp_data->open_tout);
+            err = f_con_sock(&tcp_data->data_sock, tcp_data->ip_addr, tcp_data->data_port, tcp_data->open_tout);
     }
 
     if (err==X502_ERR_OK) {
@@ -698,6 +700,7 @@ int32_t e502_make_tcp_rec(t_x502_devrec *devrec, uint32_t flags, uint32_t tout) 
         } else {
             strcpy(devrec->devname, E502_DEVICE_NAME);
             devinfo_data->cmd_port = E502_TCP_DEFAULT_CMD_PORT;
+            devinfo_data->data_port = E502_TCP_DEFAULT_DATA_PORT;
             devinfo_data->open_tout = tout;
             devinfo_data->flags = flags;
             devinfo_ptr->iface = &f_tcp_iface;
@@ -722,8 +725,6 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
     int32_t err = e502_make_tcp_rec(devrec, flags, tout);
     if (err == X502_ERR_OK) {
         t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data *)devrec->internal->iface_data;
-
-        devinfo_data->cmd_port = E502_TCP_DEFAULT_CMD_PORT;
         devinfo_data->ip_addr = ip_addr;
 #ifdef ENABLE_DNSSD
         devinfo_data->svc_rec = NULL;
@@ -736,6 +737,26 @@ X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t 
                 (ip_addr>>0) & 0xFF);
         devrec->location_type = X502_LOCATION_TYPE_ADDR;
 
+    }
+    return err;
+}
+
+X502_EXPORT(int32_t) E502_EthDevRecordSetCmdPort(t_x502_devrec *devrec, uint16_t cmd_port) {
+    int32_t err = ((devrec == NULL) || (devrec->internal->iface != &f_tcp_iface)) ?
+                X502_ERR_INVALID_DEVICE_RECORD : X502_ERR_OK;
+    if (err == X502_ERR_OK) {
+        t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data *)devrec->internal->iface_data;
+        devinfo_data->cmd_port = cmd_port;
+    }
+    return err;
+}
+
+X502_EXPORT(int32_t) E502_EthDevRecordSetDataPort(t_x502_devrec *devrec, uint16_t data_port) {
+    int32_t err = ((devrec == NULL) || (devrec->internal->iface != &f_tcp_iface)) ?
+                X502_ERR_INVALID_DEVICE_RECORD : X502_ERR_OK;
+    if (err == X502_ERR_OK) {
+        t_tcp_devinfo_data *devinfo_data = (t_tcp_devinfo_data *)devrec->internal->iface_data;
+        devinfo_data->data_port = data_port;
     }
     return err;
 }

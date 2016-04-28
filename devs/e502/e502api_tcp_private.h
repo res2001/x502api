@@ -5,6 +5,7 @@
 
 typedef struct {
     uint16_t cmd_port;
+    uint16_t data_port;
     uint32_t ip_addr;
     uint32_t open_tout;
     uint32_t flags;
