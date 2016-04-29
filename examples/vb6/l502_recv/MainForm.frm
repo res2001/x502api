@@ -153,7 +153,10 @@ Private Sub GetSamples_Click()
            
            'принимаем для примера по каждому каналу ch_points отсчетов,
            'т.е. общее число слов ch_cnt * ch_points
-           recv_size = ch_cnt * ch_points
+           'Используем CLng для перевода в Long - иначе vb использует
+           'арифметику с Integer и будет переполнение при кол-ве точек
+           'больше 32*1024
+           recv_size = CLng(ch_cnt) * ch_points
                      
                    
             'запуск сбора данных
