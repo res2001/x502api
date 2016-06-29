@@ -109,12 +109,15 @@ typedef int32_t (*t_x502_iface_gen_ioctl)(t_x502_hnd hnd, uint32_t cmd_code, uin
                                           void* rcv_data, uint32_t recv_size,
                                           uint32_t* recvd_size, uint32_t tout);
 
+typedef int32_t (*t_x502_iface_check_feature)(t_x502_hnd hnd, uint32_t feature);
+
 typedef int32_t (*t_x502_iface_fpga_mode_init)(t_x502_hnd hnd);
 
 typedef enum {
     X502_STREAM_FLAG_SINGLE     = 0x01,
     X502_STREAM_FLAG_NO_REQUEST = 0x02
 } t_x502_streams_flags;
+
 
 typedef struct {
     uint16_t id_reg_addr;
@@ -150,6 +153,7 @@ typedef struct {
     t_x502_iface_cycle_check_setup  cycle_check_setup;
     t_x502_iface_fpga_mode_init     fpga_mode_init;
     t_x502_iface_gen_ioctl          gen_ioctl;
+    t_x502_iface_check_feature      check_feature;
 } t_x502_dev_iface;
 
 

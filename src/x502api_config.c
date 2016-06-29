@@ -133,9 +133,14 @@ X502_EXPORT(int32_t) X502_SetOutFreqDivider(t_x502_hnd hnd, uint32_t out_freq_di
     if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
+    if (!err)  {
+        /* Проверяем, поддерживается ли возможность установить значение, отличное от стандартного */
+        if (out_freq_div != X502_OUT_FREQ_DIV_DEFAULT) {
+            err = X502_CheckFeature(hnd, X502_FEATURE_OUT_FREQ_DIV);
+        }
+    }
+
     if (!err) {
-        /** @todo Проверить, что для данной версии поддерживается значение установка
-         *  делителя (для L502) */
         if ((out_freq_div<X502_OUT_FREQ_DIV_MIN) || (out_freq_div > X502_OUT_FREQ_DIV_MAX)) {
             err = X502_ERR_INVALID_OUT_FREQ_DIV;
         } else {
@@ -304,11 +309,20 @@ X502_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout) {
         set_freq = *f_dout;
         if (set_freq<=0)
             set_freq = ref_freq;
-        hnd->set.out_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
-        if (hnd->set.out_freq_div < X502_OUT_FREQ_DIV_MIN)
-            hnd->set.out_freq_div = X502_OUT_FREQ_DIV_MIN;
-        if (hnd->set.out_freq_div > X502_OUT_FREQ_DIV_MAX)
-            hnd->set.out_freq_div = X502_OUT_FREQ_DIV_MAX;
+
+
+        /* Если не поддерживается возможность установки нестандартного делителя, то
+           всегда устанавливаем стандартный */
+        if (X502_CheckFeature(hnd, X502_FEATURE_OUT_FREQ_DIV) != X502_ERR_OK) {
+            hnd->set.out_freq_div = X502_OUT_FREQ_DIV_DEFAULT;
+        } else {
+            hnd->set.out_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
+            if (hnd->set.out_freq_div < X502_OUT_FREQ_DIV_MIN)
+                hnd->set.out_freq_div = X502_OUT_FREQ_DIV_MIN;
+            if (hnd->set.out_freq_div > X502_OUT_FREQ_DIV_MAX)
+                hnd->set.out_freq_div = X502_OUT_FREQ_DIV_MAX;
+        }
+
         set_freq = ref_freq/hnd->set.out_freq_div;
         *f_dout = set_freq;
     }

@@ -20,7 +20,7 @@ X502_EXPORT(t_x502_hnd) X502_Create(void) {
 
 X502_EXPORT(int32_t) X502_Free(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND(hnd);
-    if (!err) {
+    if (err == X502_ERR_OK) {
         if (hnd->flags & PRIV_FLAGS_OPENED)
             err = X502_Close(hnd);
 
@@ -34,7 +34,7 @@ X502_EXPORT(int32_t) X502_Free(t_x502_hnd hnd) {
 
 X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND(hnd);
-    if (!err && (hnd->flags  & PRIV_FLAGS_OPENED)) {
+    if ((err == X502_ERR_OK) && (hnd->flags  & PRIV_FLAGS_OPENED)) {
         int32_t stop_err;
         if (hnd->flags & PRIV_FLAGS_STREAM_RUN) {
             /* остановка потока */
@@ -45,20 +45,20 @@ X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
 
 
         stop_err = hnd->iface_hnd->close(hnd);
-        if (!err)
+        if (err == X502_ERR_OK)
             err = stop_err;
 
         if (hnd->mutex_cfg!=OSSPEC_INVALID_MUTEX) {
             stop_err = osspec_mutex_destroy(hnd->mutex_cfg);
             hnd->mutex_cfg = OSSPEC_INVALID_MUTEX;
-            if (!err)
+            if (err == X502_ERR_OK)
                 err = stop_err;
         }
 
         if (hnd->mutex_bf!=OSSPEC_INVALID_MUTEX) {
             stop_err = osspec_mutex_destroy(hnd->mutex_bf);
             hnd->mutex_bf = OSSPEC_INVALID_MUTEX;
-            if (!err)
+            if (err == X502_ERR_OK)
                 err = stop_err;
         }
     }
@@ -121,7 +121,7 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
                     /* определяем - в каком режиме работаем (BF или FPGA) */
                     uint32_t bf_ctl;
                     err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_BF_CTL, &bf_ctl);
-                    if (!err) {
+                    if (err == X502_ERR_OK) {
                         uint32_t mode = bf_ctl;
                         if (mode & X502_REGBIT_BF_CTL_DBG_MODE_Msk) {
                             hnd->mode = X502_MODE_DEBUG;
@@ -177,9 +177,9 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
                         if ((err == X502_ERR_OK) && (hnd->iface_hnd->stream_running != NULL)) {
                             int32_t running;
                             unsigned ch;
-                            for (ch=0; (ch < X502_STREAM_CH_CNT) && !err; ch++) {
+                            for (ch=0; (ch < X502_STREAM_CH_CNT) && (err == X502_ERR_OK); ch++) {
                                 err = hnd->iface_hnd->stream_running(hnd, ch, &running);
-                                if (!err && running) {
+                                if ((err == X502_ERR_OK) && running) {
                                     err = hnd->iface_hnd->stream_stop(hnd, ch, 0);
                                 }
                             }
@@ -227,7 +227,7 @@ X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
     int32_t get_info_res = 0;
     uint32_t fnd_cnt;
 
-    if (!err) {
+    if (err == X502_ERR_OK) {
         get_info_res = get_list(NULL, 0, 0, &fnd_cnt);
         if (get_info_res < 0) {
             err = get_info_res;
@@ -236,7 +236,7 @@ X502_EXPORT(int32_t) X502_Open(t_x502_hnd hnd, const char* serial,
         }
     }
 
-    if (!err) {
+    if (err == X502_ERR_OK) {
         t_x502_devrec *info_list = malloc(sizeof(t_x502_devrec)*fnd_cnt);
         if (info_list==NULL) {
             err = X502_ERR_MEMORY_ALLOC;
@@ -359,10 +359,10 @@ X502_EXPORT(int32_t) X502_FreeDevRecordList(t_x502_devrec *list, uint32_t size) 
 
 X502_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (info==NULL))
+    if ((err == X502_ERR_OK) && (info==NULL))
         err = X502_ERR_INVALID_POINTER;
 
-    if (!err)
+    if (err == X502_ERR_OK)
         *info = hnd->info;
 
     return err;
@@ -373,9 +373,9 @@ X502_EXPORT(int32_t) X502_GetDevInfo(t_x502_hnd hnd, t_x502_info* info) {
 
 X502_EXPORT(int32_t) X502_GetNextExpectedLchNum(t_x502_hnd hnd, uint32_t *lch) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (lch==NULL))
+    if ((err == X502_ERR_OK) && (lch==NULL))
         err = X502_ERR_INVALID_POINTER;
-    if (!err)
+    if (err == X502_ERR_OK)
         *lch = hnd->proc_adc_ch;
     return err;
 }
@@ -406,17 +406,17 @@ X502_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t*
                                    uint32_t *adc_data_size, uint32_t *din_data, uint32_t *din_data_size,
                                    uint32_t *usr_data, uint32_t *usr_data_size) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (adc_data_size==NULL) && (adc_data!=NULL))
+    if ((err == X502_ERR_OK) && (adc_data_size==NULL) && (adc_data!=NULL))
         err = X502_ERR_INVALID_POINTER;
-    if (!err && (din_data_size==NULL) && (din_data!=NULL))
+    if ((err == X502_ERR_OK) && (din_data_size==NULL) && (din_data!=NULL))
         err = X502_ERR_INVALID_POINTER;
-    if (!err && (usr_data_size==NULL) && (usr_data!=NULL))
+    if ((err == X502_ERR_OK) && (usr_data_size==NULL) && (usr_data!=NULL))
         err = X502_ERR_INVALID_POINTER;
-    if (!err) {
+    if (err == X502_ERR_OK) {
         uint32_t adc_cnt = 0, din_cnt=0, usr_cnt = 0;
         uint32_t i;
 
-        for (i=0; (i<size) && !err; i++) {
+        for (i=0; (i<size) && (err == X502_ERR_OK); i++) {
             register uint32_t wrd = src[i];
             t_stream_in_wrd_type type = STREAM_IN_WRD_TYPE(wrd);
             /* проверяем - это данные от АЦП или цифровых входов */
@@ -470,7 +470,7 @@ X502_EXPORT(int32_t) X502_ProcessDataWithUserExt(t_x502_hnd hnd, const uint32_t*
                         }
                     }
 
-                    if (!err) {
+                    if (err == X502_ERR_OK) {
                         double res_val = val;
                         if (flags & X502_PROC_FLAGS_VOLT) {
                             res_val = f_scales[range]*res_val/X502_ADC_SCALE_CODE_MAX;
@@ -541,9 +541,9 @@ X502_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const 
                             const uint32_t* digout, uint32_t size, int32_t flags,
                             uint32_t* out_buf) {
     int err = X502_CHECK_HND_OPENED(hnd);
-    if (!err && (out_buf==NULL))
+    if ((err == X502_ERR_OK) && (out_buf==NULL))
         err = X502_ERR_INVALID_POINTER;
-    if (!err && ((dac1==NULL) && (dac2==NULL) && (digout==NULL)))
+    if ((err == X502_ERR_OK) && ((dac1==NULL) && (dac2==NULL) && (digout==NULL)))
         err = X502_ERR_INVALID_POINTER;
 
 
@@ -570,14 +570,14 @@ X502_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const 
 
 X502_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t val) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err)
+    if (err == X502_ERR_OK)
         err = hnd->iface_hnd->fpga_reg_write(hnd, reg & 0xFFFF, val);
     return err;
 }
 
 X502_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err)
+    if (err == X502_ERR_OK)
         err = hnd->iface_hnd->fpga_reg_read(hnd, reg & 0xFFFF, val);
     return err;
 }
@@ -599,7 +599,7 @@ X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *rec) {
 
 X502_EXPORT(int32_t) X502_LedBlink(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err) {
+    if (err == X502_ERR_OK) {
         if (hnd->mode == X502_MODE_DSP) {
             /** @todo */
             err = X502_ERR_NOT_IMPLEMENTED;
@@ -608,7 +608,7 @@ X502_EXPORT(int32_t) X502_LedBlink(t_x502_hnd hnd) {
             err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_LED, 0);
             SLEEP_MS(200);
             err2 = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_LED, 1);
-            if (!err)
+            if (err == X502_ERR_OK)
                 err = err2;
         }
     }
@@ -617,7 +617,7 @@ X502_EXPORT(int32_t) X502_LedBlink(t_x502_hnd hnd) {
 
 X502_EXPORT(int32_t) X502_SetDigInPullup(t_x502_hnd hnd, uint32_t pullups) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (!err) {
+    if (err == X502_ERR_OK) {
         if (hnd->mode==X502_MODE_FPGA) {
             uint32_t val = 0;
             if (pullups & X502_PULLUPS_DI_L)
@@ -638,6 +638,15 @@ X502_EXPORT(int32_t) X502_SetDigInPullup(t_x502_hnd hnd, uint32_t pullups) {
         } else {
             err = X502_ERR_INVALID_MODE;
         }
+    }
+    return err;
+}
+
+
+X502_EXPORT(int32_t) X502_CheckFeature(t_x502_hnd hnd, uint32_t feature) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK) {
+        err = hnd->iface_hnd->check_feature(hnd, feature);
     }
     return err;
 }

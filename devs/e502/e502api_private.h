@@ -34,8 +34,11 @@ int32_t e502_iface_cycle_load_start(t_x502_hnd hnd, uint32_t size);
 int32_t e502_iface_cycle_setup(t_x502_hnd hnd, uint32_t flags);
 int32_t e502_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags);
 int32_t e502_iface_cycle_check_setup(t_x502_hnd hnd, uint32_t *done);
+int32_t e502_iface_check_feature(t_x502_hnd hnd, uint32_t feature);
 
 void e502_devinfo_init(t_x502_info *info, const t_lboot_devinfo *lboot_info);
 int32_t e502_fill_devflags(t_x502_hnd hnd);
+
+
 
 #endif // E502API_PRIVATE_H

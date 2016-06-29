@@ -57,10 +57,10 @@
 #include <stdlib.h>
 
 /* количество используемых логических каналов */
-#define ADC_LCH_CNT  3
+#define ADC_LCH_CNT  10
 
 /* частота сбора АЦП в Гц*/
-#define ADC_FREQ          2000000
+#define ADC_FREQ          (40*1000)
 /* частота кадров (на логический канал). При ADC_FREQ/ADC_LCH_CNT - межкадровой задержки нет */
 #define ADC_FRAME_FREQ    (ADC_FREQ/ADC_LCH_CNT)
 /* частота синхронного ввода в Гц*/
@@ -77,11 +77,11 @@
 
 
 /* номера используемых физических каналов */
-static uint32_t f_channels[ADC_LCH_CNT] = {0,4,6};
+static uint32_t f_channels[ADC_LCH_CNT] = {0,1,2,3,4,5,6,7,8,9};
 /* режимы измерения для каналов */
-static uint32_t f_ch_modes[ADC_LCH_CNT] = {X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF};
+static uint32_t f_ch_modes[ADC_LCH_CNT] = {X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF};
 /* диапазоны измерения для каналов */
-static uint32_t f_ch_ranges[ADC_LCH_CNT] = {X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10};
+static uint32_t f_ch_ranges[ADC_LCH_CNT] = {X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10};
 
 
 
@@ -256,8 +256,8 @@ int32_t f_setup_params(t_x502_hnd hnd) {
     if (err == X502_ERR_OK) {
         double f_adc = ADC_FREQ, f_frame = ADC_FRAME_FREQ, f_din = DIN_FREQ;
         err = X502_SetAdcFreq(hnd, &f_adc, &f_frame);
-        if (err == X502_ERR_OK)
-            err = X502_SetDinFreq(hnd, &f_din);
+        //if (err == X502_ERR_OK)
+        //    err = X502_SetDinFreq(hnd, &f_din);
         if (err == X502_ERR_OK) {
             /* выводим реально установленные значения - те что вернули функции */
             printf("Установлены частоты:\n    Частота сбора АЦП = %0.0f\n"
@@ -272,7 +272,7 @@ int32_t f_setup_params(t_x502_hnd hnd) {
 
     /* разрешаем синхронные потоки */
     if (err == X502_ERR_OK) {
-        err = X502_StreamsEnable(hnd, X502_STREAM_ADC | X502_STREAM_DIN);
+        err = X502_StreamsEnable(hnd, X502_STREAM_ADC);
     }
 
     return err;
@@ -392,6 +392,9 @@ int main(int argc, char** argv) {
                                            adc_data, &adc_size, din_data, &din_size);
                     if (err != X502_ERR_OK) {
                         fprintf(stderr, "Ошибка обработки данных: %s\n", X502_GetErrorString(err));
+                        for (uint32_t i = (adc_size > 20 ? adc_size-20 : 0); (i < (adc_size + 20)) && (i < (uint32_t)rcv_size); i++) {
+                            fprintf(stderr, "  wrd %4d: 0x%08X %c\n", i, rcv_buf[i], (i == adc_size)  ? '!' : ' ');
+                        }
                     } else {
                         uint32_t lch;
 

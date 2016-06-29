@@ -80,3 +80,4 @@ EXPORTS
     X502_OutCycleCheckSetupDone
     X502_ManualStreamStart
     X502_ManualStreamStop
+    X502_CheckFeature

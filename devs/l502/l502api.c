@@ -28,6 +28,7 @@ static int32_t f_iface_cycle_load_start(t_x502_hnd hnd, uint32_t size);
 static int32_t f_iface_cycle_setup(t_x502_hnd hnd, uint32_t flags);
 static int32_t f_iface_cycle_stop(t_x502_hnd hnd, uint32_t flags);
 static int32_t f_iface_cycle_check_setup(t_x502_hnd hnd, uint32_t *done);
+static int32_t f_iface_check_feature(t_x502_hnd hnd, uint32_t feature);
 
 
 static const t_x502_dev_iface f_pcie_iface = {
@@ -63,7 +64,8 @@ static const t_x502_dev_iface f_pcie_iface = {
     f_iface_cycle_stop,
     f_iface_cycle_check_setup,
     NULL,
-    NULL
+    NULL,
+    f_iface_check_feature
 };
 
 
@@ -142,5 +144,19 @@ static int32_t f_iface_cycle_check_setup(t_x502_hnd hnd, uint32_t *done) {
         SLEEP_MS(3);
     }
 
+    return err;
+}
+
+static int32_t f_iface_check_feature(t_x502_hnd hnd, uint32_t feature) {
+    int32_t err = X502_ERR_NOT_SUP_BY_FIRMWARE;
+    switch (feature) {
+        case X502_FEATURE_OUT_FREQ_DIV:
+            if (hnd->info.fpga_ver >= 0x5)
+                err = X502_ERR_OK;
+            break;
+        default:
+            err = X502_ERR_UNKNOWN_FEATURE_CODE;
+            break;
+    }
     return err;
 }

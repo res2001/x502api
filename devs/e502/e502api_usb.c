@@ -152,7 +152,8 @@ static const t_x502_dev_iface f_usb_iface = {
     e502_iface_cycle_stop,
     e502_iface_cycle_check_setup,
     e502_iface_fpga_mode_init,
-    f_iface_gen_ioctl
+    f_iface_gen_ioctl,
+    e502_iface_check_feature
 };
 
 

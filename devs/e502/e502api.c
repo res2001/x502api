@@ -168,7 +168,19 @@ int32_t e502_iface_cycle_check_setup(t_x502_hnd hnd, uint32_t *done) {
         }
     }
     return err;
+}
 
+int32_t e502_iface_check_feature(t_x502_hnd hnd, uint32_t feature) {
+    int32_t err = X502_ERR_NOT_SUP_BY_FIRMWARE;
+    switch (feature) {
+        case X502_FEATURE_OUT_FREQ_DIV:
+            err = X502_ERR_OK;
+            break;
+        default:
+            err = X502_ERR_UNKNOWN_FEATURE_CODE;
+            break;
+    }
+    return err;
 }
 
 void e502_devinfo_init(t_x502_info *info, const t_lboot_devinfo *lboot_info) {
@@ -230,6 +242,8 @@ X502_EXPORT(int32_t) E502_CortexExecCmd(t_x502_hnd hnd, uint32_t cmd_code, uint3
     }
     return err;
 }
+
+
 
 
 
