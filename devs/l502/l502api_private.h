@@ -32,7 +32,7 @@ int32_t l502_port_stream_set_params(t_x502_hnd hnd, t_lpcie_stream_ch_params *pa
 int32_t l502_port_stream_rdy_size(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_size);
 int32_t l502_port_renew_info(t_x502_hnd hnd);
 int32_t l502_port_get_drv_ver(t_x502_hnd hnd, uint32_t *ver);
-int32_t l502_port_cycle_load_start(t_x502_hnd hnd, uint32_t ch, uint32_t size);
+int32_t l502_port_cycle_load_start(t_x502_hnd hnd, uint32_t ch, uint32_t size, uint32_t min_irq_step);
 int32_t l502_port_cycle_setup(t_x502_hnd hnd, uint32_t ch, uint32_t evt);
 int32_t l502_port_cycle_stop(t_x502_hnd hnd, uint32_t ch, uint32_t evt);
 int32_t l502_port_cycle_check_setup(t_x502_hnd hnd, uint32_t ch, uint32_t *done);

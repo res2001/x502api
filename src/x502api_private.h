@@ -40,7 +40,7 @@ struct st_x502_devrec_inptr {
 #define X502_DMA_IN_MAX_IRQ_PER_SEC  20
 
 #define X502_DMA_OUT_BUF_SIZE  (3*3*1024*1024)
-#define X502_DMA_OUT_IRQ_STEP  (3*1024*1024/64)
+#define X502_DMA_OUT_IRQ_STEP  (3*1024*1024/32)
 
 
 
@@ -275,15 +275,18 @@ X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd, uint32_t flags);
     } \
 } while(0)
 
+
+#define STREAM_OUT_IRQ_STEP(hnd)  (hnd->stream_pars[X502_STREAM_CH_OUT].step ? \
+                                    hnd->stream_pars[X502_STREAM_CH_OUT].step : \
+                                    X502_DMA_OUT_IRQ_STEP/hnd->set.out_freq_div)
+
 #define STREAM_OUT_CFG(hnd, err) do { \
     t_x502_stream_ch_params params; \
     memset(&params, 0, sizeof(params)); \
     params.buf_size = hnd->stream_pars[X502_STREAM_CH_OUT].buf_size ? \
                 hnd->stream_pars[X502_STREAM_CH_OUT].buf_size : \
                 X502_DMA_OUT_BUF_SIZE; \
-    params.step = hnd->stream_pars[X502_STREAM_CH_OUT].step ? \
-                hnd->stream_pars[X502_STREAM_CH_OUT].step : \
-                X502_DMA_OUT_IRQ_STEP; \
+    params.step = STREAM_OUT_IRQ_STEP(hnd); \
     err = hnd->iface_hnd->stream_cfg(hnd, X502_STREAM_CH_OUT, &params); \
 } while(0)
 

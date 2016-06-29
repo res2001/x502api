@@ -117,7 +117,8 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
 }
 
 static int32_t f_iface_cycle_load_start(t_x502_hnd hnd, uint32_t size) {
-    return l502_port_cycle_load_start(hnd, L502_DMA_CHNUM_OUT, size);
+    uint32_t irq_step = STREAM_OUT_IRQ_STEP(hnd);
+    return l502_port_cycle_load_start(hnd, L502_DMA_CHNUM_OUT, size, irq_step);
 }
 static int32_t f_iface_cycle_setup(t_x502_hnd hnd, uint32_t flags) {
     return l502_port_cycle_setup(hnd, L502_DMA_CHNUM_OUT, (flags & X502_OUT_CYCLE_FLAGS_FORCE) ?

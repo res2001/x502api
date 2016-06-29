@@ -62,11 +62,12 @@ int32_t l502_port_stream_rdy_size(t_x502_hnd hnd, uint32_t ch, uint32_t *rdy_siz
     return err;
 }
 
-int32_t l502_port_cycle_load_start(t_x502_hnd hnd, uint32_t ch, uint32_t size) {
+int32_t l502_port_cycle_load_start(t_x502_hnd hnd, uint32_t ch, uint32_t size, uint32_t min_irq_step) {
     t_lpcie_cycle_set_par par;
     memset(&par, 0, sizeof(par));
     par.ch = ch;
     par.size = size;
+    par.irq_step = min_irq_step;
     return f_ioctl (L502_PCI_IFACE_FILE(hnd), LPCIE_IOCTL_CYCLE_LOAD, &par);
 }
 
