@@ -521,6 +521,22 @@ X502_EXPORT(int32_t) X502_OutCycleCheckSetupDone(t_x502_hnd hnd, uint32_t *done)
     return err;
 }
 
+X502_EXPORT(int32_t) X502_OutGetStatusFlags(t_x502_hnd hnd, uint32_t *status) {
+    int32_t err = X502_CHECK_HND_OPENED(hnd);
+    if (err == X502_ERR_OK) {
+        err = hnd->iface_hnd->check_feature(hnd, X502_FEATURE_OUT_FREQ_DIV);
+    }
+    if (err == X502_ERR_OK) {
+        if (hnd->mode == X502_MODE_FPGA) {
+            err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_IOHARD_OUTSWAP_ERROR, status);
+        } else {
+            /** @todo сделать команду для blackfin */
+            err = X502_ERR_NOT_IMPLEMENTED;
+        }
+    }
+    return err;
+}
+
 
 X502_EXPORT(int32_t) X502_AsyncGetAdcFrame(t_x502_hnd hnd, uint32_t flags,
                                             uint32_t tout, double* data) {

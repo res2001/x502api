@@ -358,7 +358,7 @@ X502_EXPORT(int32_t) X502_GetRefFreqValue(t_x502_hnd hnd, double *freq) {
 
     if (!err) {
         if ((hnd->set.sync_mode == X502_SYNC_INTERNAL) ||
-             (hnd->set.ext_ref_freq == 0)) {
+             !(hnd->set.ext_ref_freq > 0)) {
             *freq = hnd->set.ref_freq;
         } else {
             *freq = hnd->set.ext_ref_freq;

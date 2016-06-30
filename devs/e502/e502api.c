@@ -174,6 +174,7 @@ int32_t e502_iface_check_feature(t_x502_hnd hnd, uint32_t feature) {
     int32_t err = X502_ERR_NOT_SUP_BY_FIRMWARE;
     switch (feature) {
         case X502_FEATURE_OUT_FREQ_DIV:
+        case X502_FEATURE_OUT_STATUS_FLAGS:
             err = X502_ERR_OK;
             break;
         default:
