@@ -24,6 +24,9 @@ const
   X502_OUT_FREQ_DIV_MIN       = 2;
   // Максимальное значение делителя частоты синхронного вывода
   X502_OUT_FREQ_DIV_MAX       = 1024;
+  // Значение делителя частоты вывода по умолчанию (которое также всегда
+  // используется в L502 с версией прошивки ПЛИС ниже 0.5) 
+  X502_OUT_FREQ_DIV_DEFAULT   = 2;
 
   // Максимальное значение межкадровой задержки для АЦП
   X502_ADC_INTERFRAME_DELAY_MAX = $1FFFFF;
@@ -399,6 +402,21 @@ const
     // генерации циклического сигнала (для X502_OutCycleStop())
     X502_OUT_CYCLE_FLAGS_WAIT_DONE = $02;
 
+	
+	{ ----- Коды возможностей модуля, которые могут поддерживаться или нет 
+	        в зависимости от типа модуля, версий прошивок и т.п. -------------}
+    // Поддержка установки делителя частоты вывода, отличного от #X502_OUT_FREQ_DIV_DEFAULT
+    X502_FEATURE_OUT_FREQ_DIV       = 1;
+    // Возможность чтения флагов состояния вывода с помощью X502_OutGetStatusFlags() 
+    X502_FEATURE_OUT_STATUS_FLAGS   = 2;
+
+	{ --------------- Флаги состояния для синхронного вывода ------------------}
+    // Флаг указывает, что в настоящее время буфер в модуле на передачу пуст 
+    X502_OUT_STATUS_FLAG_BUF_IS_EMPTY = $01;
+    // Флаг указывает, что было опустошение буфера на вывод с начала старта синхронного
+    //    ввода-вывода или с момента последнего чтения статуса с помощью
+    //    X502_OutGetStatusFlags() (в зависимости от того, что было последним) 
+    X502_OUT_STATUS_FLAG_BUF_WAS_EMPTY = $02;
 
 type
   st_x502_devrec_inptr = record
@@ -591,7 +609,9 @@ type
   // Останов вывода циклического сигнала
   function X502_OutCycleStop(hnd: t_x502_hnd; flags: LongWord):LongInt; stdcall;
   // Проверка, завершена ли установка или останов циклического сигнала
-  function X502_OutCycleCheckSetupDone(hnd: t_x502_hnd; out done : LongBool):LongInt; stdcall;
+  function X502_OutCycleCheckSetupDone(hnd: t_x502_hnd; out done : LongBool):LongInt; stdcall;  
+  // Чтение флагов статуса вывода
+  function X502_OutGetStatusFlags(hnd: t_x502_hnd; out status : LongWord): LongInt; stdcall;
 
   // Установка размера буфера для синхронного ввода или вывода.
   function X502_SetStreamBufSize(hnd: t_x502_hnd;  dma_ch, size: LongWord): LongInt; stdcall;
@@ -639,7 +659,8 @@ type
   function X502_LedBlink(hnd: t_x502_hnd): LongInt; stdcall;
   // Установка подтягивающих резисторов на входных линиях.
   function X502_SetDigInPullup(hnd: t_x502_hnd; pullups : LongWord): LongInt; stdcall;
-
+  // Проверка поддержки модулем заданной возможности
+  function X502_CheckFeature(hnd: t_x502_hnd;  feature : LongWord) : LongInt; stdcall;
 
 
 
@@ -714,6 +735,7 @@ implementation
   function X502_OutCycleSetup(hnd: t_x502_hnd; flags: LongWord):LongInt; stdcall; external 'x502api.dll';
   function X502_OutCycleStop(hnd: t_x502_hnd; flags: LongWord):LongInt; stdcall; external 'x502api.dll';
   function X502_OutCycleCheckSetupDone(hnd: t_x502_hnd; out done : LongBool):LongInt; stdcall; external 'x502api.dll';
+  function X502_OutGetStatusFlags(hnd: t_x502_hnd; out status : LongWord): LongInt; stdcall; external 'x502api.dll';
   function X502_SetStreamBufSize(hnd: t_x502_hnd;  dma_ch, size: LongWord): LongInt; stdcall; external 'x502api.dll';
   function X502_SetStreamStep(hnd: t_x502_hnd; dma_ch, step: LongWord): LongInt; stdcall; external 'x502api.dll';
 
@@ -734,7 +756,8 @@ implementation
   function X502_GetLibraryVersion() : LongWord; stdcall; external 'x502api.dll';
   function _get_err_str(err : LongInt) : PAnsiChar; stdcall; external 'x502api.dll' name 'X502_GetErrorString';
   function X502_LedBlink(hnd: t_x502_hnd): LongInt; stdcall;  external 'x502api.dll';
-  function X502_SetDigInPullup(hnd: t_x502_hnd; pullups : LongWord): LongInt; stdcall;  external 'x502api.dll';
+  function X502_SetDigInPullup(hnd: t_x502_hnd; pullups : LongWord): LongInt; stdcall; external 'x502api.dll';
+  function X502_CheckFeature(hnd: t_x502_hnd;  feature : LongWord) : LongInt; stdcall; external 'x502api.dll';
 
 
   function X502_FreeDevRecordList(list : array of t_x502_devrec; size : LongWord) : LongInt; stdcall; overload;
