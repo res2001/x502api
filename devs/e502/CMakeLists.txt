@@ -48,6 +48,11 @@ endif(E502API_LIBUSB_DEBUG)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
 if(LIBUSB_INTERNAL) 
+    include(CheckStructHasMember)
+    check_struct_has_member("struct timespec" tv_sec time.h HAVE_STRUCT_TIMESPEC LANGUAGE C)
+    if(HAVE_STRUCT_TIMESPEC)
+        add_definitions(-DHAVE_STRUCT_TIMESPEC)
+    endif(HAVE_STRUCT_TIMESPEC)
     # использование внутренней реализации libusb, а не внешеней библиотеки
     # используется под windows, так как стандартная версия c WinUSB драйвером
     # имеет проблемны при отмене трансферов
