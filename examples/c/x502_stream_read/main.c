@@ -11,7 +11,7 @@
    то пример можно вызвать:
    x502_stream_read 192.168.1.5 192.168.1.6
    и две дополнительные строки с этими адресами появятся в списке выбора.
-   
+
    Настройки частот, количества принимаемых данных и т.д. задаются с помощью макросов в
    начале программы.
    Настройки логических каналов - с помощью таблиц f_channels/f_ch_modes/f_ch_ranges.
@@ -57,10 +57,10 @@
 #include <stdlib.h>
 
 /* количество используемых логических каналов */
-#define ADC_LCH_CNT  10
+#define ADC_LCH_CNT  3
 
 /* частота сбора АЦП в Гц*/
-#define ADC_FREQ          (40*1000)
+#define ADC_FREQ          2000000
 /* частота кадров (на логический канал). При ADC_FREQ/ADC_LCH_CNT - межкадровой задержки нет */
 #define ADC_FRAME_FREQ    (ADC_FREQ/ADC_LCH_CNT)
 /* частота синхронного ввода в Гц*/
@@ -77,11 +77,11 @@
 
 
 /* номера используемых физических каналов */
-static uint32_t f_channels[ADC_LCH_CNT] = {0,1,2,3,4,5,6,7,8,9};
+static uint32_t f_channels[ADC_LCH_CNT] = {0,4,6};
 /* режимы измерения для каналов */
-static uint32_t f_ch_modes[ADC_LCH_CNT] = {X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF};
+static uint32_t f_ch_modes[ADC_LCH_CNT] = {X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF, X502_LCH_MODE_DIFF};
 /* диапазоны измерения для каналов */
-static uint32_t f_ch_ranges[ADC_LCH_CNT] = {X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10};
+static uint32_t f_ch_ranges[ADC_LCH_CNT] = {X502_ADC_RANGE_10, X502_ADC_RANGE_10, X502_ADC_RANGE_10};
 
 
 
@@ -160,7 +160,7 @@ static uint32_t f_get_all_devrec(t_x502_devrec **pdevrec_list, uint32_t *ip_addr
 static t_x502_hnd f_dev_select_open(int argc, char** argv) {
     t_x502_hnd hnd = NULL;
     uint32_t fnd_devcnt,i, dev_ind;
-    t_x502_devrec *devrec_list = NULL;    
+    t_x502_devrec *devrec_list = NULL;
     uint32_t *ip_addr_list = NULL;
     uint32_t ip_cnt = 0;
 
@@ -256,8 +256,8 @@ int32_t f_setup_params(t_x502_hnd hnd) {
     if (err == X502_ERR_OK) {
         double f_adc = ADC_FREQ, f_frame = ADC_FRAME_FREQ, f_din = DIN_FREQ;
         err = X502_SetAdcFreq(hnd, &f_adc, &f_frame);
-        //if (err == X502_ERR_OK)
-        //    err = X502_SetDinFreq(hnd, &f_din);
+        if (err == X502_ERR_OK)
+            err = X502_SetDinFreq(hnd, &f_din);
         if (err == X502_ERR_OK) {
             /* выводим реально установленные значения - те что вернули функции */
             printf("Установлены частоты:\n    Частота сбора АЦП = %0.0f\n"
@@ -272,7 +272,7 @@ int32_t f_setup_params(t_x502_hnd hnd) {
 
     /* разрешаем синхронные потоки */
     if (err == X502_ERR_OK) {
-        err = X502_StreamsEnable(hnd, X502_STREAM_ADC);
+        err = X502_StreamsEnable(hnd, X502_STREAM_ADC | X502_STREAM_DIN);
     }
 
     return err;
@@ -367,7 +367,7 @@ int main(int argc, char** argv) {
             for (block = 0; (err == X502_ERR_OK) && !f_out; block++) {
                 int32_t rcv_size;
                 uint32_t adc_size, din_size;
-                
+
                 /* массив для приема необработанных данных */
                 static uint32_t rcv_buf[READ_BLOCK_SIZE];
                 static double   adc_data[READ_BLOCK_SIZE];
@@ -392,14 +392,11 @@ int main(int argc, char** argv) {
                                            adc_data, &adc_size, din_data, &din_size);
                     if (err != X502_ERR_OK) {
                         fprintf(stderr, "Ошибка обработки данных: %s\n", X502_GetErrorString(err));
-                        for (uint32_t i = (adc_size > 20 ? adc_size-20 : 0); (i < (adc_size + 20)) && (i < (uint32_t)rcv_size); i++) {
-                            fprintf(stderr, "  wrd %4d: 0x%08X %c\n", i, rcv_buf[i], (i == adc_size)  ? '!' : ' ');
-                        }
                     } else {
                         uint32_t lch;
 
                         printf("Блок %3d. Обработано данных АЦП =%d, цифровых входов =%d\n",
-                               block, adc_size, din_size);    
+                               block, adc_size, din_size);
                         /* если приняли цифровые данные - выводим первый отсчет */
                         if (din_size != 0)
                             printf("    din_data = 0x%05X\n", din_data[0]);
