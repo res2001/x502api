@@ -8,7 +8,7 @@ Begin VB.Form MainForm
    LinkTopic       =   "Форма1"
    ScaleHeight     =   3240
    ScaleWidth      =   6810
-   StartUpPosition =   3  'Окна По Умолчанию
+   StartUpPosition =   3  'Windows Default
    Begin VB.ListBox ResultList 
       Height          =   1425
       ItemData        =   "MainForm.frx":0000
@@ -73,7 +73,7 @@ Private Sub GetDevlistBtn_Click()
    Dim ret As Long
    Dim serials() As String
       
-   
+    ret = TEST_SERIAL_SIZE
     DevListBox.Clear
     'Получаем список серийных номеров устройств.
     'размер массива устанавливается внутри функции
@@ -172,7 +172,7 @@ Private Sub GetSamples_Click()
                 ReDim recv_vals(0 To recv_size - 1)
                 
                 'прием слов в формате модуля
-                recvd_cnt = l502_recv(hnd, recv_wrds, recv_size, 5000)
+                recvd_cnt = L502_Recv(hnd, recv_wrds, recv_size, 5000)
                 'значение меньше нуля соответствует ошибке
                 If recvd_cnt < 0 Then
                     err = recvd_cnt
