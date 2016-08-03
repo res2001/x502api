@@ -158,21 +158,21 @@ const
     // Неверно задан делитель частоты сбора данных АЦП
     X502_ERR_INVALID_ADC_FREQ_DIV         = -108;
     // Неверно задан делитель частоты синхронного ввода цифровых линий
-    X502_ERR_INVALID_DIN_FREQ_DIV         = -108;
+    X502_ERR_INVALID_DIN_FREQ_DIV         = -109;
     // Неверно задан режим работы модуля L502
-    X502_ERR_INVALID_MODE                 = -109;
+    X502_ERR_INVALID_MODE                 = -110;
     // Неверный номер канала ЦАП
-    X502_ERR_INVALID_DAC_CHANNEL          = -110;
+    X502_ERR_INVALID_DAC_CHANNEL          = -111;
     // Неверный код выбора опорной частоты синхронизации
-    X502_ERR_INVALID_REF_FREQ             = -111;
+    X502_ERR_INVALID_REF_FREQ             = -112;
     // Неверно задано значение межкадровой задержки
-    X502_ERR_INVALID_INTERFRAME_DELAY     = -112;
+    X502_ERR_INVALID_INTERFRAME_DELAY     = -113;
     // Неверно задан режим синхронизации
-    X502_ERR_INVALID_SYNC_MODE            = -113;
+    X502_ERR_INVALID_SYNC_MODE            = -114;
     // Неверно задан номер потока данных
-    X502_ERR_INVALID_STREAM_CH            = -114;
+    X502_ERR_INVALID_STREAM_CH            = -115;
     // Неверно задан делитель частоты синхронного вывода
-    X502_ERR_INVALID_OUT_FREQ_DIV         = -115;
+    X502_ERR_INVALID_OUT_FREQ_DIV         = -116;
     // Ошибка захвата опорной частоты синхронизации
     X502_ERR_REF_FREQ_NOT_LOCKED          = -131;
     // Управляющий запрос к драйверу завершен с ошибкой
