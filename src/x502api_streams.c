@@ -524,14 +524,24 @@ X502_EXPORT(int32_t) X502_OutCycleCheckSetupDone(t_x502_hnd hnd, uint32_t *done)
 X502_EXPORT(int32_t) X502_OutGetStatusFlags(t_x502_hnd hnd, uint32_t *status) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err == X502_ERR_OK) {
-        err = hnd->iface_hnd->check_feature(hnd, X502_FEATURE_OUT_FREQ_DIV);
+        err = hnd->iface_hnd->check_feature(hnd, X502_FEATURE_OUT_STATUS_FLAGS);
     }
     if (err == X502_ERR_OK) {
-        if (hnd->mode == X502_MODE_FPGA) {
-            err = hnd->iface_hnd->fpga_reg_read(hnd, X502_REGS_IOHARD_OUTSWAP_ERROR, status);
+        if (hnd->mode == X502_MODE_DSP) {
+            if (hnd->bf_features & L502_BF_FEATURE_OUT_STATUS_FLAGS) {
+                uint32_t recvd;
+                err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_GET_OUT_STATUS,
+                                     0, NULL, 0, status, 1, X502_BF_CMD_DEFAULT_TOUT,
+                                     &recvd);
+                if ((err == X502_ERR_OK) && (recvd < 1)) {
+                    err = X502_ERR_BF_CMD_RETURN_INSUF_DATA;
+                }
+            } else {
+                err = X502_ERR_NOT_IMPLEMENTED;
+            }
+
         } else {
-            /** @todo сделать команду для blackfin */
-            err = X502_ERR_NOT_IMPLEMENTED;
+            err = X502_FpgaRegRead(hnd, X502_REGS_IOHARD_OUTSWAP_ERROR, status);
         }
     }
     return err;

@@ -8,6 +8,9 @@
 
 static const double f_scales[] = {10., 5., 2., 1., 0.5, 0.2};
 
+int32_t bf_fpga_reg_rd(t_x502_hnd hnd, uint32_t addr, uint32_t* val);
+int32_t bf_fpga_reg_wr(t_x502_hnd hnd, uint32_t addr, uint32_t val);
+
 
 X502_EXPORT(t_x502_hnd) X502_Create(void) {
     t_x502_hnd hnd = calloc(sizeof(t_x502), 1);
@@ -570,15 +573,25 @@ X502_EXPORT(int32_t) X502_PrepareData(t_x502_hnd hnd, const double* dac1, const 
 
 X502_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t val) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (err == X502_ERR_OK)
-        err = hnd->iface_hnd->fpga_reg_write(hnd, reg & 0xFFFF, val);
+    if (err == X502_ERR_OK) {
+        if (hnd->mode == X502_MODE_DSP) {
+            err = bf_fpga_reg_wr(hnd, reg, val);
+        } else {
+            err = hnd->iface_hnd->fpga_reg_write(hnd, reg & 0xFFFF, val);
+        }
+    }
     return err;
 }
 
 X502_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
-    if (err == X502_ERR_OK)
-        err = hnd->iface_hnd->fpga_reg_read(hnd, reg & 0xFFFF, val);
+    if (err == X502_ERR_OK) {
+        if (hnd->mode == X502_MODE_DSP) {
+            err = bf_fpga_reg_rd(hnd, reg, val);
+        } else {
+            err = hnd->iface_hnd->fpga_reg_read(hnd, reg & 0xFFFF, val);
+        }
+    }
     return err;
 }
 
@@ -600,17 +613,12 @@ X502_EXPORT(int32_t) X502_DevRecordInit(t_x502_devrec *rec) {
 X502_EXPORT(int32_t) X502_LedBlink(t_x502_hnd hnd) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err == X502_ERR_OK) {
-        if (hnd->mode == X502_MODE_DSP) {
-            /** @todo */
-            err = X502_ERR_NOT_IMPLEMENTED;
-        } else {
-            int32_t err2;
-            err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_LED, 0);
-            SLEEP_MS(200);
-            err2 = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_LED, 1);
-            if (err == X502_ERR_OK)
-                err = err2;
-        }
+        int32_t err2;
+        err = X502_FpgaRegWrite(hnd, X502_REGS_IOHARD_LED, 0);
+        SLEEP_MS(200);
+        err2 = X502_FpgaRegWrite(hnd, X502_REGS_IOHARD_LED, 1);
+        if (err == X502_ERR_OK)
+            err = err2;
     }
     return err;
 }
@@ -618,26 +626,20 @@ X502_EXPORT(int32_t) X502_LedBlink(t_x502_hnd hnd) {
 X502_EXPORT(int32_t) X502_SetDigInPullup(t_x502_hnd hnd, uint32_t pullups) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err == X502_ERR_OK) {
-        if (hnd->mode==X502_MODE_FPGA) {
-            uint32_t val = 0;
-            if (pullups & X502_PULLUPS_DI_L)
-                val |= 0x1;
-            if (pullups & X502_PULLUPS_DI_H)
-                val |= 0x2;
-            if (pullups & X502_PULLUPS_DI_SYN1)
-                val |= 0x4;
-            if (pullups & X502_PULLUPS_DI_SYN2)
-                val |= 0x8;
-            if (pullups & X502_PULLDOWN_CONV_IN)
-                val |= 0x10;
-            if (pullups & X502_PULLDOWN_START_IN)
-                val |= 0x20;
-            err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_DIGIN_PULLUP, val);
-        } else if (hnd->mode == X502_MODE_DSP) {
-            err = X502_ERR_NOT_IMPLEMENTED;
-        } else {
-            err = X502_ERR_INVALID_MODE;
-        }
+        uint32_t val = 0;
+        if (pullups & X502_PULLUPS_DI_L)
+            val |= 0x1;
+        if (pullups & X502_PULLUPS_DI_H)
+            val |= 0x2;
+        if (pullups & X502_PULLUPS_DI_SYN1)
+            val |= 0x4;
+        if (pullups & X502_PULLUPS_DI_SYN2)
+            val |= 0x8;
+        if (pullups & X502_PULLDOWN_CONV_IN)
+            val |= 0x10;
+        if (pullups & X502_PULLDOWN_START_IN)
+            val |= 0x20;
+        err = X502_FpgaRegWrite(hnd, X502_REGS_IOHARD_DIGIN_PULLUP, val);
     }
     return err;
 }

@@ -96,7 +96,7 @@ static int32_t f_bf_mem_wr(t_x502_hnd hnd, uint32_t addr, const uint32_t* regs, 
     return err;
 }
 
-int32_t f_bf_mem_rd(t_x502_hnd hnd, uint32_t addr, uint32_t* regs, uint32_t size) {
+static int32_t f_bf_mem_rd(t_x502_hnd hnd, uint32_t addr, uint32_t* regs, uint32_t size) {
     int err = 0;
     while (!err && size) {
         int get_size = (size < hnd->iface_hnd->bf_mem_block_size) ? size :
@@ -108,6 +108,32 @@ int32_t f_bf_mem_rd(t_x502_hnd hnd, uint32_t addr, uint32_t* regs, uint32_t size
             size -= get_size;
             regs += get_size;
             addr += get_size*4;
+        }
+    }
+    return err;
+}
+
+int32_t bf_fpga_reg_wr(t_x502_hnd hnd, uint32_t addr, uint32_t val) {
+    int32_t err = hnd->mode != X502_MODE_DSP ? X502_ERR_INVALID_MODE :
+                  (hnd->bf_features & L502_BF_FEATURE_FPGA_REG_ACCESS) ?
+                                                   X502_ERR_OK : X502_ERR_NOT_IMPLEMENTED;
+    if (err == X502_ERR_OK) {
+        err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_FPGA_REG_WR, addr, &val, 1, NULL, 0,
+                             X502_BF_CMD_DEFAULT_TOUT, NULL);
+    }
+    return err;
+}
+
+int32_t bf_fpga_reg_rd(t_x502_hnd hnd, uint32_t addr, uint32_t* val) {
+    int32_t err = hnd->mode != X502_MODE_DSP ? X502_ERR_INVALID_MODE :
+                  (hnd->bf_features & L502_BF_FEATURE_FPGA_REG_ACCESS) ?
+                                                   X502_ERR_OK : X502_ERR_NOT_IMPLEMENTED;
+    if (err == X502_ERR_OK) {
+        uint32_t recvd;
+        err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_FPGA_REG_RD, addr, NULL, 0, val, 1,
+                             X502_BF_CMD_DEFAULT_TOUT, &recvd);
+        if ((err == X502_ERR_OK) && (recvd < 1)) {
+            err = X502_ERR_BF_CMD_RETURN_INSUF_DATA;
         }
     }
     return err;
@@ -128,6 +154,7 @@ static int32_t f_check_bf_firm(t_x502_hnd hnd) {
         if (!err) {
             if (recvd >= 1) {
                 hnd->bf_ver = rcv_wrds[0];
+
             } else {
                 err = X502_ERR_BF_CMD_RETURN_INSUF_DATA;
             }
