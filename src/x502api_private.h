@@ -248,6 +248,9 @@ X502_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t va
 X502_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val);
 X502_EXPORT(int32_t) X502_ReloadDevInfo(t_x502_hnd hnd, uint32_t flags);
 
+int32_t bf_fpga_reg_rd(t_x502_hnd hnd, uint32_t addr, uint32_t* val);
+int32_t bf_fpga_reg_wr(t_x502_hnd hnd, uint32_t addr, uint32_t val);
+
 #define x502_bf_set_par(hnd, par, data, size) X502_BfExecCmd(hnd, L502_BF_CMD_CODE_SET_PARAM, \
                             par, data, size, NULL, 0, X502_BF_CMD_DEFAULT_TOUT, NULL)
 
