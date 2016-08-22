@@ -231,7 +231,7 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
             /* предзагрузку значения на вывод делаем только если реально данные уже были
              * предзагружены в буфер платы */
             if ((hnd->streams & X502_STREAM_ALL_OUT) &&
-                    (hnd->flags & (PRIV_FLAGS_PRELOAD_DONE | PRIV_FLGAS_CYCLE_MODE))) {
+                    (hnd->flags & (PRIV_FLAGS_PRELOAD_DONE | PRIV_FLAGS_CYCLE_MODE))) {
                 err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 1);
                 //if (!err)
                 //    err = _fpga_reg_write(hnd, L502_REGS_IOHARD_DAC_DIGOUT_SWAP, 1);
@@ -308,7 +308,7 @@ X502_EXPORT(int32_t) X502_StreamsStop(t_x502_hnd hnd) {
         if (err == X502_ERR_OK)
             err = stop_err2;
 
-        hnd->flags &= ~(PRIV_FLAGS_STREAM_RUN | PRIV_FLAGS_PRELOAD_DONE | PRIV_FLGAS_CYCLE_MODE);
+        hnd->flags &= ~(PRIV_FLAGS_STREAM_RUN | PRIV_FLAGS_PRELOAD_DONE | PRIV_FLAGS_CYCLE_MODE);
 
         osspec_mutex_release(hnd->mutex_cfg);
     }
@@ -363,7 +363,7 @@ X502_EXPORT(int32_t) X502_Send(t_x502_hnd hnd, const uint32_t* buf, uint32_t siz
         if (err == X502_ERR_OK)
             err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
         if (err == X502_ERR_OK) {
-            if (!(hnd->flags & (PRIV_FLAGS_PRELOAD_DONE | PRIV_FLGAS_CYCLE_MODE))) {
+            if (!(hnd->flags & (PRIV_FLAGS_PRELOAD_DONE | PRIV_FLAGS_CYCLE_MODE))) {
                 err = f_out_stream_preload(hnd);
             }
             osspec_mutex_release(hnd->mutex_cfg);
@@ -450,8 +450,19 @@ X502_EXPORT(int32_t) X502_OutCycleLoadStart(t_x502_hnd hnd, uint32_t size) {
         if (err == X502_ERR_OK) {
             /** @todo проверить правильность момента вызова */
             err = hnd->iface_hnd->cycle_load_start(hnd, size);
+
+            /* если еще не была выполнена предзагрузка сигнала, то посылаем DSP
+               команду, чтобы успел подгрузить данные до старта выдачи */
+            if ((err == X502_ERR_OK) && !(hnd->flags & (PRIV_FLAGS_CYCLE_MODE | PRIV_FLAGS_PRELOAD_DONE))) {
+                if (hnd->mode == X502_MODE_DSP) {
+                    err = X502_BfExecCmd(hnd, L502_BF_CMD_CODE_PRELOAD, 0, NULL, 0,
+                                         NULL, 0, X502_BF_REQ_TOUT, NULL);
+                }
+            }
+
             if (err == X502_ERR_OK)
-                hnd->flags |= PRIV_FLGAS_CYCLE_MODE;
+                hnd->flags |= PRIV_FLAGS_CYCLE_MODE;
+
             osspec_mutex_release(hnd->mutex_cfg);
         }
     }
@@ -502,7 +513,7 @@ X502_EXPORT(int32_t) X502_OutCycleStop(t_x502_hnd hnd, uint32_t flags) {
     if (err == X502_ERR_OK) {
         err = osspec_mutex_lock(hnd->mutex_cfg, X502_MUTEX_CFG_LOCK_TOUT);
         if (err == X502_ERR_OK) {
-            hnd->flags &= ~PRIV_FLGAS_CYCLE_MODE;
+            hnd->flags &= ~PRIV_FLAGS_CYCLE_MODE;
             osspec_mutex_release(hnd->mutex_cfg);
         }
     }

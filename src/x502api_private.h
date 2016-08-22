@@ -172,7 +172,7 @@ typedef enum {
 typedef enum {
     PRIV_FLAGS_OPENED             = 0x0001,
     PRIV_FLAGS_PRELOAD_DONE       = 0x0002,
-    PRIV_FLGAS_CYCLE_MODE         = 0x0004,
+    PRIV_FLAGS_CYCLE_MODE         = 0x0004,
     PRIV_FLAGS_STREAM_RUN         = 0x0080
 } t_x502_state_flags;
 
