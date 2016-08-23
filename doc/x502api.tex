@@ -1,163 +1,20 @@
 \documentclass[12pt,a4paper,titlepage]{report}
-\usepackage[utf8]{inputenc}
-\usepackage[english, russian]{babel}
-
-\usepackage{indentfirst} %для отступа в первом абзаце
-\usepackage{longtable} %таблицы с переносом на несколько страниц
-%для создание оглавления в pdf и гиперссылок
-\usepackage[pdftex, unicode, final, colorlinks,linkcolor=blue,urlcolor=blue,bookmarksnumbered]{hyperref}
-\usepackage{array}
-\usepackage[pdftex]{graphicx}
-
-\usepackage{cmap} % чтобы работал поиск по PDF
+\usepackage{lcard}
 \usepackage{doxygen}
-\usepackage{textcomp}
-%\usepackage{floatflt}
 
 \hypersetup{
   pdftitle = {Руководство программиста для модулей L502 и E502},
   pdfauthor = {Борисов А.В.}
 }
-
-
-\oddsidemargin=5.0mm     % +10mm -25.4mm
-\evensidemargin=-10mm   % -10mm
-\textwidth=165mm
-\topmargin=-10mm
-\textheight=250mm
-
+\ltextmargin{}
 \emergencystretch=75pt
 
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{4}
 
 \begin{document}
-  \begin{titlepage}
-    \topmargin=10mm
-    \vspace{45mm}
-
-    % Название класса устройств
-    \begin{flushright}
-    {\bfseries\scshape\Large Современные устройства сбора данных}
-    \end{flushright}
-
-    \rule{160mm}{2mm}                % Горизонтальная черта
-
-    % ------------------------------------------------
-    % название конкретного устройства
-    % ------------------------------------------------
-    \begin{flushright}
-    {\bfseries\scshape\Huge L502/E502}
-    \end{flushright}
-
-    % ------------------------------------------------
-    % тип документа (имя)
-    % ------------------------------------------------
-    \begin{flushright}
-    {\bfseries\scshape\Large Руководство программиста}
-    \end{flushright}
-
-    \vspace{155mm}
-
-    % ------------------------------------------------
-    % Логотип фирмы + дата публикации + версия док-ии
-    % ------------------------------------------------
-    %\begin{floatingfigure}[l]{30mm}
-    %\includegraphics[width=40mm]{../../SharedImages/LCardLogo.pdf}
-    %\end{floatingfigure}
-
-	%\begin{floatingfigure}[l]{30mm}
-	%\includegraphics[width=30mm]{../SharedImages/LCardLogo.png} 
-	%\includegraphics[width=40mm]{LCardLogo.png} 
-	%\end{floatingfigure}
-	
-    \noindent
-    \begin{flushright}
-    {\itshape\footnotesize Ревизия 1.1.5 \\ Август 2016}
-    \end{flushright}
-
-  \end{titlepage}
-  
-  
-  \vspace{5mm}
-  \begin{flushleft}
-  \textbf{Автор руководства:} \\
-  Борисов А.В.
-  \end{flushleft}
-  
-  \vspace{5mm}
-  
-  % ------------------------------------------------
-  % Адрес фирмы
-  % ------------------------------------------------
-  
-  \label{lcard_address}
-  \begin{flushleft}
-  \bfseries\large ООО "Л КАРД" \\
-  {\mdseries\normalsize 117105, г. Москва, Варшавское ш., д. 5, корп. 4, стр. 2 }
-  \end{flushleft}
-  
-  \vspace{2mm}
-  
-  % ------------------------------------------------
-  % Телефоны
-  % ------------------------------------------------
-  \begin{flushleft}
-  тел.: 	(495) 785-95-25 \\
-  факс: 	(495) 785-95-14 \\
-  \end{flushleft}
-  
-  \vspace{2mm}
-  
-  % ------------------------------------------------
-  % Доступ в интернет
-  % ------------------------------------------------
-  \begin{flushleft}
-  \bfseries\large Адреса в Интернет:  \\
-  \mdseries\normalsize \href{http://www.lcard.ru}{www.lcard.ru} \\
-  %\mdseries\normalsize \href{ftp://ftp.lcard.ru/pub}{ftp.lcard.ru/pub} \\
-  \end{flushleft}
-  
-  \vspace{2mm}
-  
-  % ------------------------------------------------
-  % Электронная почта
-  % ------------------------------------------------
-  \begin{flushleft}
-  \bfseries\large E-Mail: \\
-  \mdseries\normalsize Отдел продаж:           sale@lcard.ru \\ 
-  \mdseries\normalsize Техническая поддержка:  support@lcard.ru \\
-  \mdseries\normalsize Отдел кадров:           job@lcard.ru \\
-  \mdseries\normalsize Общие вопросы:          lcard@lcard.ru \\
-  \mdseries\normalsize Отдел производства:     pro@lcard.ru \\
-  \end{flushleft}
-  
-  \vspace{2mm}
-  
-  % ------------------------------------------------
-  % Офисы по стране
-  % ------------------------------------------------
-  \begin{flushleft}
-  \bfseries\large Представители в регионах:  \\
-  \mdseries\normalsize Украина: ХОЛИТ Дэйта Системс,\href{http://www.holit.com.ua}{www.holit.com.ua}, (044) 241-6754 \\
-  \mdseries\normalsize Санкт-Петербург: Autex Spb Ltd., \href{http://www.autex.spb.ru}{www.autex.spb.ru}, (812) 567-7202 \\
-  \mdseries\normalsize Новосибирск: Сектор-Т, \href{http://www.sector-t.ru}{www.sector-t.ru}, (383-2) 396-592 \\
-  \mdseries\normalsize Казань: ООО 'Шатл', shuttle@kai.ru, (8432) 38-1600  \\
-  \mdseries\normalsize Екатеринбург: Aвеон, aveon@aveon.ru, +7(343) 381-75-75  \\
-  \mdseries\normalsize Пенза: НПП Технолинк, \href{http://www.tl.ru/ru/departments/industry/}{http://www.tl.ru/ru/departments/industry} (8412) 49-10-59  \\
-  \end{flushleft}
-  
-  % ---------------------------------------------------------------
-  % (!!!) Дублирование имени физический интерфейс устройства, 
-  % приведенного на титульной странице
-  % ---------------------------------------------------------------
-  
-  \vspace{65mm}
-  
-  {\itshape Модули L502/E502} \copyright~Copyrigh 2016, ООО "Л Кард". Все права защищены.
-  \newpage
-  
-  
+   \lcardtitlepage{Современные устройства сбора данных}{L502/E502}{Руководство программиста}{1.1.6}{Август 2016}
+   \lcardinfopage{Автор руководства}{\href{mailto:borisov@lcard.ru}{Борисов Алексей}}{Модули L502 и E502} 
   %----------------------------------------------------
   % Ревизии документа 
   %---------------------------------------------------------
@@ -174,6 +31,7 @@
   1.1.3            & 28.07.2015    & Добавлено описание функций X502\_SetExtRefFreqValue() и X502\_GetRefFreqValue() \\\hline
   1.1.4            & 29.06.2016    & Указано, что установка частоты вывода доступна в L502, начиная с версии 0.5 прошивки ПЛИС. Рекомендация при синхронном выводе на ЦАП предворительно асинхронно установить начальные значения. Добавлено описание функций X502\_CheckFeature() и X502\_OutGetStatusFlags(). \\\hline
   1.1.5            & 03.08.2016    & Добавлено описание использования библиотеки в Visual Basic 6 \\\hline
+  1.1.6            & 23.08.2016    & Изменена ссылка во вступлении на обновленное общее низкоуровневое описание программиста для L502 и E502 \\\hline
   \end{longtable}
   \newpage  
   
