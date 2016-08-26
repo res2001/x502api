@@ -232,19 +232,23 @@ X502_EXPORT(int32_t) X502_StreamsStart(t_x502_hnd hnd) {
              * предзагружены в буфер платы */
             if ((hnd->streams & X502_STREAM_ALL_OUT) &&
                     (hnd->flags & (PRIV_FLAGS_PRELOAD_DONE | PRIV_FLAGS_CYCLE_MODE))) {
-                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 1);
-                //if (!err)
-                //    err = _fpga_reg_write(hnd, L502_REGS_IOHARD_DAC_DIGOUT_SWAP, 1);
-                //if (!err)
-                //    err = _fpga_reg_write(hnd, L502_REGS_IOHARD_DAC_DIGOUT_SWAP, 1);
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_OUTSWAP_BFCTL, 1);                
             }
 
 
-            /* предзагрузку АЦП должны делать всегда, так как по этой функции
-             * выполняется часть инициализации параметров синхронного сбора! */
-            if (err == X502_ERR_OK) {
+            /* Предзагрузку АЦП должны делать всегда, так как по этой функции
+               выполняется часть инициализации параметров синхронного сбора!
+
+               Так как конвейер автомата управления входной коммутации АЦП состоит
+                из 2-х стадий, для корректного синхронного старта необходимо в
+                ыполнить два раза предзагрузку. В противном случае,
+                время момента первого отсчета может не совпадать с моментом
+                запуска синхронизации
+            */
+            if (err == X502_ERR_OK)
                 err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_PRELOAD_ADC, 1);
-            }
+            if (err == X502_ERR_OK)
+                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_IOHARD_PRELOAD_ADC, 1);
 
             SLEEP_MS(20);
         }
