@@ -132,10 +132,14 @@ X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
             if (err == X502_ERR_OK)
                 hnd->streams |= streams;
         } else {
-            uint32_t old_streams = hnd->streams;
-            err = f_set_streams(hnd, hnd->streams | streams);
-
             if (hnd->flags & PRIV_FLAGS_STREAM_RUN) {
+                uint32_t old_streams = hnd->streams;
+                /* Запись в регистры плиса имеет смысл делать только перез запуском
+                   или во время запуска синхронного сбора, т.к. пока сбор не запущен
+                   - не вляют. но в старых версиях ПЛИС могли приводит к сдвигу по
+                   времени первого отсчета АЦП */
+                err = f_set_streams(hnd, hnd->streams | streams);
+
                 /* если не было разрешено потока на ввод до этого,
                    а при вызове стал разрешен => инициализируем его */
                 if ((err == X502_ERR_OK) && !(old_streams & X502_STREAM_ALL_IN) &&
@@ -147,6 +151,8 @@ X502_EXPORT(int32_t) X502_StreamsEnable(t_x502_hnd hnd, uint32_t streams) {
                                   (streams & X502_STREAM_ALL_IN))) {
                     err =f_stream_in_cfg(hnd);
                 }
+            } else {
+                hnd->streams |= streams;
             }
         }
         osspec_mutex_release(hnd->mutex_cfg);
@@ -167,10 +173,11 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
                 hnd->streams &= ~streams;
 
         } else {
-            uint32_t old_streams = hnd->streams;
-            err = f_set_streams(hnd, hnd->streams & ~streams);
+
 
             if (hnd->flags & PRIV_FLAGS_STREAM_RUN) {
+                uint32_t old_streams = hnd->streams;
+                err = f_set_streams(hnd, hnd->streams & ~streams);
                 /* если все потоки на ввод были запрещены, то
                    останавливаем их */
                 if ((err == X502_ERR_OK) && (old_streams & X502_STREAM_ALL_IN) &&
@@ -185,6 +192,8 @@ X502_EXPORT(int32_t) X502_StreamsDisable(t_x502_hnd hnd, uint32_t streams) {
                         hnd->flags &= ~PRIV_FLAGS_PRELOAD_DONE;
                     }
                 }
+            } else {
+                hnd->streams &= ~streams;
             }
         }
 
