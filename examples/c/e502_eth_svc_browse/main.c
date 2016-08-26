@@ -34,10 +34,12 @@
 #else
 #include <signal.h>
 #include <unistd.h>
+
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 #ifdef _WIN32
@@ -68,6 +70,7 @@ int main(int argc, char** argv) {
     t_e502_eth_svc_browse_hnd browse_hnd;
 #ifndef _WIN32
     struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
     /* В ОС Linux устанавливаем свой обработчик на сигнал закрытия,
        чтобы завершить сбор корректно */
     sa.sa_handler = f_abort_handler;

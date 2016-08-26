@@ -55,6 +55,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* количество используемых логических каналов */
 #define ADC_LCH_CNT  3
@@ -210,7 +211,8 @@ static t_x502_hnd f_dev_select_open(int argc, char** argv) {
         /* выбираем нужный по введенному номеру модуля по порядку с клавиатуры */
         printf("Введите номер модуля, с которым хотите работать (от 0 до %d)\n", fnd_devcnt-1);
         fflush(stdout);
-        scanf("%d", &dev_ind);
+        //scanf("%d", &dev_ind);
+        dev_ind = 0;
 
         if (dev_ind >= fnd_devcnt) {
             printf("Неверно указан номер модуля...\n");
@@ -266,13 +268,17 @@ int32_t f_setup_params(t_x502_hnd hnd) {
         }
     }
 
+    if (err == X502_ERR_OK) {
+        err = X502_BfLoadFirmware(hnd, "/home/user/PRJ/lpcie_sdk/firmware/l502-bf/build/release/bin/l502-bf.ldr");
+    }
+
     /* записываем настройки в модуль */
     if (err == X502_ERR_OK)
         err = X502_Configure(hnd, 0);
 
     /* разрешаем синхронные потоки */
     if (err == X502_ERR_OK) {
-        err = X502_StreamsEnable(hnd, X502_STREAM_ADC | X502_STREAM_DIN);
+        err = X502_StreamsEnable(hnd, X502_STREAM_DIN);
     }
 
     return err;
@@ -284,6 +290,7 @@ int main(int argc, char** argv) {
     t_x502_hnd hnd = NULL;
 #ifndef _WIN32
     struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
     /* В ОС Linux устанавливаем свой обработчик на сигнал закрытия,
        чтобы завершить сбор корректно */
     sa.sa_handler = f_abort_handler;
