@@ -14,9 +14,9 @@ EXPORTS
     X502_Configure
     X502_StreamsEnable
     X502_StreamsDisable
-    X502_StreamsEnable
+    X502_GetEnabledStreams
     X502_StreamsStart
-    X502_StreamsStop    
+    X502_StreamsStop
     X502_IsRunning
     X502_Recv
     X502_Send
@@ -55,7 +55,7 @@ EXPORTS
     X502_GetLibraryVersion
     X502_GetErrorString
     X502_SetStreamBufSize
-    X502_SetStreamStep
+    X502_SetStreamStep    
     X502_AsyncOutDac
     X502_AsyncOutDig
     X502_AsyncInDig
