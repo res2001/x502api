@@ -5,8 +5,14 @@
 #define E502_CM4_SUPPORT_OUT_CYCLE_SETUP_CHECK(ver) (ver >= 0x01000200)
 
 
+/***************************************************************************//**
+    @addtogroup e502proto_defs Определения протокола обмена с модулем E502
+    @{
+*******************************************************************************/
+
+/** Коды ошибок, возвращаемые модулем при завершении управляющей команды */
 typedef enum {
-    E502_CM4_ERR_OK                     = 0,
+    E502_CM4_ERR_OK                     = 0,     /**< Команда выполнена успешно */
     E502_CM4_ERR_FPGA_NSTATUS_TOUT      = -1001, /**< При загрузке ПЛИС не удалось дождаться сигнала перехода в режим загрузки */
     E502_CM4_ERR_FPGA_CONF_DONE_TOUT    = -1002, /**< При загрузке ПЛИС не удалось дождаться сигнала завершения загрузки */
     E502_CM4_ERR_FPGA_FW_NOT_PRESENT    = -1003, /**< Не обнаружена прошивка ПЛИС во flash-памяти модуля */
@@ -61,6 +67,9 @@ typedef enum {
     E502_CM4_ERR_OUT_CYCLE_NOT_LOADED         = -1040, /**< Не был полностью загружен циклический буфер перед сменой */
 } t_e502_cm4_errs;
 
+/** @} */
+
+
 typedef enum {
     E502_STREAM_CH_IN = 0,
     E502_STREAM_CH_OUT = 1
@@ -72,13 +81,10 @@ typedef enum {
     E502_IFACE_TCP = 1
 } t_e502_ifaces;
 
-
-
-
-
+/** Коды команды протокола обмена с модулем E502 */
 typedef enum {
-    E502_CM4_CMD_GET_MODULE_NAME        = 11,
     E502_CM4_CMD_GET_USB_SPEED          = 6,
+    E502_CM4_CMD_GET_MODULE_NAME        = 11,
 
     E502_CM4_CMD_BOOT                   = 0x0F,
     E502_CM4_CMD_FPGA_REG_READ          = 0x10,
@@ -98,6 +104,7 @@ typedef enum {
     E502_CM4_CMD_BF_MEM_WRITE           = 0x20,
     E502_CM4_CMD_BF_MEM_READ            = 0x21,
     E502_CM4_CMD_BF_FIRM_LOAD           = 0x22,
+
     E502_CM4_CMD_DROP_DATA_CON          = 0x23,
     E502_CM4_CMD_RELOAD_FPGA            = 0x24,
     E502_CM4_CMD_GET_DEVFLAGS           = 0x25,
@@ -115,10 +122,14 @@ typedef enum {
 
     E502_CM4_CMD_GET_MODULE_INFO        = 0x80,
     E502_CM4_CMD_GET_MODULE_MODE        = 0x81,
-    E502_CM4_CMD_GET_LAST_ERROR         = 0x82
+
+    E502_CM4_CMD_GET_LAST_ERROR     = 0x82
 } t_e502_cm4_cmd_codes;
 
 
+
+
+/** @internal */
 typedef enum {
     E502_CM4_TEST_NONE=0,
     E502_CM4_TEST_SRAM_BUF_RING,
@@ -131,6 +142,8 @@ typedef enum {
 } t_test_number;
 
 
+/** @internal */
+/** Параметры теста */
 typedef struct {
     uint32_t test; /**< Номер выполняемого теста */
     uint32_t run; /**< Признак, запущен ли сейчас тест */
