@@ -545,6 +545,12 @@ type
   // Получение текущих калибровочных коэффициентов ЦАП.
   function X502_GetDacCoef(hnd: t_x502_hnd; ch : LongWord; out k, double: Double): LongInt; stdcall;
 
+  // Рассчет частоты сбора АЦП
+  function X502_CalcAdcFreq(ref_freq: Double; lch_cnt: LongWord; var f_acq, f_frame: Double; out result_freq_div : LongWord; out  result_frame_delay: LongWord): LongInt; stdcall;
+  // Рассчет частоты синхронного ввода с цифровых входов.
+  function X502_CalcDinFreq(ref_freq: Double; var f_din : Double; out result_freq_div : LongWord): LongInt; stdcall;
+  // Рассчет частоты синхронного вывода
+  function X502_CalcOutFreq(ref_freq: Double; var f_dout : Double; out result_freq_div : LongWord): LongInt; stdcall;
   {----------------------- Функции асинхронного ввода-вывода ------------------}
   // Асинхронный вывод данных на канал ЦАП.
   function X502_AsyncOutDac(hnd: t_x502_hnd; ch: LongWord; data: Double; flags: LongWord): LongInt; stdcall;
@@ -701,6 +707,9 @@ implementation
   function X502_GetAdcCoef(hnd: t_x502_hnd; range: LongWord; out k, offs: Double): LongInt; stdcall; external 'x502api.dll';
   function X502_SetDacCoef(hnd: t_x502_hnd; ch : LongWord; k, double: Double): LongInt; stdcall; external 'x502api.dll';
   function X502_GetDacCoef(hnd: t_x502_hnd; ch : LongWord; out k, double: Double): LongInt; stdcall; external 'x502api.dll';
+  function X502_CalcAdcFreq(ref_freq: Double; lch_cnt: LongWord; var f_acq, f_frame: Double; out result_freq_div : LongWord; out  result_frame_delay: LongWord): LongInt; stdcall; external 'x502api.dll';
+  function X502_CalcDinFreq(ref_freq: Double; var f_din : Double; out result_freq_div : LongWord): LongInt; stdcall; external 'x502api.dll';
+  function X502_CalcOutFreq(ref_freq: Double; var f_dout : Double; out result_freq_div : LongWord): LongInt; stdcall; external 'x502api.dll';
 
   function X502_AsyncOutDac(hnd: t_x502_hnd; ch: LongWord; data: Double; flags: LongWord): LongInt; stdcall; external 'x502api.dll';
   function X502_AsyncOutDig(hnd: t_x502_hnd; val, msk: LongWord): LongInt; stdcall; external 'x502api.dll';
