@@ -203,45 +203,62 @@ X502_EXPORT(int32_t) X502_GetMode(t_x502_hnd hnd, uint32_t* mode) {
     return err;
 }
 
+X502_EXPORT(int32_t) X502_CalcAdcFreq(double ref_freq, uint32_t lch_cnt, double *f_acq,
+                                      double *f_frame, uint32_t *adc_freq_div, uint32_t *adc_frame_delay) {
+    int32_t err = (f_acq==NULL) ? X502_ERR_INVALID_POINTER : X502_ERR_OK;
+    if (err == X502_ERR_OK) {
+        uint32_t cur_adc_freq_div, cur_frame_delay = 0;
+
+        double set_freq = *f_acq;
+        if (set_freq <= 0)
+            set_freq = ref_freq;
+        cur_adc_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
+        if (cur_adc_freq_div == 0)
+            cur_adc_freq_div = 1;
+        if (cur_adc_freq_div > X502_ADC_FREQ_DIV_MAX)
+            cur_adc_freq_div = X502_ADC_FREQ_DIV_MAX;
+        set_freq = ref_freq/cur_adc_freq_div;
+
+        *f_acq = set_freq;
+
+        if (f_frame==NULL) {
+            cur_frame_delay = 0;
+        } else {
+            if (lch_cnt == 0)
+                lch_cnt = 1;
+
+            if (*f_frame <= 0) {
+                cur_frame_delay = 0;
+            } else {
+                int32_t frame_div = (int32_t)((ref_freq/(*f_frame)
+                                    - lch_cnt*ref_freq/set_freq)+0.49);
+
+                cur_frame_delay = frame_div <=0 ? 0 :
+                          frame_div > X502_ADC_INTERFRAME_DELAY_MAX ?
+                          X502_ADC_INTERFRAME_DELAY_MAX : frame_div;
+            }
+            *f_frame = 1./(lch_cnt/set_freq +
+                           cur_frame_delay/ref_freq);
+        }
+
+        if (adc_freq_div != NULL)
+            *adc_freq_div = cur_adc_freq_div;
+        if (adc_frame_delay != NULL)
+            *adc_frame_delay = cur_frame_delay;
+    }
+    return err;
+}
 
 X502_EXPORT(int32_t) X502_SetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_frame) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
 
-    if (!err && (f_acq==NULL))
-        err = X502_ERR_INVALID_POINTER;
-
     if (!err) {
         double ref_freq;
-        double set_freq = *f_acq;
         X502_GetRefFreqValue(hnd, &ref_freq);
-        if (set_freq<=0)
-            set_freq = ref_freq;
-        hnd->set.adc_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
-        if (!hnd->set.adc_freq_div)
-            hnd->set.adc_freq_div = 1;
-        if (hnd->set.adc_freq_div > X502_ADC_FREQ_DIV_MAX)
-            hnd->set.adc_freq_div = X502_ADC_FREQ_DIV_MAX;
-        set_freq = ref_freq/hnd->set.adc_freq_div;
-        *f_acq = set_freq;
-
-        if (f_frame==NULL) {
-            hnd->set.adc_frame_delay = 0;
-        } else {
-            if (*f_frame <= 0) {
-                hnd->set.adc_frame_delay = 0;
-            } else {
-                int32_t frame_div = (int32_t)((ref_freq/(*f_frame)
-                                    - hnd->set.lch_cnt*ref_freq/set_freq)+0.49);
-
-                hnd->set.adc_frame_delay = frame_div <=0 ? 0 :
-                          frame_div > X502_ADC_INTERFRAME_DELAY_MAX ?
-                          X502_ADC_INTERFRAME_DELAY_MAX : frame_div;
-            }
-            *f_frame = 1./(hnd->set.lch_cnt/set_freq +
-                           hnd->set.adc_frame_delay/ref_freq);
-        }
+        err = X502_CalcAdcFreq(ref_freq, hnd->set.lch_cnt, f_acq, f_frame,
+                               &hnd->set.adc_freq_div, &hnd->set.adc_frame_delay);
     }
     return err;
 }
@@ -270,27 +287,57 @@ X502_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_fr
 }
 
 
+X502_EXPORT(int32_t) X502_CalcDinFreq(double ref_freq, double *f_din, uint32_t *result_freq_div) {
+    int32_t err = f_din==NULL ? X502_ERR_INVALID_POINTER : X502_ERR_OK;
+    if (err == X502_ERR_OK) {
+        double set_freq = *f_din;
+        if (set_freq<=0)
+            set_freq = ref_freq;
+        uint32_t freq_div = (uint32_t)(ref_freq/set_freq+0.49);
+        if (freq_div == 0)
+            freq_div = 1;
+        if (freq_div > X502_DIN_FREQ_DIV_MAX)
+            freq_div = X502_DIN_FREQ_DIV_MAX;
+        set_freq = ref_freq/freq_div;
+        *f_din = set_freq;
+
+        if (result_freq_div != NULL)
+            *result_freq_div = freq_div;
+    }
+    return err;
+}
+
 X502_EXPORT(int32_t) X502_SetDinFreq(t_x502_hnd hnd, double *f_din) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (!err && (hnd->flags & PRIV_FLAGS_STREAM_RUN))
         err = X502_ERR_STREAM_IS_RUNNING;
-    if (!err && (f_din==NULL))
-        err = X502_ERR_INVALID_POINTER;
-
     if (!err) {
-        double ref_freq, set_freq;
-
+        double ref_freq;
         X502_GetRefFreqValue(hnd, &ref_freq);
-        set_freq = *f_din;
+        err = X502_CalcDinFreq(ref_freq, f_din, &hnd->set.din_freq_div);
+    }
+    return err;
+}
+
+
+X502_EXPORT(int32_t) X502_CalcOutFreq(double ref_freq, double *f_dout, uint32_t *result_freq_div) {
+    int32_t err = f_dout==NULL ? X502_ERR_INVALID_POINTER : X502_ERR_OK;
+    if (err == X502_ERR_OK) {
+        double set_freq = *f_dout;
         if (set_freq<=0)
             set_freq = ref_freq;
-        hnd->set.din_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
-        if (!hnd->set.din_freq_div)
-            hnd->set.din_freq_div = 1;
-        if (hnd->set.din_freq_div > X502_DIN_FREQ_DIV_MAX)
-            hnd->set.din_freq_div = X502_DIN_FREQ_DIV_MAX;
-        set_freq = ref_freq/hnd->set.din_freq_div;
-        *f_din = set_freq;
+
+        uint32_t out_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
+        if (out_freq_div < X502_OUT_FREQ_DIV_MIN)
+            out_freq_div = X502_OUT_FREQ_DIV_MIN;
+        if (out_freq_div > X502_OUT_FREQ_DIV_MAX)
+            out_freq_div = X502_OUT_FREQ_DIV_MAX;
+
+        set_freq = ref_freq/out_freq_div;
+        *f_dout = set_freq;
+
+        if (result_freq_div != NULL)
+            *result_freq_div = out_freq_div;
     }
     return err;
 }
@@ -303,28 +350,17 @@ X502_EXPORT(int32_t) X502_SetOutFreq(t_x502_hnd hnd, double *f_dout) {
         err = X502_ERR_INVALID_POINTER;
 
     if (!err) {
-        double ref_freq, set_freq;
+        double ref_freq;
 
         X502_GetRefFreqValue(hnd, &ref_freq);
-        set_freq = *f_dout;
-        if (set_freq<=0)
-            set_freq = ref_freq;
-
-
         /* Если не поддерживается возможность установки нестандартного делителя, то
            всегда устанавливаем стандартный */
         if (X502_CheckFeature(hnd, X502_FEATURE_OUT_FREQ_DIV) != X502_ERR_OK) {
             hnd->set.out_freq_div = X502_OUT_FREQ_DIV_DEFAULT;
+            *f_dout = ref_freq/hnd->set.out_freq_div;
         } else {
-            hnd->set.out_freq_div = (uint32_t)(ref_freq/set_freq+0.49);
-            if (hnd->set.out_freq_div < X502_OUT_FREQ_DIV_MIN)
-                hnd->set.out_freq_div = X502_OUT_FREQ_DIV_MIN;
-            if (hnd->set.out_freq_div > X502_OUT_FREQ_DIV_MAX)
-                hnd->set.out_freq_div = X502_OUT_FREQ_DIV_MAX;
+            err = X502_CalcOutFreq(ref_freq, f_dout, &hnd->set.out_freq_div);
         }
-
-        set_freq = ref_freq/hnd->set.out_freq_div;
-        *f_dout = set_freq;
     }
     return err;
 }

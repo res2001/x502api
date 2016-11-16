@@ -82,3 +82,6 @@ EXPORTS
     X502_ManualStreamStop
     X502_CheckFeature
     X502_OutGetStatusFlags
+    X502_CalcAdcFreq
+    X502_CalcDinFreq
+    X502_CalcOutFreq
