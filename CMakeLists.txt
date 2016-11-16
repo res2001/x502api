@@ -17,13 +17,6 @@ endif(WIN32)
 
 project(${PROJECT} C)
 
-if(UNIX)
-    set(CMAKE_PACKAGES ${CMAKE_CURRENT_SOURCE_DIR}/packages/packages.cmake)
-    if(NOT OSC_PROJECT)
-        set(OSC_PROJECT      home:l-card)
-    endif(NOT OSC_PROJECT)
-endif(UNIX)
-
 
 
 set(X502API_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
@@ -145,12 +138,12 @@ if(LPCIE_DOCGEN_DIR)
 endif(LPCIE_DOCGEN_DIR)
 
 #цели для сборки пакетов
-if(UNIX AND CMAKE_PACKAGES)
+if(UNIX AND CMAKE_EXT_INCLUDE_DIR)
     set(PACKAGE_NAME     ${PROJECT})
     set(PACKAGE_VERSION  ${X502API_VERSION})
     set(PACKAGE_ARCH_INSTALL_FILE ${PACKAGE_NAME}.install)
-    include(${CMAKE_PACKAGES})
-endif(UNIX AND CMAKE_PACKAGES)
+    include(${CMAKE_EXT_INCLUDE_DIR}/packages/packages.cmake)
+endif(UNIX AND CMAKE_EXT_INCLUDE_DIR)
 
 
 
