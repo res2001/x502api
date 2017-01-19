@@ -13,11 +13,12 @@
 #ifndef L502API_COMPAT_H
 #define L502API_COMPAT_H
 
+
+#include "x502api.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "x502api.h"
 
 #define LPCIE_EXPORT(type) X502_EXPORT(type)
 

@@ -9,13 +9,12 @@
 #ifndef L502_API_H
 #define L502_API_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "l502api_compat.h"
 #include "x502api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /***************************************************************************//**
     @addtogroup func_open

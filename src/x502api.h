@@ -1,12 +1,13 @@
 #ifndef X502API_H
 #define X502API_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 
 #include "lcard_pstdint.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
