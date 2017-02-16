@@ -213,6 +213,8 @@ namespace x502_example
             /* заполняем полученные серийные номера в ComboBox */
             for (int i = 0; i < devrecs.Length; i++)
                 cbbSerialList.Items.Add(devrecs[i].DevName + ", " + devrecs[i].Serial);
+            if (devrecs.Length > 0)
+                cbbSerialList.SelectedIndex = 0;
             cbbSerialList.SelectedIndex = 0;
         
             
