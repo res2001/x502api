@@ -215,7 +215,6 @@ namespace x502_example
                 cbbSerialList.Items.Add(devrecs[i].DevName + ", " + devrecs[i].Serial);
             if (devrecs.Length > 0)
                 cbbSerialList.SelectedIndex = 0;
-            cbbSerialList.SelectedIndex = 0;
         
             
             updateControls();
