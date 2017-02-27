@@ -391,8 +391,8 @@ typedef enum {
     X502_SYNC_INTERNAL        = 0, /**< Внутренний сигнал */
     X502_SYNC_EXTERNAL_MASTER = 1, /**< От внешнего мастера по разъему межмодульной синхронизации */
     X502_SYNC_DI_SYN1_RISE    = 2, /**< По фронту сигнала DI_SYN1 */
-    X502_SYNC_DI_SYN1_FALL    = 3, /**< По фронту сигнала DI_SYN2 */
-    X502_SYNC_DI_SYN2_RISE    = 6, /**< По спаду сигнала DI_SYN1 */
+    X502_SYNC_DI_SYN1_FALL    = 3, /**< По спаду сигнала DI_SYN1 */
+    X502_SYNC_DI_SYN2_RISE    = 6, /**< По фронту сигнала DI_SYN2 */
     X502_SYNC_DI_SYN2_FALL    = 7  /**< По спаду сигнала DI_SYN2 */
 } t_x502_sync_mode;
 
