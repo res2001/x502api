@@ -171,7 +171,9 @@ X502_EXPORT(int32_t) X502_SetMode(t_x502_hnd hnd, uint32_t mode) {
         if (!err) {
             val &= ~(X502_REGBIT_BF_CTL_CLK_DIV_Msk | X502_REGBIT_BF_CTL_DBG_MODE_Msk | X502_REGBIT_BF_CTL_DSP_MODE_Msk);
             if (mode==X502_MODE_DSP) {
-                val |= X502_REGBIT_BF_CTL_DSP_MODE_Msk;
+                /* в DSP режиме сброс должен быть снят с blackfin, иначе не будут работать
+                   команды по HostDMA */
+                val |= X502_REGBIT_BF_CTL_DSP_MODE_Msk | X502_REGBIT_BF_CTL_BF_RESET_Msk;
             } else if (mode==X502_MODE_DEBUG) {
                 val |= X502_REGBIT_BF_CTL_DBG_MODE_Msk;
             } else if (mode!=X502_MODE_FPGA) {

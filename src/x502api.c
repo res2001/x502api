@@ -133,10 +133,16 @@ X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devr
                             hnd->mode = X502_MODE_FPGA;
                         }
 
-                        /** @todo Для BlackFin проверить наличие прошивки */
 
                         if (hnd->mode==X502_MODE_DSP) {
-                            err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
+                            /* если blackfin находится в состоянии сброса, то возвращаемся в режим
+                               FPGA, т.к. все команды к HostDMA все равно не выполнятся */
+                            if (!(bf_ctl & X502_REGBIT_BF_CTL_BF_RESET_Msk)) {
+                                err = X502_SetMode(hnd, X502_MODE_FPGA);
+                            } else {
+                                err = hnd->iface_hnd->fpga_reg_write(hnd, X502_REGS_BF_CMD, X502_BF_CMD_HDMA_RST);
+                                /** @todo Для BlackFin проверить наличие прошивки */
+                            }
                         }
                     }
 
