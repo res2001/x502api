@@ -587,7 +587,7 @@ X502_EXPORT(int32_t) X502_FpgaRegWrite(t_x502_hnd hnd, uint32_t reg, uint32_t va
 X502_EXPORT(int32_t) X502_FpgaRegRead(t_x502_hnd hnd, uint32_t reg, uint32_t *val) {
     int32_t err = X502_CHECK_HND_OPENED(hnd);
     if (err == X502_ERR_OK) {
-        err = bf_fpga_reg_rd(hnd, reg, val);
+        err = hnd->iface_hnd->fpga_reg_read(hnd, reg, val);
     }
     return err;
 }
