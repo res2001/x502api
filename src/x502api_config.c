@@ -36,11 +36,15 @@ X502_EXPORT(int32_t) X502_SetLChannel(t_x502_hnd hnd, uint32_t lch, uint32_t phy
         err = X502_ERR_STREAM_IS_RUNNING;
 
     if (!err) {
+        /* Для измерения собственного нуля номер канала не имеет значения */
+        if (mode == X502_LCH_MODE_ZERO)
+            phy_ch = 0;
+
         if ((mode != X502_LCH_MODE_COMM) && (mode != X502_LCH_MODE_DIFF) &&
                 (mode != X502_LCH_MODE_ZERO)) {
             err = X502_ERR_INVALID_LCH_MODE;
         } else if ((phy_ch >= X502_ADC_COMM_CH_CNT) ||
-                   ((mode != X502_LCH_MODE_COMM) && (phy_ch >= X502_ADC_DIFF_CH_CNT))) {
+                   ((mode == X502_LCH_MODE_DIFF) && (phy_ch >= X502_ADC_DIFF_CH_CNT))) {
             err = X502_ERR_INVALID_LCH_PHY_NUMBER;
         } else if (range >= X502_ADC_RANGE_CNT) {
             err = X502_ERR_INVALID_LCH_RANGE;
