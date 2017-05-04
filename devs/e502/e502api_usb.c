@@ -608,6 +608,23 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_tx_thread_func(void 
 }
 
 
+static void f_stream_init(uint32_t ch, t_transf_info *info) {
+    info->stop_req = 0;
+    info->err = 0;
+    if (ch==X502_STREAM_CH_IN) {
+        unsigned i;
+        info->rx.cpl_get_pos = 0;
+        info->rx.buf_get_rdy = 0;
+
+
+        for (i=0; i < info->rx.cpl_cnt; i++) {
+            info->rx.cpls[i].state = RX_STATE_IDLE;
+        }
+    }  else {
+        info->tx.buf_pos_put = 0;
+        info->tx.buf_put_rdy = info->buf_size;
+    }
+}
 
 static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_params *params) {
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
@@ -617,9 +634,6 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
     /** @todo вариант изменения размеров буфера в работе */
     if (info->data == NULL) {
         info->buf_size = params->buf_size;
-
-        info->stop_req = 0;
-        info->err = 0;
 
 
         if (ch==X502_STREAM_CH_IN) {
@@ -634,20 +648,10 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
                 info->rx.cpl_cnt = USB_BULK_RX_MAX_TRANSF_CNT;
             info->buf_size = info->rx.cpl_cnt*info->rx.transf_size;
 
-            info->rx.cpl_get_pos = 0;
-            info->rx.buf_get_rdy = 0;
             info->rx.cpls = malloc(info->rx.cpl_cnt * sizeof(info->rx.cpls[0]));
             if (info->rx.cpls == NULL) {
                 err = X502_ERR_MEMORY_ALLOC;
-            } else {
-                unsigned i;
-                for (i=0; i < info->rx.cpl_cnt; i++) {
-                    info->rx.cpls[i].state = RX_STATE_IDLE;
-                }
             }
-        } else {
-            info->tx.buf_pos_put = 0;
-            info->tx.buf_put_rdy = info->buf_size;
         }
 
         if (err == X502_ERR_OK) {
@@ -657,15 +661,18 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
             }
         }
 
+        if (err == X502_ERR_OK) {
+            f_stream_init(ch, info);
+        }
 
-        if (!err) {
+        if (err == X502_ERR_OK) {
             uint16_t send_step = params->step > 0xFFFF ? 0xFFFF : params->step;
             err = f_ioreq(usb_data->devhnd, E502_CM4_CMD_STREAM_SET_STEP,
                           (ch<<16) | send_step, NULL, 0, NULL, 0, NULL, 0);
         }
 
 
-        if (err) {
+        if (err != X502_ERR_OK) {
             f_iface_stream_free(hnd, ch, 0);
         }
     }
@@ -681,10 +688,11 @@ static int32_t f_iface_stream_cfg(t_x502_hnd hnd, uint32_t ch, t_x502_stream_ch_
 
 static int32_t f_iface_stream_start(t_x502_hnd hnd, uint32_t ch, uint32_t flags) {
     t_usb_iface_data *usb_data = (t_usb_iface_data *)hnd->iface_data;
-    int err = 0;
+    int32_t err = X502_ERR_OK;
 
-    if (!err) {
+    if (err == X502_ERR_OK) {
         t_transf_info *info = &usb_data->streams[ch];
+        f_stream_init(ch, info);
         info->thread = osspec_thread_create(ch == X502_STREAM_CH_IN ?
                                                 f_usb_rx_thread_func : f_usb_tx_thread_func,
                                             usb_data, 0);
