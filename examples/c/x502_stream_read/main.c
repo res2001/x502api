@@ -273,7 +273,7 @@ int32_t f_setup_params(t_x502_hnd hnd) {
 
     /* разрешаем синхронные потоки */
     if (err == X502_ERR_OK) {
-        err = X502_StreamsEnable(hnd, X502_STREAM_ADC | X502_STREAM_DIN);
+        err = X502_StreamsEnable(hnd, X502_STREAM_ADC);
     }
 
     return err;
@@ -374,6 +374,15 @@ int main(int argc, char** argv) {
                 static uint32_t rcv_buf[READ_BLOCK_SIZE];
                 static double   adc_data[READ_BLOCK_SIZE];
                 static uint32_t din_data[READ_BLOCK_SIZE];
+
+                if (block == 3) {
+                    uint32_t rdy_cnt;
+                    X502_StreamsDisable(hnd, X502_STREAM_ADC);
+                    X502_GetRecvReadyCount(hnd, &rdy_cnt);
+                    printf("rdy cnt = %d\n", rdy_cnt);
+                    X502_StreamsEnable(hnd, X502_STREAM_ADC);
+                }
+
 
                 /* принимаем данные (по таймауту) */
                 rcv_size = X502_Recv(hnd, rcv_buf, READ_BLOCK_SIZE, READ_TIMEOUT);
