@@ -122,7 +122,7 @@ int x502_check_eeprom(t_x502_hnd hnd, uint32_t flags) {
             if (err == X502_ERR_OK) {
                 uint32_t crc, crc2;
                 crc = CRC32_Block8(0, (uint8_t*)pdescr, (uint32_t)(size-sizeof(crc)));
-                crc2 = *(uint32_t*)(&((uint8_t*)pdescr)[pdescr->hdr.size-4]);
+                memcpy(&crc2, &((uint8_t*)pdescr)[size-4], 4);
                 if (crc == crc2) {
 
                     hnd->info.devflags |= X502_DEVFLAGS_FLASH_DATA_VALID;
