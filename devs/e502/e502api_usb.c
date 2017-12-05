@@ -414,12 +414,17 @@ static OSSPEC_THREAD_FUNC_RET OSSPEC_THREAD_FUNC_CALL f_usb_rx_thread_func(void 
 
 
             if (transf_completed[transf_check_pos] != TRANSF_CPL_IDLE) {
+                int lusberr;
                 /* иначе ждем событий от USB */
                 struct timeval tv;
                 tv.tv_sec =0;
                 tv.tv_usec = 200 * 1000;
-                if (libusb_handle_events_timeout_completed(NULL, &tv, (int*)&transf_completed[transf_check_pos]) != 0)
+                lusberr = libusb_handle_events_timeout_completed(NULL, &tv, (int*)&transf_completed[transf_check_pos]);
+
+                if ((lusberr != LIBUSB_SUCCESS) && (lusberr != LIBUSB_ERROR_INTERRUPTED)) {
                     err = X502_ERR_RECV;
+                }
+
             } else if (wt_buf_rdy) {
                 /* если буфер занят - ждем события от потока чтения */
                 osspec_event_wait(info->usb_wake_evt, OSSPEC_TIMEOUT_INFINITY);
