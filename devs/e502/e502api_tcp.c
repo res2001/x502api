@@ -499,7 +499,7 @@ static int32_t f_iface_close(t_x502_hnd hnd) {
         }
 
         if (tcp_data->ioctl_mutex != OSSPEC_INVALID_MUTEX) {
-            osspec_mutex_release(tcp_data->ioctl_mutex);
+            osspec_mutex_destroy(tcp_data->ioctl_mutex);
             tcp_data->ioctl_mutex = OSSPEC_INVALID_MUTEX;
         }
 

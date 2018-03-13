@@ -375,15 +375,6 @@ int main(int argc, char** argv) {
                 static double   adc_data[READ_BLOCK_SIZE];
                 static uint32_t din_data[READ_BLOCK_SIZE];
 
-                if (block == 3) {
-                    uint32_t rdy_cnt;
-                    X502_StreamsDisable(hnd, X502_STREAM_ADC);
-                    X502_GetRecvReadyCount(hnd, &rdy_cnt);
-                    printf("rdy cnt = %d\n", rdy_cnt);
-                    X502_StreamsEnable(hnd, X502_STREAM_ADC);
-                }
-
-
                 /* принимаем данные (по таймауту) */
                 rcv_size = X502_Recv(hnd, rcv_buf, READ_BLOCK_SIZE, READ_TIMEOUT);
                 /* результат меньше нуля означает ошибку */
