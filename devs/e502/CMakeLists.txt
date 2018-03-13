@@ -5,12 +5,21 @@ project(${PROJECT} C)
 
 option(E502API_LIBUSB_DEBUG "Print debug messages from libusb" OFF)
 
+option(E502API_ENABLE_DNSSD "enable dns-sd service discovery" ON)
+
+if (E502API_ENABLE_DNSSD)
+    if(WIN32)
+        option(ENABLE_BONJOUR  "enable bonjour support" ON)
+    else(WIN32)
+        option(ENABLE_AVAHI  "enable avahi support" ON)
+    endif(WIN32)
+endif(E502API_ENABLE_DNSSD)
+
 if(WIN32)
     option(LIBUSB_INTERNAL "use internal libusb realisation" ON)
-    option(ENABLE_BONJOUR  "enable bonjour support" ON)
-else(WIN32)
-    option(ENABLE_AVAHI  "enable avahi support" ON)
 endif(WIN32)
+
+
 
 include(${LTIMER_DIR}/ltimer.cmake)
 
@@ -91,21 +100,25 @@ else()
     set(LIBS ${LIBS} ${LIBUSB_LIBRARIES})
 endif()
 
-if(ENABLE_BONJOUR)
-    find_package(DNSSD REQUIRED)
-    include_directories(${DNSSD_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${DNSSD_LIBRARIES})
-    set(SOURCES ${SOURCES} e502api_dnssd.c)
-    set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ENABLE_BONJOUR ENABLE_DNSSD)
-endif(ENABLE_BONJOUR)
 
-if(ENABLE_AVAHI)
-    find_package(Avahi REQUIRED)
-    include_directories(${AVAHI_INCLUDE_DIRS})
-    set(LIBS ${LIBS} ${AVAHI_LIBRARIES})
+if(E502API_ENABLE_DNSSD)
     set(SOURCES ${SOURCES} e502api_dnssd.c)
-    set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ENABLE_AVAHI ENABLE_DNSSD)
-endif(ENABLE_AVAHI)
+    set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ENABLE_DNSSD)
+
+    if(ENABLE_BONJOUR)
+        find_package(DNSSD REQUIRED)
+        include_directories(${DNSSD_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${DNSSD_LIBRARIES})
+        set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ENABLE_BONJOUR)
+    endif(ENABLE_BONJOUR)
+
+    if(ENABLE_AVAHI)
+        find_package(Avahi REQUIRED)
+        include_directories(${AVAHI_INCLUDE_DIRS})
+        set(LIBS ${LIBS} ${AVAHI_LIBRARIES})
+        set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ENABLE_AVAHI)
+    endif(ENABLE_AVAHI)
+endif(E502API_ENABLE_DNSSD)
 
 
 include_directories(${X502API_LIB_DIR}/osspec)

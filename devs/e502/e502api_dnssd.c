@@ -1,3 +1,4 @@
+#ifdef ENABLE_DNSSD
 #ifdef ENABLE_BONJOUR
     #include "dns_sd.h"
 
@@ -951,3 +952,47 @@ int32_t e502_svc_fill_devinfo(t_tcp_devinfo_data *data) {
     }
     return err;
 }
+
+#else
+    X502_EXPORT(int32_t) E502_EthSvcRecordFree(t_e502_eth_svc_record_hnd rec) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+
+    X502_EXPORT(int32_t) E502_EthSvcRecordGetInstanceName(t_e502_eth_svc_record_hnd rec, char *name) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+
+    X502_EXPORT(int32_t) E502_EthSvcRecordGetDevSerial(t_e502_eth_svc_record_hnd rec, char *serial) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+
+    X502_EXPORT(int32_t) E502_EthSvcRecordResolveIPv4Addr(t_e502_eth_svc_record_hnd rec,
+                                                          uint32_t *addr, uint32_t tout) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+
+    X502_EXPORT(int32_t) E502_EthSvcRecordIsSameInstance(t_e502_eth_svc_record_hnd svc1,
+                                                         t_e502_eth_svc_record_hnd svc2) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+
+
+    X502_EXPORT(int32_t) E502_EthSvcBrowseStart(t_e502_eth_svc_browse_hnd *pcontext, uint32_t flags) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+
+    X502_EXPORT(int32_t) E502_EthSvcBrowseGetEvent(t_e502_eth_svc_browse_hnd context,
+                                                     t_e502_eth_svc_record_hnd *svc, uint32_t *pevent,
+                                                   uint32_t *flags, uint32_t tout) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+
+    X502_EXPORT(int32_t) E502_EthSvcBrowseStop(t_e502_eth_svc_browse_hnd context) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+
+    X502_EXPORT(int32_t) E502_MakeDevRecordByEthSvc(t_x502_devrec *devrec, t_e502_eth_svc_record_hnd svc,
+                                                    uint32_t flags, uint32_t tout) {
+        return X502_ERR_NOT_IMPLEMENTED;
+    }
+#endif
