@@ -11,9 +11,12 @@ Source: @PACKAGE_SRC_TAR_NAME@
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 
-BuildRequires: cmake >= 2.6, udev, avahi-devel
-
-Obsoletes: l502api
+BuildRequires: cmake >= 2.6, udev
+%if 0%{?mageia}
+BuildRequires: libavahi-common-devel, libavahi-client-devel
+%else
+BuildRequires: avahi-devel
+%endif
 
 # включаем зависимость от libusb-1.0
 %if 0%{?fedora}
@@ -24,12 +27,16 @@ BuildRequires: libusb1-devel
 BuildRequires: libusb-1_0-devel
 %endif
 
+%if %0{?mageia}
+BuildRequires: libusb1.0-devel
+%endif
+
 %if 0%{?rhel_version} || 0%{?rhel} || 0%{?centos_version}
 BuildRequires: libusbx-devel
 %endif
 
 
-
+Obsoletes: l502api
 
 Summary: Source package for libraries for L502 and E502 devices
 
