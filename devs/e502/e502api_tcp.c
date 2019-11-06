@@ -1,3 +1,4 @@
+#ifdef ENABLE_TCP
 #include "e502api_private.h"
 #include "e502_tcp_protocol.h"
 #include "ltimer.h"
@@ -556,7 +557,7 @@ static int32_t f_iface_stream_stop(t_x502_hnd hnd, uint32_t ch, uint32_t flags) 
         err = hnd->iface_hnd->stream_running(hnd, ch, &running);
         if (!err && running) {
             err = f_iface_gen_ioctl(hnd, E502_CM4_CMD_STREAM_STOP, (ch << 16),
-                                      NULL, 0, NULL, 0, NULL, 0);       
+                                      NULL, 0, NULL, 0, NULL, 0);
         }
     }
     return err;
@@ -790,3 +791,28 @@ X502_EXPORT(int32_t) E502_GetIpAddr(t_x502_hnd hnd, uint32_t *ip_addr) {
     }
     return err;
 }
+#else
+#include "e502api.h"
+X502_EXPORT(int32_t) E502_MakeDevRecordByIpAddr(t_x502_devrec *devrec, uint32_t ip_addr,
+                                               uint32_t flags, uint32_t tout) {
+    return  X502_ERR_NOT_IMPLEMENTED;
+}
+
+X502_EXPORT(int32_t) E502_EthDevRecordSetCmdPort(t_x502_devrec *devrec, uint16_t cmd_port) {
+    return  X502_ERR_NOT_IMPLEMENTED;
+}
+
+X502_EXPORT(int32_t) E502_EthDevRecordSetDataPort(t_x502_devrec *devrec, uint16_t data_port) {
+    return  X502_ERR_NOT_IMPLEMENTED;
+}
+
+
+X502_EXPORT(int32_t) E502_OpenByIpAddr(t_x502_hnd hnd, uint32_t ip_addr, uint32_t flags, uint32_t tout) {
+    return  X502_ERR_NOT_IMPLEMENTED;
+}
+
+
+X502_EXPORT(int32_t) E502_GetIpAddr(t_x502_hnd hnd, uint32_t *ip_addr) {
+    return  X502_ERR_NOT_IMPLEMENTED;
+}
+#endif

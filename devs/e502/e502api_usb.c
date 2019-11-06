@@ -1,3 +1,4 @@
+#ifdef ENABLE_USB
 #include "libusb-1.0/libusb.h"
 #include "e502api_private.h"
 #include "lboot_req.h"
@@ -785,7 +786,7 @@ static int32_t f_iface_stream_read(t_x502_hnd hnd, uint32_t *buf, uint32_t size,
 
                 if (cur_state == RX_STATE_ERR) {
                     err = X502_ERR_RECV;
-                } else if (cur_state == RX_STATE_RDY){
+                } else if (cur_state == RX_STATE_RDY) {
                     osspec_mutex_lock(info->mutex, MUTEX_STREAM_LOCK_TOUT);
 
                     if (cpl->size) {
@@ -1103,6 +1104,17 @@ X502_EXPORT(int32_t) E502_UsbGetSerialList(char serials[][X502_SERIAL_SIZE], uin
                            uint32_t flags, uint32_t *devcnt) {
    return X502_GetSerialList(serials, size, flags, devcnt, E502_DEVICE_NAME, E502_UsbGetDevRecordsList);
 }
+#else
+#include "e502api.h"
+X502_EXPORT(int32_t) E502_OpenUsb(t_x502_hnd hnd, const char* serial) {
+    return X502_ERR_NOT_IMPLEMENTED;
+}
+
+X502_EXPORT(int32_t) E502_UsbGetSerialList(char serials[][X502_SERIAL_SIZE], uint32_t size,
+                           uint32_t flags, uint32_t *devcnt) {
+   return X502_ERR_NOT_IMPLEMENTED;
+}
+#endif
 
 
 
