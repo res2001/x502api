@@ -27,6 +27,7 @@ set(LIBS
     x502api
     ${LTIMER_LIBS})
 
+set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ${LTIMER_DEFINITIONS})
 
 if(WIN32)
     #В Windows используем setupapi для нахождения устройства

@@ -6,6 +6,7 @@
 #include <Windows.h>
 #else
 #include <unistd.h>
+#include <sys/time.h>
 #endif
 
 #include "x502api.h"

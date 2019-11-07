@@ -40,7 +40,7 @@ set(SOURCES
     ${X502API_LIB_DIR}/osspec/osspec.c
     )
 
-
+set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ${LTIMER_DEFINITIONS})
 
 
 
