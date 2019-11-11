@@ -21,7 +21,11 @@ extern "C" {
         #define APIENTRY
     #endif
 
-    #define X502_EXPORT(type) __attribute__ ((visibility("default"))) type
+    #if __GNUC__ >= 4
+        #define X502_EXPORT(type) __attribute__ ((visibility("default"))) type
+    #else
+        #define X502_EXPORT(type) type
+    #endif
 #endif
 
 

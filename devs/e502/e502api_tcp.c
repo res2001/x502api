@@ -36,8 +36,6 @@
     //#include <stropts.h>
 
     #include <linux/sockios.h>
-    #include <asm-generic/ioctls.h>
-
 
 
     typedef int t_socket;

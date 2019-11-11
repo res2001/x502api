@@ -14,9 +14,12 @@ target_link_libraries(${PROJECT_NAME} ${LIBS})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${X502API_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 1)
 
-
 if(UNIX)
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
+    #опция fvisibility доступна с GCC 4.0, проверка версии компилятора доступна
+    #начиная с cmake 2.8.8
+    if(DEFINED CMAKE_C_COMPILER_VERSION AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.0)
+        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
+    endif ()
 endif(UNIX)
 if (COMPILE_DEFINITIONS)
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS "${COMPILE_DEFINITIONS}")

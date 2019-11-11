@@ -296,10 +296,12 @@ X502_EXPORT(int32_t) X502_GetAdcFreq(t_x502_hnd hnd, double *f_acq, double *f_fr
 X502_EXPORT(int32_t) X502_CalcDinFreq(double ref_freq, double *f_din, uint32_t *result_freq_div) {
     int32_t err = f_din==NULL ? X502_ERR_INVALID_POINTER : X502_ERR_OK;
     if (err == X502_ERR_OK) {
+        uint32_t freq_div;
         double set_freq = *f_din;
+
         if (set_freq<=0)
             set_freq = ref_freq;
-        uint32_t freq_div = (uint32_t)(ref_freq/set_freq+0.49);
+        freq_div = (uint32_t)(ref_freq/set_freq+0.49);
         if (freq_div == 0)
             freq_div = 1;
         if (freq_div > X502_DIN_FREQ_DIV_MAX)

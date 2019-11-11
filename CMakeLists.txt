@@ -42,14 +42,24 @@ set(X502API_PREPARE_HEADERS ON)
 
 #для GCC устанавливаем повышенный уроень предупреждения компилятора
 if(CMAKE_COMPILER_IS_GNUCC)
-    set(WARNOPTS
-        -Werror=implicit-int -Werror=implicit-function-declaration -Werror=strict-prototypes -Werror=return-type
-        -Wall -Wextra
-        -Wformat-security -Winit-self -Wstrict-aliasing -Wfloat-equal
-        -Wundef -Wshadow -Wunsafe-loop-optimizations -Wpointer-arith -Wcast-align
-        -Wwrite-strings  -Wsign-compare -Wlogical-op -Waggregate-return -Winline
-        -Wno-unused-parameter -Wno-unused-variable -Wno-aggregate-return)
-    add_definitions(${WARNOPTS})
+
+    #точные версии, с которых были введены опции не проверялись.
+    #те опции, которые точно отсутствуют в gcc 2.95.4 включаются только для GCC >= 3.0
+
+    set(WARNOPTS -Wall -Wundef -Wshadow -Wpointer-arith -Wcast-align
+        -Wwrite-strings -Waggregate-return -Winline -Wformat-security -Wsign-compare)
+
+    if(DEFINED CMAKE_C_COMPILER_VERSION AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 3.0)
+        set(WARNOPTS ${WARNOPTS}
+            -Wextra
+            -Werror=implicit-int -Werror=implicit-function-declaration
+            -Werror=strict-prototypes -Werror=return-type
+             -Winit-self -Wstrict-aliasing -Wfloat-equal
+            -Wunsafe-loop-optimizations
+            -Wlogical-op
+            -Wno-unused-parameter -Wno-unused-variable)
+        add_definitions(${WARNOPTS})
+    endif()
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 #при сборке MSVC компилируем runtime-библиотеку статически, чтобы не зависеть от версии
@@ -84,6 +94,7 @@ endif(MSVC)
 
 
 include(${LTIMER_DIR}/ltimer.cmake)
+set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ${LTIMER_DEFINITIONS})
 
 set(SOURCES
     src/x502api.c
