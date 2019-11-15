@@ -42,8 +42,14 @@
 
    */
 
-#include "l502api.h"
-#include "e502api.h"
+//#ifdef X502API_ENABLE_DEV_L502
+//    #include "l502api.h"
+//#endif
+#ifdef X502API_ENABLE_DEV_E502
+    #include "e502api.h"
+#else
+    #error E502 not supported!
+#endif
 
 #ifdef _WIN32
 #include <locale.h>
@@ -215,6 +221,7 @@ int main(int argc, char** argv) {
     printf("Версия библиотеки: %d.%d.%d\n", (ver >> 24)&0xFF, (ver>>16)&0xFF, (ver>>8)&0xFF);
 
     /********** Получение списка устройств и выбор, с каким будем работать ******************/
+#ifdef E502API_ENABLE_TCP
     if (argc < 2) {
         fprintf(stderr, "Не указан IP-адрес устройства!\n");
     } else {
@@ -240,6 +247,7 @@ int main(int argc, char** argv) {
             err = X502_ERR_MEMORY_ALLOC;
         }
     }
+#endif  // E502API_ENABLE_TCP
 
 
     /********************************** Работа с модулем **************************/
