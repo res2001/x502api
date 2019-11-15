@@ -26,6 +26,7 @@ set(X502API_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
 set(X502API_LIB_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 set(LTIMER_DIR       ${X502API_LIB_DIR}/ltimer)
 set(LCSPEC_DIR       ${X502API_LIB_DIR}/lcspec)
+set(OSSPEC_DIR       ${X502API_LIB_DIR}/osspec)
 set(X502_LIBS_CMAKE_FILE  ${CMAKE_CURRENT_SOURCE_DIR}/x502libs.cmake)
 
 if(NOT X502_INSTALL_LIB)
@@ -42,24 +43,35 @@ set(X502API_PREPARE_HEADERS ON)
 
 #для GCC устанавливаем повышенный уроень предупреждения компилятора
 if(CMAKE_COMPILER_IS_GNUCC)
+    set(WARNOPTS)
+    include(CheckCCompilerFlag)
+    set(CHECK_FLAGS
+        -Wall -Wformat-security -Wundef -Wshadow -Wpointer-arith -Wcast-align
+        -Wwrite-strings  -Wsign-compare -Waggregate-return -Winline -Wno-aggregate-return
+        -Werror=implicit-int -Werror=implicit-function-declaration -Werror=strict-prototypes -Werror=return-type
+        -Wextra -Winit-self -Wstrict-aliasing -Wfloat-equal
+        -Wunsafe-loop-optimizations -Wlogical-op
+        -Wno-unused-parameter -Wno-unused-variable)
+    foreach(CUR_FLAG ${CHECK_FLAGS})
+        unset(FLAG_ENABLE CACHE)
+        CHECK_C_COMPILER_FLAG(${CUR_FLAG} FLAG_ENABLE)
+        if(FLAG_ENABLE)
+            set(WARNOPTS ${WARNOPTS} ${CUR_FLAG})
+        endif(FLAG_ENABLE)
+    endforeach(CUR_FLAG)
 
-    #точные версии, с которых были введены опции не проверялись.
-    #те опции, которые точно отсутствуют в gcc 2.95.4 включаются только для GCC >= 3.0
+    unset(FLAG_NO_UNDEFINED CACHE)
+    CHECK_C_COMPILER_FLAG(-Wl,--no-undefined FLAG_NO_UNDEFINED)
+    if(FLAG_NO_UNDEFINED)
+        set(LINK_FLAGS -Wl,--no-undefined)
+    else(FLAG_NO_UNDEFINED)
+        message(STATUS "LINKER FLAG -Wl,--no-undefined WAS NOT FOUND!")
+    endif(FLAG_NO_UNDEFINED)
 
-    set(WARNOPTS -Wall -Wundef -Wshadow -Wpointer-arith -Wcast-align
-        -Wwrite-strings -Waggregate-return -Winline -Wformat-security -Wsign-compare)
+    unset(FLAG_FVISIBILITY CACHE)
+    CHECK_C_COMPILER_FLAG(-fvisibility=hidden FLAG_FVISIBILITY)
 
-    if(DEFINED CMAKE_C_COMPILER_VERSION AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 3.0)
-        set(WARNOPTS ${WARNOPTS}
-            -Wextra
-            -Werror=implicit-int -Werror=implicit-function-declaration
-            -Werror=strict-prototypes -Werror=return-type
-             -Winit-self -Wstrict-aliasing -Wfloat-equal
-            -Wunsafe-loop-optimizations
-            -Wlogical-op
-            -Wno-unused-parameter -Wno-unused-variable)
-        add_definitions(${WARNOPTS})
-    endif()
+    add_definitions(${WARNOPTS})
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 #при сборке MSVC компилируем runtime-библиотеку статически, чтобы не зависеть от версии
@@ -94,7 +106,10 @@ endif(MSVC)
 
 
 include(${LTIMER_DIR}/ltimer.cmake)
-set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ${LTIMER_DEFINITIONS})
+set(NO_OSSPEC_USE_EVENTS ON)
+set(NO_OSSPEC_USE_THREADS ON)
+include(${OSSPEC_DIR}/osspec.cmake)
+set(COMPILE_DEFINITIONS ${LTIMER_DEFINITIONS} ${OSSPEC_DEFINITIONS})
 
 set(SOURCES
     src/x502api.c
@@ -104,8 +119,8 @@ set(SOURCES
     src/x502api_async.c
     src/x502api_bf.c
     src/x502api_eeprom.c
-    lib/osspec/osspec.c
     lib/crc/fast_crc.c
+    ${OSSPEC_SOURCES}
     ${LTIMER_SOURCES})
 
 
@@ -121,8 +136,8 @@ set(HEADERS
     src/x502api_private.h
     src/x502_eeprom.h
     src/osspec_cfg.h
-    lib/osspec/osspec.h
     src/fast_crc_cfg.h
+    ${OSSPEC_HEADERS}
     ${LTIMER_HEADERS})
 
 

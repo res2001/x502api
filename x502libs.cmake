@@ -15,15 +15,16 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${X502API_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 1)
 
 if(UNIX)
-    #опция fvisibility доступна с GCC 4.0, проверка версии компилятора доступна
-    #начиная с cmake 2.8.8
-    if(DEFINED CMAKE_C_COMPILER_VERSION AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.0)
+    if(FLAG_FVISIBILITY)
         set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
     endif ()
 endif(UNIX)
 if (COMPILE_DEFINITIONS)
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS "${COMPILE_DEFINITIONS}")
 endif(COMPILE_DEFINITIONS)
+if(LINK_FLAGS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${LINK_FLAGS}")
+endif(LINK_FLAGS)
 
 if(WIN32)
     #для Windows устанавливаем .lib файл отдельно от .dll в поддиректорию msvc

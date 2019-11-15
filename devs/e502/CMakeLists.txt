@@ -9,11 +9,18 @@ option(E502API_ENABLE_USB   "enable usb interface support" ON)
 option(E502API_ENABLE_TCP   "enable tcp interface support" ON)
 option(E502API_ENABLE_DNSSD "enable dns-sd service discovery" ON)
 
+unset(COMPILE_DEFINITIONS CACHE)
+
 if(E502API_ENABLE_USB)
     option(E502API_LIBUSB_DEBUG "Print debug messages from libusb" OFF)
     if(WIN32)
         option(LIBUSB_INTERNAL "use internal libusb realisation" ON)
     endif(WIN32)
+    set(NO_OSSPEC_USE_EVENTS OFF)
+    set(NO_OSSPEC_USE_THREADS OFF)
+else(E502API_ENABLE_USB)
+    set(NO_OSSPEC_USE_EVENTS ON)
+    set(NO_OSSPEC_USE_THREADS ON)
 endif(E502API_ENABLE_USB)
 
 if (E502API_ENABLE_DNSSD)
@@ -29,6 +36,8 @@ endif(E502API_ENABLE_DNSSD)
 
 
 include(${LTIMER_DIR}/ltimer.cmake)
+include(${OSSPEC_DIR}/osspec.cmake)
+set(COMPILE_DEFINITIONS ${LTIMER_DEFINITIONS} ${OSSPEC_DEFINITIONS})
 
 set(SOURCES
     e502api_usb.c
@@ -37,16 +46,13 @@ set(SOURCES
     e502api.c
     e502api_eth_config.c
     ${LTIMER_SOURCES}
-    ${X502API_LIB_DIR}/osspec/osspec.c
+    ${OSSPEC_SOURCES}
     )
-
-set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ${LTIMER_DEFINITIONS})
-
-
 
 set(SETUP_HEADERS e502api.h)
     
 set(HEADERS
+    ${OSSPEC_HEADERS}
     ${LTIMER_HEADERS}
     e502_fpga_regs.h
     e502_cm4_defs.h
