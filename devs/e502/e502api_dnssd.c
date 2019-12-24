@@ -278,7 +278,8 @@ static void f_add_new_svc(t_e502_eth_svc_browse_hnd browse_context, t_svc_iface_
         memset(svc_context, 0, sizeof(t_service_context));
         svc_context->rec = f_service_record_create();
         if (svc_context->rec != NULL) {
-            strncpy(svc_context->rec->service_name, svc_name, X502_INSTANCE_NAME_SIZE);
+            strncpy(svc_context->rec->service_name, svc_name, X502_INSTANCE_NAME_SIZE-1);
+            svc_context->rec->service_name[X502_INSTANCE_NAME_SIZE-1] = '\0';
             svc_context->rec->domain = malloc(domain_len);
             if (svc_context->rec->domain != NULL) {
                 strcpy(svc_context->rec->domain, domain);

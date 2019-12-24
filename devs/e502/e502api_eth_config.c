@@ -97,7 +97,7 @@ X502_EXPORT(int32_t) E502_EthConfigWrite(t_x502_hnd hnd, t_e502_eth_config_hnd c
     }
     if (err == X502_ERR_OK) {
         if (passwd != NULL) {
-            strncpy(cfg->params.passwd, passwd, E502_ETHCONFIG_PASSWD_SIZE);
+            strncpy(cfg->params.passwd, passwd, E502_ETHCONFIG_PASSWD_SIZE-1);
             cfg->params.passwd[E502_ETHCONFIG_PASSWD_SIZE-1] = '\0';
         } else {
             cfg->params.passwd[0] = '\0';
