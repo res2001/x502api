@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 
-set(PROJECT l502api)
-project(${PROJECT} C)
+project(l502api C)
+set(PROJECT_VARNAME_PREFIX L502API)
+
 
 
 include(${LTIMER_DIR}/ltimer.cmake)
@@ -27,7 +28,7 @@ set(LIBS
     x502api
     ${LTIMER_LIBS})
 
-set(COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} ${LTIMER_DEFINITIONS})
+set(L502API_COMPILE_DEFINITIONS ${L502API_COMPILE_DEFINITIONS} ${LTIMER_DEFINITIONS})
 
 if(WIN32)
     #В Windows используем setupapi для нахождения устройства

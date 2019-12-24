@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 2.6)
 
-set(PROJECT x502api)
+project(x502api C)
+set(PROJECT_VARNAME_PREFIX X502API)
+
+
 set(X502API_VER_MAJOR 1)
 set(X502API_VER_MINOR 1)
-set(X502API_VER_PATCH 13)
+set(X502API_VER_PATCH 14)
 set(X502API_VERSION ${X502API_VER_MAJOR}.${X502API_VER_MINOR}.${X502API_VER_PATCH})
 
 add_definitions(-DX502API_VER_MAJOR=${X502API_VER_MAJOR} -DX502API_VER_MINOR=${X502API_VER_MINOR} -DX502API_VER_PATCH=${X502API_VER_PATCH})
@@ -18,7 +21,6 @@ if(WIN32)
 endif(WIN32)
 
 
-project(${PROJECT} C)
 
 
 
@@ -43,7 +45,7 @@ set(X502API_PREPARE_HEADERS ON)
 
 #для GCC устанавливаем повышенный уроень предупреждения компилятора
 if(CMAKE_COMPILER_IS_GNUCC)
-    set(WARNOPTS)
+
     include(CheckCCompilerFlag)
     set(CHECK_FLAGS
         -Wall -Wformat-security -Wundef -Wshadow -Wpointer-arith -Wcast-align
@@ -53,25 +55,29 @@ if(CMAKE_COMPILER_IS_GNUCC)
         -Wunsafe-loop-optimizations -Wlogical-op
         -Wno-unused-parameter -Wno-unused-variable)
     foreach(CUR_FLAG ${CHECK_FLAGS})
-        unset(FLAG_ENABLE CACHE)
-        CHECK_C_COMPILER_FLAG(${CUR_FLAG} FLAG_ENABLE)
-        if(FLAG_ENABLE)
-            set(WARNOPTS ${WARNOPTS} ${CUR_FLAG})
-        endif(FLAG_ENABLE)
+        # для корректного названия переменной флага заменяем недопустимые
+        # символы - и = в названии флага на _
+        string(REGEX REPLACE "-|=" "_" FLAG_VARNAME FLAG_${CUR_FLAG}_ENABLE)
+
+        CHECK_C_COMPILER_FLAG(${CUR_FLAG} ${FLAG_VARNAME})
+        if(${FLAG_VARNAME})
+            set(COMPILE_FLAGS "${COMPILE_FLAGS} ${CUR_FLAG}")
+        endif()
     endforeach(CUR_FLAG)
 
-    unset(FLAG_NO_UNDEFINED CACHE)
+
+
     CHECK_C_COMPILER_FLAG(-Wl,--no-undefined FLAG_NO_UNDEFINED)
     if(FLAG_NO_UNDEFINED)
-        set(LINK_FLAGS -Wl,--no-undefined)
+        set(LINK_FLAGS "${LINK_FLAGS} -Wl,--no-undefined")
     else(FLAG_NO_UNDEFINED)
         message(STATUS "LINKER FLAG -Wl,--no-undefined WAS NOT FOUND!")
     endif(FLAG_NO_UNDEFINED)
 
-    unset(FLAG_FVISIBILITY CACHE)
     CHECK_C_COMPILER_FLAG(-fvisibility=hidden FLAG_FVISIBILITY)
-
-    add_definitions(${WARNOPTS})
+    if (FLAG_FVISIBILITY)
+        set(COMPILE_FLAGS "${COMPILE_FLAGS} -fvisibility=hidden")
+    endif(FLAG_FVISIBILITY)
 endif(CMAKE_COMPILER_IS_GNUCC)
 
 #при сборке MSVC компилируем runtime-библиотеку статически, чтобы не зависеть от версии
@@ -106,10 +112,11 @@ endif(MSVC)
 
 
 include(${LTIMER_DIR}/ltimer.cmake)
-set(NO_OSSPEC_USE_EVENTS ON)
-set(NO_OSSPEC_USE_THREADS ON)
+set(OSSPEC_USE_MUTEX  ON)
+set(OSSPEC_USE_THREADS OFF)
+set(OSSPEC_USE_EVENTS  OFF)
 include(${OSSPEC_DIR}/osspec.cmake)
-set(COMPILE_DEFINITIONS ${LTIMER_DEFINITIONS} ${OSSPEC_DEFINITIONS})
+set(X502API_COMPILE_DEFINITIONS ${LTIMER_DEFINITIONS} ${OSSPEC_DEFINITIONS})
 
 set(SOURCES
     src/x502api.c
@@ -140,6 +147,9 @@ set(HEADERS
     ${OSSPEC_HEADERS}
     ${LTIMER_HEADERS})
 
+set(LIBS
+    ${LTIMER_LIBS}
+    ${OSSPEC_LIBS})
 
 
 include_directories(src lib/crc ${X502API_LIB_DIR}/osspec)
@@ -168,7 +178,7 @@ endif(LPCIE_DOCGEN_DIR)
 
 #цели для сборки пакетов
 if(UNIX AND CMAKE_EXT_INCLUDE_DIR)
-    set(PACKAGE_NAME     ${PROJECT})
+    set(PACKAGE_NAME     ${PROJECT_NAME})
     set(PACKAGE_VERSION  ${X502API_VERSION})
     set(PACKAGE_ARCH_INSTALL_FILE ${PACKAGE_NAME}.install)
     include(${CMAKE_EXT_INCLUDE_DIR}/packages/packages.cmake)
