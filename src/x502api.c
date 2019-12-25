@@ -67,14 +67,23 @@ X502_EXPORT(int32_t) X502_Close(t_x502_hnd hnd) {
     return err;
 }
 
+X502_EXPORT(int32_t) X502_IsOpened(t_x502_hnd hnd) {
+    int32_t err  = X502_CHECK_HND(hnd);
+    if ((err == X502_ERR_OK) && !(hnd->flags & PRIV_FLAGS_OPENED)) {
+        err = X502_ERR_DEVICE_NOT_OPENED;
+    }
+    return err;
+}
+
 
 
 X502_EXPORT(int32_t) X502_OpenByDevRecord(t_x502* hnd, const t_x502_devrec *devrec) {
     int32_t err  = X502_CHECK_HND(hnd);
     if ((err == X502_ERR_OK) && ((devrec==NULL) || (devrec->sign!=X502_DEVREC_SIGN)))
         err = X502_ERR_INVALID_DEVICE_RECORD;
-    if ((err == X502_ERR_OK) && (hnd->flags & PRIV_FLAGS_OPENED))
-        err = X502_ERR_ALREADY_OPENED;
+    if (X502_IsOpened(hnd) == X502_ERR_OK) {
+        X502_Close(hnd);
+    }
     if (err == X502_ERR_OK) {
         hnd->iface_hnd = (const t_x502_dev_iface *)(devrec->internal->iface);
         memcpy(hnd->info.serial, devrec->serial, X502_SERIAL_SIZE);

@@ -85,3 +85,4 @@ EXPORTS
     X502_CalcAdcFreq
     X502_CalcDinFreq
     X502_CalcOutFreq
+    X502_IsOpened
