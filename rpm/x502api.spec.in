@@ -27,7 +27,7 @@ BuildRequires: libusb1-devel
 BuildRequires: libusb-1_0-devel
 %endif
 
-%if %0{?mageia}
+%if 0%{?mageia}
 BuildRequires: libusb1.0-devel
 %endif
 
@@ -43,6 +43,9 @@ Summary: Source package for libraries for L502 and E502 devices
 %description 
 This package contain libraries for control L-Card data acqusition 
 L502 and E502 devices.
+
+#запрет отладочной информации, т.к. на некоторых платформах (Fedora >= 27) есть проблемы сборки пакетов с ней
+%global debug_package %{nil}
 
 %prep
 #извлечение исходников из архива
