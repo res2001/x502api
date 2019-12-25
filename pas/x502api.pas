@@ -491,7 +491,8 @@ type
   function X502_OpenByDevRecord(hnd: t_x502_hnd; var devrec : t_x502_devrec) : LongInt; stdcall;
   function X502_FreeDevRecordList(list : array of t_x502_devrec; size : LongWord) : LongInt; stdcall; overload;
   function X502_FreeDevRecordList(var rec : t_x502_devrec) : LongInt; stdcall; overload;
-
+  
+  function X502_IsOpened(hnd: t_x502_hnd): LongInt; stdcall;
   //разорвать связь с модулем
   function X502_Close(hnd: t_x502_hnd): LongInt; stdcall;
   //получение информации о модуле
@@ -681,6 +682,7 @@ implementation
 
   function X502_OpenByDevRecord(hnd: t_x502_hnd; var devrec : t_x502_devrec) : LongInt; stdcall; external 'x502api.dll';
   function _free_dev_record_list(var list ; size : LongWord) : LongInt; stdcall; external 'x502api.dll' name 'X502_FreeDevRecordList';
+  function X502_IsOpened(hnd: t_x502_hnd): LongInt; stdcall; external 'x502api.dll';
   function X502_Close(hnd : t_x502_hnd) : LongInt; stdcall; external 'x502api.dll';
   function X502_GetDevInfo(hnd : t_x502_hnd; out info : t_x502_info) : LongInt; stdcall; external 'x502api.dll';
 
